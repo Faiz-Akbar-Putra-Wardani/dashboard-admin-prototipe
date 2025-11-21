@@ -162,6 +162,15 @@ const routes = [
     component: () => import( /* webpackChunkName: "home" */ '../views/penjualan/print.vue'),
     },
 
+    {
+        path: '/sewa',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'kasir sewa',
+        component: () => import( /* webpackChunkName: "home" */ '../views/sewa/CashierAppSewa.vue'),
+    },
+
 
 
 

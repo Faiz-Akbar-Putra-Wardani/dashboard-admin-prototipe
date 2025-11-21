@@ -40,22 +40,22 @@ const updateStatus = async () => {
 
   try {
     statusUpdating.value = true;
-    const token = Cookies.get("token");
-    Api.defaults.headers.common["Authorization"] = token;
 
-    await Api.put(`/api/transactions/${id}/status`, {
+    await Api.put("/api/transactions/status", {
       invoice: transaction.value.invoice,
       status: newStatus.value
     });
 
     transaction.value.status = newStatus.value;
     toast.success("Status berhasil diperbarui");
+
   } catch (err) {
     toast.error("Gagal mengubah status");
   } finally {
     statusUpdating.value = false;
   }
 };
+
 
 const openPrintPage = () => {
   window.open(`/penjualan/print?invoice=${transaction.value.invoice}`, "_blank");

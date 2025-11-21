@@ -283,12 +283,12 @@ const menuGroups = [
       {
         icon: GridIcon,
         name: "Transaksi Sewa",
-        path: "/penjualan",
+        path: "/sewa",
       },
       {
         icon: GridIcon,
         name: "Data Sewa",
-        path: "/halaman-data-penjualan",
+        path: "/halaman-data-sewa",
       },
       
       // ... Add other menu items here

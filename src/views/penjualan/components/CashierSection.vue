@@ -160,7 +160,7 @@
         <label class="block text-xs font-semibold text-gray-700 mb-2">Status Pesanan</label>
         <select
           v-model="localStatus"
-          @change="updateStatus"
+          @change="$emit('update:status', $event.target.value)"
           class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl text-sm bg-white focus:outline-none focus:border-cyan-500 transition-all"
         >
           <option value="proses">🔄 Proses</option>

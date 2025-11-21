@@ -160,25 +160,25 @@ const changeQty = async ({ id, delta }) => {
   }
 };
 
-const status = ref("proses"); 
+const selectedStatus = ref(null);
 
 const updateStatus = async (newStatus) => {
-  if (!invoice.value) return; 
+  selectedStatus.value = newStatus; 
+
+  if (!invoice.value) return;
 
   try {
-    await Api.put(`/api/transactions/:id/status`, {
+    await Api.put("/api/transactions/status", {
       invoice: invoice.value,
-      status: newStatus
+      status: newStatus,
     }, {
       headers: { Authorization: token }
     });
-
-    status.value = newStatus;
-
   } catch (error) {
     console.error("Gagal update status:", error.response?.data || error);
   }
 };
+
 
 const nego = ref(0)
 const dp   = ref(0)
@@ -262,7 +262,8 @@ const checkout = async () => {
       dp: dp.value,
       nego: nego.value,
       grand_total: totalBayar.value,
-      status: status.value,
+      status: selectedStatus.value || "proses",
+
     });
 
     await Swal.fire({
@@ -376,6 +377,7 @@ const filteredProducts = computed(() => products.value.filter(p => {
               v-model:dp="dp"
               v-model:extra="extra"
               v-model:pph="pph"
+                 v-model:status="selectedStatus"
               @select-customer="selectCustomer"
               @remove-item="removeFromCart"
               @open-customer-modal="showCustomerModal = true"
@@ -425,6 +427,7 @@ const filteredProducts = computed(() => products.value.filter(p => {
             v-model:dp="dp"
             v-model:extra="extra"
             v-model:pph="pph"
+               v-model:status="selectedStatus"
             @select-customer="selectCustomer"
             @remove-item="removeFromCart"
             @open-customer-modal="showCustomerModal = true"

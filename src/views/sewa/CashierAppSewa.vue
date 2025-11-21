@@ -1,0 +1,357 @@
+<script setup>
+import { ref, computed, onMounted } from "vue"
+import Swal from "sweetalert2"
+
+import FilterSection from "./components/FilterSection.vue"
+import ProductGrid from "./components/ProductGrid.vue"
+import CashierSection from "./components/CashierSection.vue"
+import CustomerModal from "./components/CustomerModal.vue"
+
+import Api from "@/services/api"
+import Cookies from "js-cookie"
+
+const token = Cookies.get("token")
+
+/* -----------------------------
+   STATES
+------------------------------ */
+const activeTab = ref("products")
+const showCustomerModal = ref(false)
+
+const products = ref([])
+const categories = ref([])
+const customers = ref([])
+const cart = ref([])
+const selectedCustomer = ref(null)
+
+const startDate = ref("")
+const endDate = ref("")
+const dp = ref(0)
+const invoice = ref("")
+
+/* -----------------------------
+   FETCH DATA
+------------------------------ */
+const fetchInvoice = async () => {
+  try {
+    const res = await Api.get("/api/rentals/invoice/new", {
+      headers: { Authorization: token }
+    })
+
+    invoice.value = res.data.data.invoice
+  } catch (e) {
+    console.error("Gagal ambil invoice", e)
+  }
+}
+
+const fetchProducts = async () => {
+  const res = await Api.get("/api/products-all", {
+    headers: { Authorization: token }
+  })
+
+  products.value = res.data.data.map((p) => ({
+    id: p.id,
+    name: p.title,
+    price: p.rent_price || 0,
+    brand: p.category?.name ?? "Umum",
+    icon: p.image
+  }))
+}
+
+const fetchCategories = async () => {
+  const res = await Api.get("/api/categories-all", {
+    headers: { Authorization: token }
+  })
+  categories.value = ["Semua", ...res.data.data.map(c => c.name)]
+}
+
+const fetchCustomers = async () => {
+  const res = await Api.get("/api/customers-all", {
+    headers: { Authorization: token }
+  })
+
+  customers.value = res.data.data.map((c) => ({
+    id: c.value,
+    name: c.name,
+    address: c.address,
+  }))
+}
+
+/* -----------------------------
+   CART
+------------------------------ */
+const addToCart = (p) => {
+  const exist = cart.value.find(i => i.id === p.id)
+  if (exist) return exist.qty++
+
+  cart.value.push({
+    id: p.id,
+    name: p.name,
+    qty: 1,
+    rent_price: p.price,
+    icon: p.icon
+  })
+}
+
+const removeFromCart = (id) => {
+  cart.value = cart.value.filter(i => i.id !== id)
+}
+
+const changeQty = ({ id, delta }) => {
+  const item = cart.value.find(i => i.id === id)
+  if (!item) return
+
+  if (item.qty === 1 && delta === -1) {
+    return removeFromCart(id)
+  }
+
+  item.qty += delta
+}
+
+/* -----------------------------
+   TOTAL
+------------------------------ */
+const rentPrice = computed(() =>
+  cart.value.reduce((t, i) => t + (Number(i.rent_price) * i.qty), 0)
+)
+
+/* -----------------------------
+   CHECKOUT
+------------------------------ */
+const checkout = async () => {
+  if (!selectedCustomer.value)
+    return Swal.fire("Customer belum dipilih", "", "warning")
+
+  if (!startDate.value || !endDate.value)
+    return Swal.fire("Tanggal sewa wajib diisi!", "", "warning")
+
+  if (!cart.value.length)
+    return Swal.fire("Keranjang kosong!", "", "warning")
+
+  const payload = {
+    invoice: invoice.value,
+    customer_id: selectedCustomer.value.id,
+    dp: dp.value,
+    rent_price: rentPrice.value,
+    start_date: startDate.value,
+    end_date: endDate.value,
+    status: "ongoing",
+    details: cart.value.map(c => ({
+      product_id: c.id,
+      qty: c.qty,
+      rent_price: c.rent_price
+    }))
+  }
+
+  try {
+    const res = await Api.post("/api/rentals", payload, {
+      headers: { Authorization: token }
+    })
+
+    Swal.fire({
+      icon: "success",
+      title: "Rental berhasil dibuat",
+      text: `Invoice ${res.data.data.invoice}`
+    })
+
+    cart.value = []
+    selectedCustomer.value = null
+    dp.value = 0
+    startDate.value = ""
+    endDate.value = ""
+
+    window.location.href = "/halaman-data-rental"
+
+  } catch (err) {
+    Swal.fire("Gagal checkout", err.response?.data?.meta?.message || "", "error")
+  }
+}
+
+/* -----------------------------
+   SEARCH
+------------------------------ */
+const searchQuery = ref("")
+const selectedBrand = ref("Semua")
+
+const filteredProducts = computed(() =>
+  products.value.filter((p) => {
+    const matchName = p.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    const matchBrand = selectedBrand.value === "Semua" || p.brand === selectedBrand.value
+    return matchName && matchBrand
+  })
+)
+
+/* -----------------------------
+   ON MOUNT
+------------------------------ */
+onMounted(() => {
+  fetchInvoice()
+  fetchProducts()
+  fetchCategories()
+  fetchCustomers()
+});
+</script>
+
+
+<template>
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100">
+
+    <!-- HEADER TABS -->
+    <div class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-30 border-b-2 border-cyan-100">
+      <div class="max-w-7xl mx-auto flex gap-3 p-4 overflow-x-auto">
+
+        <!-- TAB: PRODUCTS -->
+        <button
+          @click="activeTab = 'products'"
+          :class="[
+            'flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300',
+            activeTab === 'products'
+              ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg scale-105'
+              : 'bg-white text-gray-700 hover:bg-blue-50 border-2 border-blue-200'
+          ]"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+          <span>Daftar Produk</span>
+        </button>
+
+        <!-- TAB: CART -->
+        <button
+          @click="activeTab = 'cart'"
+          :class="[
+            'flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 relative',
+            activeTab === 'cart'
+              ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg scale-105'
+              : 'bg-white text-gray-700 hover:bg-blue-50 border-2 border-blue-200'
+          ]"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          <span>Keranjang</span>
+
+          <span
+            v-if="cart.length > 0"
+            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold animate-pulse">
+            {{ cart.length }}
+          </span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="max-w-7xl mx-auto p-4 md:p-6">
+
+      <!-- MOBILE -->
+      <div class="md:hidden">
+
+        <div v-show="activeTab === 'products'" class="animate-fade-in">
+          <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-5 mb-4 border border-blue-200">
+            <FilterSection
+              v-model:search="searchQuery"
+              v-model:brand="selectedBrand"
+              v-model:brands="categories"
+            />
+          </div>
+
+          <ProductGrid :products="filteredProducts" @add-to-cart="addToCart" />
+        </div>
+
+        <div v-show="activeTab === 'cart'" class="animate-fade-in">
+          <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-5 border border-blue-200">
+
+            <CashierSection
+              :cart="cart"
+              :selected-customer="selectedCustomer"
+             :invoice="invoice"
+
+              :status="status"
+
+              v-model:dp="dp"
+              v-model:start_date="startDate"
+              v-model:end_date="endDate"
+
+              @select-customer="selectCustomer"
+              @remove-item="removeFromCart"
+              @open-customer-modal="showCustomerModal = true"
+              @checkout="checkout"
+              @update-status="updateStatus"
+            />
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- DESKTOP -->
+      <div class="hidden md:grid md:grid-cols-3 gap-6">
+
+        <!-- PRODUCT SIDE -->
+        <div class="md:col-span-2 space-y-5">
+          <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200">
+            <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent mb-5 flex items-center gap-2">
+              <svg class="w-7 h-7 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              Daftar Paket
+            </h2>
+
+            <FilterSection
+              v-model:search="searchQuery"
+              v-model:brand="selectedBrand"
+              v-model:brands="categories"
+            />
+
+            <ProductGrid :products="filteredProducts" @add-to-cart="addToCart" />
+          </div>
+        </div>
+
+        <!-- CART SIDE -->
+        <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200 sticky top-24 h-fit">
+
+          <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent mb-5 flex items-center gap-2">
+            <svg class="w-7 h-7 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            Keranjang
+          </h2>
+
+          <CashierSection
+            :cart="cart"
+            :selected-customer="selectedCustomer"
+            :invoice="invoice"
+            :status="status"
+
+            v-model:dp="dp"
+            v-model:start_date="startDate"
+            v-model:end_date="endDate"
+
+            @select-customer="selectCustomer"
+            @remove-item="removeFromCart"
+            @open-customer-modal="showCustomerModal = true"
+            @checkout="checkout"
+            @update-status="updateStatus"
+            @change-qty="changeQty"
+          />
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CUSTOMER MODAL -->
+    <CustomerModal
+      v-if="showCustomerModal"
+      :customers="customers"
+      @select="chooseCustomer"
+      @close="showCustomerModal = false"
+    />
+
+  </div>
+</template>
