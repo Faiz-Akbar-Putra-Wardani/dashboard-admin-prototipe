@@ -170,8 +170,31 @@ const routes = [
         name: 'kasir sewa',
         component: () => import( /* webpackChunkName: "home" */ '../views/sewa/CashierAppSewa.vue'),
     },
+      {
+        path: '/halaman-data-sewa',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'data sewa',
+        component: () => import( /* webpackChunkName: "home" */ '../views/sewa/index.vue'),
+    },
 
-
+    {
+        path: '/halaman-data-rental/detail/:id',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'halaman data detail sewa',
+        component: () => import( /* webpackChunkName: "home" */ '../views/sewa/detail.vue'),
+    },
+          {
+    path: '/rental/print',
+    beforeEnter: (to, from, next) => {
+        useUser().getToken ? next() : next('/')
+    },
+    name: 'sewa print',
+    component: () => import( /* webpackChunkName: "home" */ '../views/sewa/print.vue'),
+    },
 
 
 ]

@@ -181,10 +181,10 @@ const formatDate = (val) =>
               </div>
 
               <div class="pt-4 border-t border-gray-200">
-                <div class="flex justify-between text-base font-semibold">
+                <!-- <div class="flex justify-between text-base font-semibold">
                   <span>Total Biaya</span>
                   <span class="text-indigo-600">Rp {{ formatRupiah(transaction.subtotalPlusExtra) }}</span>
-                </div>
+                </div> -->
                 <div class="flex justify-between text-base font-semibold">
                   <span>Total/Sisa bayar</span>
                   <span class="text-indigo-600">Rp {{ formatRupiah(transaction.grand_total) }}</span>

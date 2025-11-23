@@ -6,6 +6,7 @@ import FilterSection from "./components/FilterSection.vue"
 import ProductGrid from "./components/ProductGrid.vue"
 import CashierSection from "./components/CashierSection.vue"
 import CustomerModal from "./components/CustomerModal.vue"
+import { toISO } from "@/utils/date"
 
 import Api from "@/services/api"
 import Cookies from "js-cookie"
@@ -64,19 +65,25 @@ const fetchCategories = async () => {
   })
   categories.value = ["Semua", ...res.data.data.map(c => c.name)]
 }
+const chooseCustomer = (customer) => {
+  selectedCustomer.value = customer;
+  showCustomerModal.value = false;
+};
 
 const fetchCustomers = async () => {
-  const res = await Api.get("/api/customers-all", {
-    headers: { Authorization: token }
-  })
-
-  customers.value = res.data.data.map((c) => ({
-    id: c.value,
-    name: c.name,
-    address: c.address,
-  }))
-}
-
+  if (token) {
+    Api.defaults.headers.common["Authorization"] = token;
+    await Api.get("/api/customers-all")
+      .then((res) => {
+        customers.value = res.data.data.map(c => ({
+          id: c.value,
+          name: c.label,
+          address: c.address
+        }));
+      })
+      .catch((err) => console.error(err));
+  }
+};
 /* -----------------------------
    CART
 ------------------------------ */
@@ -128,44 +135,78 @@ const checkout = async () => {
   if (!cart.value.length)
     return Swal.fire("Keranjang kosong!", "", "warning")
 
+  const result = await Swal.fire({
+    title: "Konfirmasi Checkout",
+    html: `
+      <div class="text-center">
+        <p><strong>Total Harga Sewa:</strong> Rp ${rentPrice.value.toLocaleString()}</p>
+        <p><strong>DP:</strong> Rp ${dp.value.toLocaleString()}</p>
+        <p><strong>Tanggal Sewa:</strong> ${startDate.value}</p>
+        <p><strong>Tanggal Kembali:</strong> ${endDate.value}</p>
+      </div>
+    `,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Ya, Proses",
+    cancelButtonText: "Batal",
+    confirmButtonColor: "#06b6d4",
+    cancelButtonColor: "#ef4444",
+  });
+
+  if (!result.isConfirmed) return;
+
   const payload = {
     invoice: invoice.value,
     customer_id: selectedCustomer.value.id,
     dp: dp.value,
     rent_price: rentPrice.value,
-    start_date: startDate.value,
-    end_date: endDate.value,
+    start_date: toISO(startDate.value),
+    end_date: toISO(endDate.value),
     status: "ongoing",
     details: cart.value.map(c => ({
       product_id: c.id,
       qty: c.qty,
       rent_price: c.rent_price
     }))
-  }
+  };
 
   try {
+    Swal.fire({
+      title: "Memproses data...",
+      text: "Mohon tunggu sebentar",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
     const res = await Api.post("/api/rentals", payload, {
       headers: { Authorization: token }
-    })
+    });
 
-    Swal.fire({
+    await Swal.fire({
       icon: "success",
       title: "Rental berhasil dibuat",
-      text: `Invoice ${res.data.data.invoice}`
-    })
+      text: `Invoice: ${res.data.data.invoice}`,
+      timer: 1800,
+      showConfirmButton: false,
+    });
 
+    // reset
     cart.value = []
     selectedCustomer.value = null
     dp.value = 0
     startDate.value = ""
     endDate.value = ""
 
-    window.location.href = "/halaman-data-rental"
+    window.location.href = "/halaman-data-sewa"
 
   } catch (err) {
-    Swal.fire("Gagal checkout", err.response?.data?.meta?.message || "", "error")
+    Swal.fire(
+      "Gagal checkout",
+      err.response?.data?.meta?.message || "Terjadi kesalahan",
+      "error"
+    );
   }
-}
+};
 
 /* -----------------------------
    SEARCH
@@ -275,7 +316,8 @@ onMounted(() => {
               v-model:start_date="startDate"
               v-model:end_date="endDate"
 
-              @select-customer="selectCustomer"
+            @select-customer="chooseCustomer"
+
               @remove-item="removeFromCart"
               @open-customer-modal="showCustomerModal = true"
               @checkout="checkout"
@@ -332,7 +374,8 @@ onMounted(() => {
             v-model:start_date="startDate"
             v-model:end_date="endDate"
 
-            @select-customer="selectCustomer"
+          @select-customer="chooseCustomer"
+
             @remove-item="removeFromCart"
             @open-customer-modal="showCustomerModal = true"
             @checkout="checkout"

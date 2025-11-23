@@ -11,32 +11,45 @@
       </div>
     </div>
 
-    <!-- CUSTOMER -->
+   <!-- PELANGGAN -->
     <div class="flex gap-2 items-end">
       <div class="flex-1">
-        <label class="block text-xs font-semibold text-gray-700 mb-2">PELANGGAN</label>
+        <label class="block text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+          <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          PELANGGAN
+        </label>
         <input
           :value="selectedCustomer?.name ?? ''"
           type="text"
           readonly
           placeholder="Pilih pelanggan..."
-          class="w-full px-4 py-3 border-2 border-blue-200 rounded-2xl bg-white"
+          class="w-full px-4 py-3 border-2 border-blue-200 rounded-2xl text-sm bg-white cursor-default focus:outline-none focus:border-cyan-500 transition-all"
         />
       </div>
 
+      <!-- SEARCH ICON -->
       <button
         @click="$emit('open-customer-modal')"
-        class="p-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-2xl"
+        class="p-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-2xl hover:shadow-lg transition-all transform hover:scale-105 active:scale-95"
+        title="Cari Pelanggan"
       >
-        🔍
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
       </button>
 
+      <!-- HAPUS -->
       <button
         v-if="selectedCustomer"
         @click="clearCustomer"
-        class="p-3 bg-red-500 text-white rounded-2xl"
+        class="p-3 bg-red-500 text-white rounded-2xl hover:bg-red-600 hover:shadow-lg transition-all transform hover:scale-105 active:scale-95"
+        title="Hapus Pelanggan"
       >
-        ❌
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
       </button>
     </div>
 
