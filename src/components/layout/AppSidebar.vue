@@ -231,7 +231,7 @@ const menuGroups = [
     items: [
       {
         icon: PieChartIcon,
-        name: "Charts",
+        name: "Dashboard",
         path: "/"
       },
       {
@@ -289,6 +289,40 @@ const menuGroups = [
         icon: GridIcon,
         name: "Data Sewa",
         path: "/halaman-data-sewa",
+      },
+      
+      // ... Add other menu items here
+    ],
+  },
+  {
+    title: "Sistem perbaikan Barang",
+    items: [
+      {
+        icon: GridIcon,
+        name: "Transaksi Perbaikan",
+        path: "/sewa",
+      },
+      {
+        icon: GridIcon,
+        name: "Data Perbaikan",
+        path: "/halaman-data-sewa",
+      },
+      
+      // ... Add other menu items here
+    ],
+  },
+  {
+    title: "Manajemen Konten",
+    items: [
+      {
+        icon: GridIcon,
+        name: "Proyek",
+        path: "/projects",
+      },
+      {
+        icon: GridIcon,
+        name: "Klien",
+        path: "/klien",
       },
       
       // ... Add other menu items here

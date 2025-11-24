@@ -170,17 +170,17 @@ onMounted(() => {
           <tr class="total-row">
             <td colspan="4" class="right"><b>Total</b></td>
             <td class="right"><b>Rp {{ formatRupiah(rentPrice) }}</b></td>
-            </tr>
+          </tr>
 
-            <tr class="total-row">
+          <tr class="total-row">
             <td colspan="4" class="right"><b>DP</b></td>
             <td class="right"><b>Rp {{ formatRupiah(dp) }}</b></td>
-            </tr>
+          </tr>
 
-            <tr class="total-row">
+          <tr class="total-row">
             <td colspan="4" class="right"><b>Sisa</b></td>
             <td class="right"><b>Rp {{ formatRupiah(sisa) }}</b></td>
-            </tr>
+          </tr>
 
         </tbody>
       </table>

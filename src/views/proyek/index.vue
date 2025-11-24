@@ -11,7 +11,7 @@ import Cookies from "js-cookie";
 
 import { getImageUrl } from "@/utils/getImageUrl";
 
-const categories = ref([]);
+const projects = ref([]);
 const keywords = ref("");
 const isLoading = ref(true);
 
@@ -33,9 +33,9 @@ const fetchData = async (pageNumber = 1, search = "") => {
 
     try {
         const response = await Api.get(
-            `/api/categories?page=${pageNumber}&search=${search}`
+            `/api/projects?page=${pageNumber}&search=${search}`
         );
-        categories.value = response.data.data;
+        projects.value = response.data.data;
         pagination.value = {
             currentPage: response.data.pagination.currentPage,
             perPage: response.data.pagination.perPage,
@@ -43,7 +43,7 @@ const fetchData = async (pageNumber = 1, search = "") => {
         };
     } catch (error) {
         console.error("Gagal ambil data:", error);
-        toast.error("Gagal mengambil data kategori.");
+        toast.error("Gagal mengambil data proyek.");
     } finally  {
         isLoading.value = false
     }
@@ -74,15 +74,15 @@ onMounted(() => {
             <h1
               class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white"
             >
-              Daftar Kategori
+              Daftar Proyek
             </h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Kelola data kategori produk di sini
+              Kelola data proyek di sini
             </p>
           </div>
 
           <router-link
-            to="/categories/create"
+            to="/projects/create"
             class="group flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-medium text-sm px-5 py-3 rounded-xl shadow-lg hover:shadow-xl hover:from-indigo-600 hover:to-indigo-700 transform hover:-translate-y-0.5 transition-all duration-200"
           >
             <svg
@@ -98,7 +98,7 @@ onMounted(() => {
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            Tambah Kategori
+            Tambah Proyek
           </router-link>
         </div>
 
@@ -145,7 +145,7 @@ onMounted(() => {
 
         <!-- Table -->
       <div
-      v-else-if="categories.length > 0"
+      v-else-if="projects.length > 0"
       class="overflow-x-auto w-full rounded-2xl border border-gray-200 dark:border-gray-700"
     >
       <table class="min-w-max w-full">
@@ -160,7 +160,10 @@ onMounted(() => {
           Gambar
         </th>
         <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">
-          Nama Kategori
+          Nama proyek
+        </th>
+         <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">
+          Lokasi
         </th>
         <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">
           Aksi
@@ -169,8 +172,8 @@ onMounted(() => {
     </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
               <tr
-                v-for="(cat, i) in categories"
-                :key="cat.id"
+                v-for="(project, i) in projects"
+                :key="project.id"
                 class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 transition-colors"
               >
                 <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
@@ -178,20 +181,25 @@ onMounted(() => {
                 </td>
                 <td class="px-6 py-4">
                   <img
-                    :src="getImageUrl(cat.image)"
-                    alt="category"
+                    :src="getImageUrl(project.image)"
+                    alt="project"
                     class="w-12 h-12 rounded-xl object-cover border border-gray-200 dark:border-gray-700"
                   />
                 </td>
                 <td
                   class="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white"
                 >
-                  {{ cat.name }}
+                  {{ project.project_name }}
+                </td>
+                 <td
+                  class="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white"
+                >
+                  {{ project.location}}
                 </td>
                 <td class="px-6 py-4 text-right">
                   <div class="flex justify-end gap-2">
                     <router-link
-                      :to="`/categories/edit/${cat.id}`"
+                      :to="`/projects/edit/${project.id}`"
                       class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
                       title="Edit"
                     >
@@ -210,8 +218,8 @@ onMounted(() => {
                       </svg>
                     </router-link>
                     <DeleteModal
-                      :id="cat.id"
-                      endpoint="/api/categories"
+                      :id="project.id"
+                      endpoint="/api/projects"
                       :fetchData="fetchData"
                       class="text-red-600 hover:text-red-700 hover:bg-red-50 p-2.5 rounded-xl transition-all"
                     >

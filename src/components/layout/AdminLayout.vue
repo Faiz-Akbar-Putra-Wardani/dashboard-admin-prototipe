@@ -13,13 +13,8 @@
       </div>
       <!-- Footer -->
       <footer class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 pt-0">
-        <p class="text-sm text-center text-gray-500 dark:text-gray-400">
+        <p class="text-sm text-center text-brand-500 dark:text-blue-400 font-medium">
           SES-rentFix
-          <a 
-            class="text-brand-500 hover:text-brand-600 transition-colors duration-200 font-medium"
-          >
-            TailAdmin
-          </a>
           ~ Distributed by 
           <a 
             href="https://themewagon.com/" 
@@ -27,7 +22,7 @@
             rel="noopener noreferrer"
             class="text-brand-500 hover:text-brand-600 transition-colors duration-200 font-medium"
           >
-            Teknokrat
+            Universitas Teknokrat Indonesia
           </a>
           .
         </p>

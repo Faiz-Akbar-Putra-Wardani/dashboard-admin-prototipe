@@ -196,6 +196,31 @@ const routes = [
     component: () => import( /* webpackChunkName: "home" */ '../views/sewa/print.vue'),
     },
 
+    {
+        path: '/projects',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'data proyek',
+        component: () => import( /* webpackChunkName: "home" */ '../views/proyek/index.vue'),
+    },
+     {
+        path: '/projects/create',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'tambah data proyek',
+        component: () => import( /* webpackChunkName: "home" */ '../views/proyek/create.vue'),
+    },
+    {
+        path: '/projects/edit/:id',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'edit data proyek',
+        component: () => import( /* webpackChunkName: "home" */ '../views/proyek/edit.vue'),
+    },
+
 
 ]
 const router = createRouter({
