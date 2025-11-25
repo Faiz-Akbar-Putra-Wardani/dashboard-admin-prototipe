@@ -109,16 +109,12 @@ const loginHandler = async () => {
 
         <!-- Logo / Title -->
         <div class="text-center mb-8">
-          <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl shadow-md">
-            <svg
-              class="w-9 h-9 text-white"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M12 2L2 12h3v8h14v-8h3L12 2z" />
-            </svg>
+          <div class="inline-flex items-center justify-center w-16 h-16  rounded-2xl shadow-md">
+           <img
+            src="/images/logo/logo_ses2.png"
+            alt="Logo SES"
+            class="w-15h-15 object-contain"
+          />
           </div>
 
           <h1 class="text-3xl font-bold text-blue-700 mt-4">

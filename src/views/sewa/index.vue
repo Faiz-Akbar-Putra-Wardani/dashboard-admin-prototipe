@@ -76,8 +76,6 @@ onMounted(() => {
 <template>
   <admin-layout >
    <div class="mx-auto w-full max-w-full p-4 sm:p-6 lg:p-8 overflow-x-hidden">
-
-
       <div class="rounded-3xl bg-white/80 backdrop-blur-xl shadow-2xl border border-indigo-100 dark:bg-gray-900/90 dark:border-indigo-900/50 p-6 lg:p-8">
 
         <!-- HEADER -->
@@ -123,114 +121,110 @@ onMounted(() => {
             <div class="h-16 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
           </div>
         </div>
+    
+    <!-- TABEL DESKTOP -->
+    <div
+      v-else-if="rentals.length > 0"
+      class="w-full rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+    >
 
-       <!-- TABLE DESKTOP -->
-<!-- TABEL DESKTOP -->
-<div
-  v-else-if="rentals.length > 0"
-  class="w-full rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
->
+    <!-- TABEL FIX -->
+    <div class="w-full overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700">
+      <div class="max-h-[420px] overflow-y-auto">
+        <table class="min-w-max w-full">
+          <thead
+            class="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/50 dark:to-indigo-800/50 sticky top-0 z-10"
+          >
+            <tr>
+              <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">No</th>
+              <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Invoice</th>
+              <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Customer</th>
+              <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Tanggal Sewa</th>
+              <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Produk</th>
+              <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Total Sewa</th>
+              <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Status</th>
+              <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
+            </tr>
+          </thead>
 
-  <!-- HEADER TABEL (tetap, tidak scroll) -->
-  <div class="w-full overflow-x-auto">
-    <table class="min-w-max w-full">
-      <thead class="bg-indigo-50 dark:bg-indigo-900/40">
-        <tr>
-          <th class="px-6 py-4 text-left">No</th>
-          <th class="px-6 py-4 text-left">Invoice</th>
-          <th class="px-6 py-4 text-left">Customer</th>
-          <th class="px-6 py-4 text-left">Tanggal</th>
-          <th class="px-6 py-4 text-left">Produk</th>
-          <th class="px-6 py-4 text-left">Total Sewa</th>
-          <th class="px-6 py-4 text-left">Status</th>
-          <th class="px-6 py-4 text-right">Aksi</th>
-        </tr>
-      </thead>
-    </table>
-  </div>
-
-  <!-- BODY TABEL SCROLL KANAN-KIRI DAN ATAS-BAWAH -->
-  <div class="max-h-[420px] overflow-x-auto overflow-y-auto w-full">
-    <table class="min-w-[1100px]  w-full border-t border-gray-200 dark:border-gray-700">
-      <tbody>
-        <tr
-          v-for="(r, i) in rentals"
-          :key="r.id"
-          class="border-b hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-        >
-          <td class="px-6 py-4">
-            {{ (pagination.currentPage - 1) * pagination.perPage + i + 1 }}
-          </td>
-
-          <td class="px-6 py-4 font-semibold">{{ r.invoice }}</td>
-
-          <td class="px-6 py-4">
-            {{ r.customer?.name_perusahaan ?? "-" }}
-          </td>
-
-          <td class="px-6 py-4 whitespace-nowrap">
-            {{ new Date(r.start_date).toLocaleDateString("id-ID") }} -
-            {{ new Date(r.end_date).toLocaleDateString("id-ID") }}
-          </td>
-
-          <td class="px-6 py-4">
-            {{ getProductName(r) }}
-          </td>
-
-          <td class="px-6 py-4 font-bold text-green-600">
-            Rp {{ new Intl.NumberFormat("id-ID").format(r.rent_price) }}
-          </td>
-
-          <td class="px-6 py-4">
-            <span
-              :class="[
-                'px-3 py-1 rounded-xl text-xs font-semibold',
-                r.status === 'ongoing'
-                  ? 'bg-yellow-100 text-yellow-700'
-                  : r.status === 'completed'
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-gray-200 text-gray-700'
-              ]"
+          <tbody>
+            <tr
+              v-for="(r, i) in rentals"
+              :key="r.id"
+              class="border-b hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
             >
-              {{ r.status }}
-            </span>
-          </td>
+              <td class="px-6 py-4">
+                {{ (pagination.currentPage - 1) * pagination.perPage + i + 1 }}
+              </td>
 
-          <td class="px-6 py-4 text-right">
-            <div class="flex justify-end gap-3">
-              <router-link
-                :to="`/halaman-data-rental/detail/${r.id}`"
-                class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 
-                          002 2h11a2 2 0 
-                          002-2v-5m-1.414-9.414a2 2 0 
-                          112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </router-link>
+              <td class="px-6 py-4 font-semibold text-center">
+                {{ r.invoice }}
+              </td>
 
-              <delete-modal
-                :id="r.id"
-                endpoint="/api/rentals"
-                :fetchData="fetchData"
-                class="p-2 text-red-600 hover:bg-red-50 rounded-xl"
-              />
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+              <td class="px-6 py-4 text-center">
+                {{ r.customer?.name_perusahaan ?? "-" }}
+              </td>
 
-</div>
+              <td class="px-6 py-4 text-right whitespace-nowrap">
+                {{ new Date(r.start_date).toLocaleDateString("id-ID") }} -
+                {{ new Date(r.end_date).toLocaleDateString("id-ID") }}
+              </td>
 
+              <td class="px-6 py-4 text-center">
+                {{ getProductName(r) }}
+              </td>
 
+              <td class="px-6 py-4 font-bold text-green-600 text-center">
+                Rp {{ new Intl.NumberFormat("id-ID").format(r.rent_price) }}
+              </td>
 
+              <td class="px-6 py-4 text-center">
+                <span
+                  :class="[
+                    'px-3 py-1 rounded-xl text-xs font-semibold',
+                    r.status === 'ongoing'
+                      ? 'bg-yellow-100 text-yellow-700'
+                      : r.status === 'completed'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-200 text-gray-700'
+                  ]"
+                >
+                  {{ r.status }}
+                </span>
+              </td>
 
+              <td class="px-6 py-4 text-center">
+                <div class="flex justify-end gap-3">
+                  <router-link
+                    :to="`/halaman-data-rental/detail/${r.id}`"
+                    class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 
+                              0 002 2h11a2 2 
+                              0 002-2v-5m-1.414-9.414a2 2 
+                              112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </router-link>
+
+                  <delete-modal
+                    :id="r.id"
+                    endpoint="/api/rentals"
+                    :fetchData="fetchData"
+                    class="p-2 text-red-600 hover:bg-red-50 rounded-xl"
+                  />
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
+
+          </div>
+        </div>
+      </div>
   </admin-layout>
 </template>
 

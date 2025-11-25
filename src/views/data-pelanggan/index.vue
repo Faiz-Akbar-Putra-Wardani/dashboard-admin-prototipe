@@ -120,11 +120,11 @@ onMounted(() => {
     <table class="min-w-max w-full">
       <thead class="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/50 dark:to-indigo-800/50">
         <tr>
-          <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">No</th>
-          <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Perusahaan</th>
-          <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Telepon</th>
-          <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Alamat</th>
-          <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">Aksi</th>
+          <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">No</th>
+          <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Perusahaan</th>
+          <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Telepon</th>
+          <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Alamat</th>
+          <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
         </tr>
       </thead>
 
@@ -164,16 +164,11 @@ onMounted(() => {
               </delete-modal>
             </div>
           </td>
-
         </tr>
       </tbody>
     </table>
   </div>
 </div>
-
-
-
-
         <!-- Empty State -->
         <div v-else class="text-center py-16">
           <div class="bg-gray-100 dark:bg-gray-800 w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center">

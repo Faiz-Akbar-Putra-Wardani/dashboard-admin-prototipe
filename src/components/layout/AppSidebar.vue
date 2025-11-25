@@ -81,7 +81,7 @@
                         : 'menu-item-icon-inactive',
                     ]"
                   >
-                    <component :is="item.icon" />
+                  <component :is="item.icon" class="w-5 h-5" />
                   </span>
                   <span
                     v-if="isExpanded || isHovered || isMobileOpen"
@@ -111,16 +111,16 @@
                       'menu-item-inactive': !isActive(item.path),
                     },
                   ]"
-                >
-                  <span
-                    :class="[
-                      isActive(item.path)
-                        ? 'menu-item-icon-active'
-                        : 'menu-item-icon-inactive',
-                    ]"
-                  >
-                    <component :is="item.icon" />
-                  </span>
+                ><span
+                :class="[
+                  isActive(item.path)
+                    ? 'menu-item-icon-active'
+                    : 'menu-item-icon-inactive',
+                ]"
+              >
+                <component :is="item.icon" class="w-5 h-5" />
+              </span>
+
                   <span
                     v-if="isExpanded || isHovered || isMobileOpen"
                     class="menu-item-text"
@@ -210,14 +210,24 @@ import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 
 import {
-  GridIcon,
-  UserCircleIcon,
-  PieChartIcon,
+  HomeIcon,
+  UsersIcon,
+  TagIcon,
+  CubeIcon,
+  CubeTransparentIcon,
+  ShoppingCartIcon,
+  DocumentTextIcon,
+  ClipboardDocumentListIcon,
+  ClipboardDocumentCheckIcon,
+  WrenchScrewdriverIcon,
+  WrenchIcon,
+  BriefcaseIcon,
+  BuildingStorefrontIcon,
+  SunIcon,
+  MoonIcon,
   ChevronDownIcon,
-  HorizontalDots,
-  PlugInIcon,
-  MenuIcon
-} from "../../icons";
+} from "@heroicons/vue/24/outline";
+
 import SidebarWidget from "./SidebarWidget.vue";
 import { useSidebar } from "@/composables/useSidebar";
 
@@ -230,105 +240,104 @@ const menuGroups = [
     title: "Menu",
     items: [
       {
-        icon: PieChartIcon,
+        icon: HomeIcon,
         name: "Dashboard",
         path: "/"
       },
       {
-        icon: UserCircleIcon,
+        icon: UsersIcon,
         name: "Data Pelanggan",
         path: "/data-pelanggan",
       },
     ],
   },
+
   {
     title: "Menu Product",
     items: [
       {
-        icon: GridIcon,
+        icon: TagIcon,
         name: "Data Categories",
         path: "/categories",
       },
       {
-        icon: MenuIcon,
+        icon: CubeIcon,
         name: "Tentang Product",
         subItems: [
-          { name: "Product", path: "/products", pro: false },
-          { name: "Detail Product", path: "/detail-products", pro: false },
+          { name: "Product", path: "/products", pro: false, icon: CubeIcon },
+          { name: "Detail Product", path: "/detail-products", pro: false, icon: CubeTransparentIcon },
         ],
       },
-      // ... Add other menu items here
     ],
   },
+
   {
     title: "Sistem Penjualan",
     items: [
       {
-        icon: GridIcon,
+        icon: ShoppingCartIcon,
         name: "Transaksi Penjualan",
         path: "/penjualan",
       },
       {
-        icon: GridIcon,
+        icon: DocumentTextIcon,
         name: "Data Penjualan",
         path: "/halaman-data-penjualan",
       },
-      
-      // ... Add other menu items here
     ],
   },
+
   {
     title: "Sistem Sewa Barang",
     items: [
       {
-        icon: GridIcon,
+        icon: ClipboardDocumentCheckIcon,
         name: "Transaksi Sewa",
         path: "/sewa",
       },
       {
-        icon: GridIcon,
+        icon: ClipboardDocumentListIcon,
         name: "Data Sewa",
         path: "/halaman-data-sewa",
       },
-      
-      // ... Add other menu items here
     ],
   },
+
   {
-    title: "Sistem perbaikan Barang",
+    title: "Sistem Perbaikan Barang",
     items: [
       {
-        icon: GridIcon,
+        icon: WrenchScrewdriverIcon,
         name: "Transaksi Perbaikan",
-        path: "/sewa",
+        path: "/perbaikan",
       },
       {
-        icon: GridIcon,
+        icon: WrenchIcon,
         name: "Data Perbaikan",
-        path: "/halaman-data-sewa",
+        path: "/halaman-data-perbaikan",
       },
-      
-      // ... Add other menu items here
     ],
   },
+
   {
     title: "Manajemen Konten",
     items: [
       {
-        icon: GridIcon,
+        icon: BriefcaseIcon,
         name: "Proyek",
         path: "/projects",
       },
       {
-        icon: GridIcon,
+        icon: BuildingStorefrontIcon,
         name: "Klien",
-        path: "/klien",
+        path: "/clients",
       },
-      
-      // ... Add other menu items here
     ],
   },
+
+  
 ];
+
 
 const isActive = (path) => route.path === path;
 

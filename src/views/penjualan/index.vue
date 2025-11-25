@@ -131,30 +131,30 @@ onMounted(() => {
         </div>
 
       
-   <!-- TABEL DESKTOP -->
+<!-- TABEL DESKTOP -->
 <div
   v-else-if="transactions.length > 0"
   class="w-full rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
 >
 
-  <!-- WRAPPER -->
+  <!-- WRAPPER HEADER -->
   <div class="w-full overflow-x-auto">
     <table class="min-w-max w-full">
-      <thead class="bg-indigo-50 dark:bg-indigo-900/40">
+      <thead class="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/50 dark:to-indigo-800/50">
         <tr>
-          <th class="px-6 py-4 text-left">No</th>
-          <th class="px-6 py-4 text-left">Invoice</th>
-          <th class="px-6 py-4 text-left">Customer</th>
-          <th class="px-6 py-4 text-left">Tanggal</th>
-          <th class="px-6 py-4 text-left">Produk</th>
-          <th class="px-6 py-4 text-left">Total Bayar</th>
-          <th class="px-6 py-4 text-right">Aksi</th>
+          <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">No</th>
+          <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Invoice</th>
+          <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Pelanggan</th>
+          <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Tanggal</th>
+          <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Produk</th>
+          <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Total Bayar</th>
+          <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
         </tr>
       </thead>
     </table>
   </div>
 
-  <!-- BODY SCROLL ONLY -->
+  <!-- BODY SCROLL -->
   <div class="max-h-[420px] overflow-auto w-full">
     <table class="min-w-max w-full border-t border-gray-200 dark:border-gray-700">
       <tbody>
@@ -210,8 +210,8 @@ onMounted(() => {
       </tbody>
     </table>
   </div>
-
 </div>
+
         <!-- JIKA KOSONG -->
         <div v-else class="text-center py-16">
           <p class="text-gray-500">Belum ada transaksi</p>

@@ -221,6 +221,32 @@ const routes = [
         component: () => import( /* webpackChunkName: "home" */ '../views/proyek/edit.vue'),
     },
 
+     {
+        path: '/clients',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'data klien',
+        component: () => import( /* webpackChunkName: "home" */ '../views/client/index.vue'),
+    },
+     {
+        path: '/clients/create',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'tambah data klien',
+        component: () => import( /* webpackChunkName: "home" */ '../views/client/create.vue'),
+    },
+    {
+        path: '/clients/edit/:id',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'edit data klien',
+        component: () => import( /* webpackChunkName: "home" */ '../views/client/edit.vue'),
+    },
+
+
 
 ]
 const router = createRouter({
