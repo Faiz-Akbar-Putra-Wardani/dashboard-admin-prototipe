@@ -155,7 +155,12 @@
                             },
                           ]"
                         >
-                          {{ subItem.name }}
+                        <!-- ICON SUBMENU -->
+                        <component
+                          :is="subItem.icon"
+                          class="w-5 h-5 text-gray-400 group-hover:text-brand-500 transition"
+                        />
+                          <span>{{ subItem.name }}</span>
                           <span class="flex items-center gap-1 ml-auto">
                             <span
                               v-if="subItem.new"
@@ -253,7 +258,7 @@ const menuGroups = [
   },
 
   {
-    title: "Menu Product",
+    title: "Menu Produk",
     items: [
       {
         icon: TagIcon,
@@ -262,10 +267,10 @@ const menuGroups = [
       },
       {
         icon: CubeIcon,
-        name: "Tentang Product",
+        name: "Tentang Produk",
         subItems: [
-          { name: "Product", path: "/products", pro: false, icon: CubeIcon },
-          { name: "Detail Product", path: "/detail-products", pro: false, icon: CubeTransparentIcon },
+          { name: "Produk", path: "/products", pro: false, icon: CubeIcon },
+          { name: "Detail Produk", path: "/detail-products", pro: false, icon: CubeTransparentIcon },
         ],
       },
     ],
@@ -331,6 +336,17 @@ const menuGroups = [
         icon: BuildingStorefrontIcon,
         name: "Klien",
         path: "/clients",
+      },
+    ],
+  },
+
+  {
+    title: "Rekap",
+    items: [
+      {
+        icon: UsersIcon,
+        name: "Rekap Data Pelanggan",
+        path: "/projects",
       },
     ],
   },

@@ -3,7 +3,7 @@ import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Api from "@/services/api";
 import Cookies from "js-cookie";
-import { toast } from "vue3-toastify";
+import Swal from "sweetalert2";
 
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 
@@ -43,7 +43,12 @@ const fetchDetail = async () => {
 
     newStatus.value = rental.value.status;
   } catch (err) {
-    toast.error("Gagal mengambil detail rental");
+    Swal.fire({
+      icon: "error",
+      title: "Gagal!",
+      text: "Gagal mengambil detail rental",
+      confirmButtonColor: "#e3342f",
+    });
   } finally {
     loading.value = false;
   }
@@ -51,23 +56,45 @@ const fetchDetail = async () => {
 
 // Update status rental
 const updateStatus = async () => {
+  if (!newStatus.value) {
+    Swal.fire({
+      icon: "warning",
+      title: "Status belum dipilih",
+      text: "Pilih status sebelum memperbarui!",
+      confirmButtonColor: "#f59e0b",
+    });
+    return;
+  }
+
   try {
     statusUpdating.value = true;
 
     await Api.put("/api/rentals/status", {
       invoice: rental.value.invoice,
-      status: newStatus.value
+      status: newStatus.value,
     });
 
     rental.value.status = newStatus.value;
 
-    toast.success("Status berhasil diperbarui");
+    Swal.fire({
+      icon: "success",
+      title: "Berhasil!",
+      text: "Status rental berhasil diperbarui",
+      confirmButtonColor: "#4f46e5",
+    });
+
   } catch (err) {
-    toast.error("Gagal mengubah status");
+    Swal.fire({
+      icon: "error",
+      title: "Gagal!",
+      text: "Gagal mengubah status rental",
+      confirmButtonColor: "#e3342f",
+    });
   } finally {
     statusUpdating.value = false;
   }
 };
+
 
 // Print halaman rental
 const openPrintPage = () => {

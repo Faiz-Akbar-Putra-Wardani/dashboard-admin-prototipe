@@ -124,7 +124,7 @@ onMounted(() => {
           <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Perusahaan</th>
           <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Telepon</th>
           <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Alamat</th>
-          <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
+          <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
         </tr>
       </thead>
 
@@ -141,7 +141,7 @@ onMounted(() => {
           <td class="px-6 py-4 text-sm">{{ c.no_telp }}</td>
           <td class="px-6 py-4 text-sm max-w-xs truncate">{{ c.address }}</td>
 
-          <td class="px-6 py-4 text-right">
+          <td class="px-6 py-4 text-left">
             <div class="flex justify-end gap-2">
               <router-link
                 :to="`/data-pelanggan/edit/${c.id}`"

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { toast } from "vue3-toastify";
+import Swal from "sweetalert2";
 import Api from "@/services/api";
 import Cookies from "js-cookie";
 
@@ -24,9 +24,16 @@ const fetchDetail = async () => {
 
     const res = await Api.get(`/api/transactions/${id}`);
     transaction.value = res.data.data;
-    newStatus.value = transaction.value.status; 
+    newStatus.value = transaction.value.status;
   } catch (err) {
-    toast.error("Gagal mengambil detail transaksi");
+
+    Swal.fire({
+      icon: "error",
+      title: "Gagal!",
+      text: "Gagal mengambil detail transaksi",
+      confirmButtonColor: "#e3342f",
+    });
+
   } finally {
     loading.value = false;
   }
@@ -34,7 +41,12 @@ const fetchDetail = async () => {
 
 const updateStatus = async () => {
   if (!newStatus.value) {
-    toast.error("Pilih status terlebih dahulu");
+    Swal.fire({
+      icon: "warning",
+      title: "Status kosong!",
+      text: "Pilih status terlebih dahulu",
+      confirmButtonColor: "#f59e0b",
+    });
     return;
   }
 
@@ -43,14 +55,25 @@ const updateStatus = async () => {
 
     await Api.put("/api/transactions/status", {
       invoice: transaction.value.invoice,
-      status: newStatus.value
+      status: newStatus.value,
     });
 
     transaction.value.status = newStatus.value;
-    toast.success("Status berhasil diperbarui");
+
+    Swal.fire({
+      icon: "success",
+      title: "Berhasil!",
+      text: "Status berhasil diperbarui",
+      confirmButtonColor: "#4f46e5",
+    });
 
   } catch (err) {
-    toast.error("Gagal mengubah status");
+    Swal.fire({
+      icon: "error",
+      title: "Gagal!",
+      text: "Gagal mengubah status",
+      confirmButtonColor: "#e3342f",
+    });
   } finally {
     statusUpdating.value = false;
   }
@@ -194,7 +217,7 @@ const formatDate = (val) =>
 
             <div class="mt-8 space-y-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Status & Pembayaran</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                 <select v-model="newStatus" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                   <option value="proses">Proses</option>
                   <option value="dikirim">Dikirim</option>
