@@ -247,6 +247,50 @@ const routes = [
     },
 
 
+     {
+        path: '/repairs',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'data perbaikan',
+        component: () => import( /* webpackChunkName: "home" */ '../views/perbaikan/index.vue'),
+    },
+    {
+        path: '/repairs/create',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'tambah data perbaikan',
+        component: () => import( /* webpackChunkName: "home" */ '../views/perbaikan/create.vue'),
+    },
+    {
+        path: '/repairs/edit/:id',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'edit data perbaikan',
+        component: () => import( /* webpackChunkName: "home" */ '../views/perbaikan/edit.vue'),
+    },
+
+    {
+        path: '/repairs/detail/:id',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'halaman data detail perbaikan',
+        component: () => import( /* webpackChunkName: "home" */ '../views/perbaikan/detail.vue'),
+    },
+
+     {
+    path: '/repairs/print',
+    beforeEnter: (to, from, next) => {
+        useUser().getToken ? next() : next('/')
+    },
+    name: 'perbaikan print',
+    component: () => import( /* webpackChunkName: "home" */ '../views/perbaikan/print.vue'),
+    },
+
+
 
 ]
 const router = createRouter({

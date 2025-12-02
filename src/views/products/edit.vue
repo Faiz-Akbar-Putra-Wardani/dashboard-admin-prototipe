@@ -20,6 +20,7 @@ const form = reactive({
   title: "",
   category_id: "",
   sell_price: "",
+  rent_price: "",
   stock: "",
   description: "",
   image: null,
@@ -58,6 +59,7 @@ const fetchProduct = async () => {
     form.title = data.title || "";
       form.category_id = data.category?.id ? Number(data.category.id) : "";
     form.sell_price = data.sell_price || "";
+    form.rent_price = data.rent_price ?? "";
     form.stock = data.stock || "";
     form.description = data.description || "";
     previewUrl.value = data.image ? getImageUrl(data.image) : null;
@@ -120,6 +122,12 @@ const updateProduct = async () => {
     formData.append("sell_price", form.sell_price);
     formData.append("stock", form.stock);
     formData.append("description", form.description);
+
+    if (form.rent_price === "" || form.rent_price === null) {
+  formData.append("rent_price", "");
+} else {
+  formData.append("rent_price", form.rent_price);
+}
 
     if (form.image instanceof File) {
       formData.append("image", form.image);
@@ -264,6 +272,27 @@ onMounted(async () => {
             Harga Produk <span class="text-red-500">*</span>
           </label>
           <p v-if="errors.sell_price" class="mt-1 text-xs text-red-600">{{ errors.sell_price }}</p>
+        </div>
+
+        <!-- Harga Sewa -->
+        <div class="group relative">
+          <input
+            id="rent_price"
+            v-model="form.rent_price"
+            type="number"
+            :data-filled="form.rent_price"
+            class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            placeholder="Masukkan harga sewa"
+          />
+          <label
+            for="rent_price"
+            class="absolute left-4 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
+              peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
+              peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
+              peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400">
+            Harga Sewa <span class="text-red-500">*</span>
+          </label>
+          <p v-if="errors.rent_price" class="mt-1 text-xs text-red-600">{{ errors.rent_price }}</p>
         </div>
 
         <!-- Stok -->

@@ -141,24 +141,33 @@ const changeQty = async ({ id, delta }) => {
   const item = cart.value.find(i => i.id === id);
   if (!item) return;
 
-  if (item.qty === 1 && delta === -1) {
-    return removeFromCart(id);
+  const newQty = item.qty + delta;
+
+  // ✅ JANGAN PERNAH KIRIM qty < 1
+  if (newQty < 1) {
+    return await removeFromCart(id);
   }
 
   try {
-    await Api.put(`/api/carts/${id}`, {
-      qty: item.qty + delta
-    }, {
-      headers: { Authorization: token }
-    });
+    await Api.put(
+      `/api/carts/${id}`,
+      { qty: newQty },
+      { headers: { Authorization: token } }
+    );
 
-    // refresh cart
     await fetchCarts();
 
   } catch (err) {
     console.error("Gagal update qty:", err.response?.data || err);
+
+    Swal.fire({
+      icon: "error",
+      title: "Gagal update jumlah",
+      text: err.response?.data?.meta?.message || "Quantity tidak valid",
+    });
   }
 };
+
 
 const selectedStatus = ref(null);
 
@@ -180,20 +189,112 @@ const updateStatus = async (newStatus) => {
 };
 
 
-const nego = ref(0)
-const dp   = ref(0)
-const extra = ref(0)   // tambahan biaya
-const pph   = ref(0)
+const nego  = ref(null)
+const dp    = ref(null)
+const extra = ref(null)
+const pph   = ref(null)
+
+const extraSafe = computed(() => Number(extra.value) || 0)
+const pphSafe   = computed(() => Number(pph.value) || 0)
+const negoSafe  = computed(() => Number(nego.value) || 0)
+const dpSafe    = computed(() => Number(dp.value) || 0)
+
 
 const subtotal = computed(() =>
   cart.value.reduce((sum, c) => sum + c.price * c.qty, 0)
-);
+)
 
-const subtotalPlusExtra = computed(() => subtotal.value + extra.value)
-const pphNominal = computed(() => subtotalPlusExtra.value * (pph.value / 100))
-const totalBeforeNego = computed(() => subtotalPlusExtra.value - pphNominal.value)
-const totalAfterNego = computed(() => Math.max(0, totalBeforeNego.value - nego.value))
-const totalBayar = computed(() => Math.max(0, totalAfterNego.value))
+const subtotalPlusExtra = computed(() =>
+  subtotal.value + extraSafe.value
+)
+
+const pphNominal = computed(() =>
+  subtotalPlusExtra.value * (pphSafe.value / 100)
+)
+
+const totalBeforeNego = computed(() =>
+  subtotalPlusExtra.value - pphNominal.value
+)
+
+const totalAfterNego = computed(() =>
+  Math.max(0, totalBeforeNego.value - negoSafe.value)
+)
+
+const totalBayar = computed(() =>
+  Math.max(0, totalAfterNego.value)
+)
+
+watch([nego, totalBeforeNego], () => {
+  if (nego.value == null) return
+
+  if (nego.value > totalBeforeNego.value) {
+    nego.value = totalBeforeNego.value
+
+    Swal.fire({
+      icon: "warning",
+      title: "Nego tidak valid",
+      text: "Harga nego tidak boleh melebihi total sebelum nego",
+      timer: 1500,
+      showConfirmButton: false,
+    })
+  }
+
+  if (nego.value < 0) {
+    nego.value = 0
+  }
+})
+
+
+watch([dp, totalBayar], () => {
+  if (dp.value == null) return
+
+  // DP tidak boleh lebih dari total
+  if (dp.value > totalBayar.value) {
+    dp.value = totalBayar.value
+
+    Swal.fire({
+      icon: "warning",
+      title: "DP tidak valid",
+      text: "DP tidak boleh melebihi total bayar",
+      timer: 1500,
+      showConfirmButton: false,
+    })
+  }
+
+  if (dp.value < 0) {
+    dp.value = 0
+  }
+});
+
+watch([pph, subtotalPlusExtra], () => {
+  if (pph.value == null) return
+
+  // maksimal 100%
+  if (pph.value > 100) {
+    pph.value = 100
+
+    Swal.fire({
+      icon: "warning",
+      title: "PPH tidak valid",
+      text: "PPH tidak boleh melebihi 100%",
+      timer: 1500,
+      showConfirmButton: false,
+    })
+  }
+
+  if (pph.value < 0) {
+    pph.value = 0
+  }
+
+  // VALIDASI NOMINAL
+  const pphNominal = subtotalPlusExtra.value * (pph.value / 100)
+
+  if (pphNominal > subtotalPlusExtra.value) {
+    pph.value = 100
+  }
+});
+
+
 
 const checkout = async () => {
   if (!cart.value.length) {
@@ -214,22 +315,44 @@ const checkout = async () => {
     return;
   }
 
+  if (negoSafe.value > totalBeforeNego.value) {
+  return Swal.fire(
+    "Nego tidak valid",
+    "Harga nego tidak boleh melebihi total sebelum nego",
+    "warning"
+  )
+}
+
+
+  if (dpSafe.value > totalBayar.value) {
+  return Swal.fire(
+    "DP tidak valid",
+    "DP tidak boleh melebihi total bayar",
+    "warning"
+  )
+}
+
+
   const result = await Swal.fire({
     title: "Konfirmasi Checkout",
     html: `
-      <div class="text-center">
-        <p><strong>Subtotal:</strong> Rp ${subtotal.value.toLocaleString()}</p>
-        <p><strong>Tambahan Biaya:</strong> Rp ${extra.value.toLocaleString()}</p>
-         <p><strong>Total Tambahan Biaya:</strong> Rp ${subtotalPlusExtra.value.toLocaleString()}</p>
-      <p><strong>PPH (%):</strong> ${pph.value}%</p>
-      <p><strong>PPH Nominal:</strong> Rp ${pphNominal.value.toLocaleString()}</p>
-        <p><strong>Nego:</strong> Rp ${nego.value.toLocaleString()}</p>
-        <p><strong>DP:</strong> Rp ${dp.value.toLocaleString()}</p>
-        <hr class="my-2" />
-        <p class="text-lg font-bold" style="color: #06b6d4;">
-          Total Dibayar: Rp ${totalBayar.value.toLocaleString()}
-        </p>
-      </div>
+       <div class="text-center">
+      <p><strong>Subtotal:</strong> Rp ${subtotal.value.toLocaleString('id-ID')}</p>
+
+      <p><strong>Tambahan Biaya:</strong> Rp ${extraSafe.value.toLocaleString('id-ID')}</p>
+      <p><strong>Total Tambahan Biaya:</strong> Rp ${subtotalPlusExtra.value.toLocaleString('id-ID')}</p>
+
+      <p><strong>PPH (%):</strong> ${pphSafe.value}%</p>
+      <p><strong>PPH Nominal:</strong> Rp ${pphNominal.value.toLocaleString('id-ID')}</p>
+
+      <p><strong>Nego:</strong> Rp ${negoSafe.value.toLocaleString('id-ID')}</p>
+      <p><strong>DP:</strong> Rp ${dpSafe.value.toLocaleString('id-ID')}</p>
+
+      <hr class="my-2" />
+      <p class="text-lg font-bold" style="color:#06b6d4">
+        Total Dibayar: Rp ${totalBayar.value.toLocaleString('id-ID')}
+      </p>
+    </div>
     `,
     icon: "question",
     showCancelButton: true,
@@ -256,12 +379,13 @@ const checkout = async () => {
       customer_id: selectedCustomer.value?.id || null,
       subtotal: subtotal.value,
       subtotalPlusExtra: subtotalPlusExtra.value, 
-      extra: extra.value,
-      pph: pph.value,
+      extra: extraSafe.value,
+      pph: pphSafe.value,
       pph_nominal: pphNominal.value,
-      dp: dp.value,
-      nego: nego.value,
+      nego: negoSafe.value,
+      dp: dpSafe.value,
       grand_total: totalBayar.value,
+
       status: selectedStatus.value || "proses",
 
     });
@@ -324,9 +448,6 @@ const filteredProducts = computed(() => products.value.filter(p => {
               : 'bg-white text-gray-700 hover:bg-blue-50 border-2 border-blue-200'
           ]"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
           <span>Daftar Produk</span>
         </button>
         <button
@@ -366,25 +487,29 @@ const filteredProducts = computed(() => products.value.filter(p => {
         <div v-show="activeTab === 'cart'" class="animate-fade-in">
           <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-5 border border-blue-200">
             <CashierSection
-              :cart="cart"
-              :selected-customer="selectedCustomer"
-              :invoice="invoice"
-              :subtotal="subtotal"
-              :subtotal-plus-extra="subtotalPlusExtra"
-              :pph-nominal="pphNominal"
-              :total-bayar="totalBayar"
-              v-model:nego="nego"
-              v-model:dp="dp"
-              v-model:extra="extra"
-              v-model:pph="pph"
-                 v-model:status="selectedStatus"
-              @select-customer="selectCustomer"
-              @remove-item="removeFromCart"
-              @open-customer-modal="showCustomerModal = true"
-              @update-status="updateStatus"
-                @change-qty="changeQty"
-              @checkout="checkout"
-            />
+          :cart="cart"
+          :selected-customer="selectedCustomer"
+          :invoice="invoice"
+
+          :subtotal="subtotal"
+          :subtotal-plus-extra="subtotalPlusExtra"
+          :pph-nominal="pphNominal"
+          :total-before-nego="totalBeforeNego"
+          :total-after-nego="totalAfterNego"
+          :total-bayar="totalBayar"
+
+          v-model:extra="extra"
+          v-model:pph="pph"
+          v-model:nego="nego"
+          v-model:dp="dp"
+          v-model:status="selectedStatus"
+
+          @checkout="checkout"
+          @remove-item="removeFromCart"
+          @change-qty="changeQty"
+          @open-customer-modal="showCustomerModal = true"
+        />
+
           </div>
         </div>
       </div>
@@ -394,10 +519,7 @@ const filteredProducts = computed(() => products.value.filter(p => {
         <div class="md:col-span-2 space-y-5">
           <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200 animate-slide-in">
             <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent mb-5 flex items-center gap-2">
-              <svg class="w-7 h-7 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-              Daftar Paket
+              Daftar Produk
             </h2>
             <FilterSection 
               v-model:search="searchQuery" 
@@ -419,22 +541,26 @@ const filteredProducts = computed(() => products.value.filter(p => {
             :cart="cart"
             :selected-customer="selectedCustomer"
             :invoice="invoice"
-              :subtotal="subtotal"
+
+            :subtotal="subtotal"
             :subtotal-plus-extra="subtotalPlusExtra"
             :pph-nominal="pphNominal"
+            :total-before-nego="totalBeforeNego"
+            :total-after-nego="totalAfterNego"
             :total-bayar="totalBayar"
-            v-model:nego="nego"
-            v-model:dp="dp"
+
             v-model:extra="extra"
             v-model:pph="pph"
-               v-model:status="selectedStatus"
-            @select-customer="selectCustomer"
-            @remove-item="removeFromCart"
-            @open-customer-modal="showCustomerModal = true"
-            @update-status="updateStatus"
-              @change-qty="changeQty"
+            v-model:nego="nego"
+            v-model:dp="dp"
+            v-model:status="selectedStatus"
+
             @checkout="checkout"
+            @remove-item="removeFromCart"
+            @change-qty="changeQty"
+            @open-customer-modal="showCustomerModal = true"
           />
+
         </div>
       </div>
     </div>

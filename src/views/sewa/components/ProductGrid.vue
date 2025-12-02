@@ -20,6 +20,10 @@
         {{ p.name }}
       </h3>
 
+      <p class="text-cyan-600 font-bold text-base mb-3">
+        {{ moneyFormat(p.price) }}
+      </p>
+
       <!-- Add Button -->
       <button class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg transition-all transform group-hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,6 +37,7 @@
 
 <script setup>
 import { getImageUrl } from "@/utils/getImageUrl";
+import { moneyFormat } from "@/utils/moneyFormat";
 
 defineProps(['products'])
 defineEmits(['add-to-cart'])

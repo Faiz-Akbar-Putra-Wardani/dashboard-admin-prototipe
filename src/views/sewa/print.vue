@@ -10,7 +10,6 @@ const customer = ref("-");
 const startDate = ref("");
 const endDate = ref("");
 const dp = ref(0);
-const rentPrice = ref(0);
 const status = ref("");
 const printDate = ref(new Date());
 const items = ref([]);
@@ -27,6 +26,29 @@ const formatDate = (date) =>
     month: "long",
     year: "numeric",
   });
+const formatPrintDate = (date) =>
+  new Date(date).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+ const getMonths = (start, end) => {
+  if (!start || !end) return 1;
+
+  const s = new Date(start);
+  const e = new Date(end);
+
+  // Hitung selisih bulan dari tahun dan bulan
+  let months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
+
+  // Jika tanggal end LEBIH BESAR dari tanggal start, tambah 1 bulan
+  if (e.getDate() > s.getDate()) {
+    months += 1;
+  }
+
+  return months < 1 ? 1 : months;
+};
 
 // Fetch Data
 const fetchRental = async () => {
@@ -41,23 +63,66 @@ const fetchRental = async () => {
     startDate.value = data.start_date;
     endDate.value = data.end_date;
     dp.value = Number(data.dp);
-    rentPrice.value = Number(data.rent_price);
     status.value = data.status;
 
-    items.value = data.details.map((d) => ({
-      name: d.product?.title ?? "-",
-      qty: d.qty,
-      price: d.rent_price,
-      total: d.qty * d.rent_price,
-    }));
+   items.value = data.details.map((d) => {
+  const start = new Date(d.start_date);
+  const end = new Date(d.end_date);
+
+  let months = 0;
+
+  // Hitung dengan logika yang benar
+  if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+    months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    
+    // Jika tanggal end > tanggal start, tambah 1 bulan
+    if (end.getDate() > start.getDate()) {
+      months += 1;
+    }
+  }
+
+  if (months < 1) months = 1;
+
+  const total = months * Number(d.rent_price ?? 0) * Number(d.qty ?? 0);
+
+  return {
+    name: d.product?.title ?? "-",
+    qty: Number(d.qty ?? 0),
+    price: Number(d.rent_price ?? 0),
+    total,
+    start_date: d.start_date,
+    end_date: d.end_date,
+  };
+});
+
   } catch (err) {
     console.error("Gagal memuat rental:", err);
   }
 };
 
-const sisa = computed(() => {
-  return Math.max(0, rentPrice.value - dp.value);
+const total_rent_price = computed(() => {
+  return items.value.reduce(
+    (sum, item) => sum + Number(item.total ?? 0),
+    0
+  );
 });
+
+const sisa = computed(() => {
+  const total = Number(total_rent_price.value ?? 0);
+  const down = Number(dp.value ?? 0);
+
+  // Jika dp = 0 → sisa = 0
+  if (down === 0) return 0;
+
+  // Jika dp lebih kecil dari total → normal
+  const result = total - down;
+
+  // Jika dp melebihi total → jangan minus
+  return result > 0 ? result : 0;
+});
+
+
+
 
 // Download PDF
 const downloadPdf = () => {
@@ -106,13 +171,13 @@ onMounted(() => {
 
       <!-- Tanggal -->
       <div class="place-date">
-        Bandar Lampung, {{ formatDate(printDate) }}
+        Bandar Lampung, {{ formatPrintDate(printDate) }}
       </div>
 
       <!-- Judul -->
       <div class="title-section">
         <p class="invoice-title"><u>Invoice Rental</u></p>
-        <p>Tanggal Cetak: {{ formatDate(printDate) }}</p>
+        <p>Tanggal Cetak: {{ formatPrintDate(printDate) }}</p>
       </div>
 
       <!-- Kepada Yth -->
@@ -129,18 +194,6 @@ onMounted(() => {
           <td>: {{ invoiceCode }}</td>
         </tr>
         <tr>
-          <td>Tanggal Mulai</td>
-          <td>: {{ formatDate(startDate) }}</td>
-        </tr>
-        <tr>
-          <td>Tanggal Selesai</td>
-          <td>: {{ formatDate(endDate) }}</td>
-        </tr>
-        <tr>
-          <td>DP</td>
-          <td>: Rp {{ formatRupiah(dp) }}</td>
-        </tr>
-        <tr>
           <td>Status</td>
           <td>: {{ status }}</td>
         </tr>
@@ -154,6 +207,8 @@ onMounted(() => {
             <th>No</th>
             <th>Nama Barang</th>
             <th>Qty</th>
+            <th>Tanggal Sewa</th>
+            <th>Durasi Sewa</th>
             <th>Harga Sewa</th>
             <th>Total</th>
           </tr>
@@ -163,23 +218,30 @@ onMounted(() => {
             <td class="center">{{ i + 1 }}</td>
             <td>{{ item.name }}</td>
             <td class="center">{{ item.qty }}</td>
+            <!-- TANGGAL PER PRODUK -->
+            <td class="center">
+              {{ formatDate(item.start_date) }} - {{ formatDate(item.end_date) }}
+            </td>
+            <td class="center">
+              {{ getMonths(item.start_date, item.end_date) }} bulan
+            </td>
             <td class="right">Rp {{ formatRupiah(item.price) }}</td>
             <td class="right">Rp {{ formatRupiah(item.total) }}</td>
           </tr>
 
           <tr class="total-row">
-            <td colspan="4" class="right"><b>Total</b></td>
-            <td class="right"><b>Rp {{ formatRupiah(rentPrice) }}</b></td>
-          </tr>
-
-          <tr class="total-row">
-            <td colspan="4" class="right"><b>DP</b></td>
+            <td colspan="6" class="right"><b>DP</b></td>
             <td class="right"><b>Rp {{ formatRupiah(dp) }}</b></td>
           </tr>
 
           <tr class="total-row">
-            <td colspan="4" class="right"><b>Sisa</b></td>
+            <td colspan="6" class="right"><b>Sisa</b></td>
             <td class="right"><b>Rp {{ formatRupiah(sisa) }}</b></td>
+          </tr>
+
+          <tr class="total-row">
+            <td colspan="6" class="right"><b>Total</b></td>
+            <td class="right"><b>Rp {{ formatRupiah(total_rent_price) }}</b></td>
           </tr>
 
         </tbody>

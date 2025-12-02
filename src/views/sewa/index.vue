@@ -1,5 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import dayjs from "dayjs";
+
 import { toast } from "vue3-toastify";
 import "vue3-toastify/dist/index.css";
 
@@ -19,6 +21,53 @@ const pagination = ref({
   total: 0,
   totalPages: 1,
 });
+
+const formatDate = (date) => {
+  if (!date) return "-";
+
+  const parsed = dayjs(date);
+
+  if (!parsed.isValid()) return "-";
+
+  return parsed.format("DD MMM YYYY");
+};
+
+const hasMultipleDates = (details = []) => {
+  if (details.length <= 1) return false;
+
+  const firstStart = details[0].start_date;
+  const firstEnd = details[0].end_date;
+
+  return details.some(d => d.start_date !== firstStart || d.end_date !== firstEnd);
+};
+
+const getTooltipDates = (details = []) => {
+  if (!details.length) return "";
+
+  return details
+    .map(d => `${d.product?.title}: ${formatDate(d.start_date)} → ${formatDate(d.end_date)}`)
+    .join("\n");
+};
+
+const getRentalDates = (details = []) => {
+  if (!details.length) {
+    return { start: "-", end: "-" };
+  }
+
+  const allStart = details.map(d => d.start_date);
+  const allEnd   = details.map(d => d.end_date);
+
+  const earliestStart = allStart.sort()[0];
+  const latestEnd     = allEnd.sort()[allEnd.length - 1];
+
+  return {
+    start: formatDate(earliestStart),
+    end: formatDate(latestEnd),
+  };
+};
+
+
+
 
 const fetchData = async (pageNumber = 1, search = "") => {
   const token = Cookies.get("token");
@@ -165,17 +214,35 @@ onMounted(() => {
                 {{ r.customer?.name_perusahaan ?? "-" }}
               </td>
 
-              <td class="px-6 py-4 text-right whitespace-nowrap">
-                {{ new Date(r.start_date).toLocaleDateString("id-ID") }} -
-                {{ new Date(r.end_date).toLocaleDateString("id-ID") }}
-              </td>
+            <td
+              class="px-6 py-4 text-center whitespace-nowrap"
+              :title="getTooltipDates(r.details)"
+            >
+              <div class="flex flex-col items-center">
+                <div class="text-sm font-medium text-gray-800 dark:text-gray-200">
+                  {{ getRentalDates(r.details).start }}
+                </div>
+                <div class="text-xs text-gray-500">
+                  s/d {{ getRentalDates(r.details).end }}
+                </div>
+
+                <!-- BADGE MULTIPLE DATES -->
+                <span
+                  v-if="hasMultipleDates(r.details)"
+                  class="mt-1 px-2 py-0.5 text-[10px] bg-yellow-100 text-yellow-700 rounded-full"
+                >
+                  Multiple Dates
+                </span>
+              </div>
+            </td>
+
 
               <td class="px-6 py-4 text-center">
                 {{ getProductName(r) }}
               </td>
 
               <td class="px-6 py-4 font-bold text-green-600 text-center">
-                Rp {{ new Intl.NumberFormat("id-ID").format(r.rent_price) }}
+                Rp {{ new Intl.NumberFormat("id-ID").format(r.total_rent_price) }}
               </td>
 
               <td class="px-6 py-4 text-center">

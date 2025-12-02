@@ -1,6 +1,12 @@
 <script setup>
-import { ref, computed, onMounted } from "vue"
+import { ref, computed, onMounted, watch} from "vue"
 import Swal from "sweetalert2"
+import dayjs from "dayjs"
+
+import customParseFormat from "dayjs/plugin/customParseFormat"
+
+dayjs.extend(customParseFormat)
+
 
 import FilterSection from "./components/FilterSection.vue"
 import ProductGrid from "./components/ProductGrid.vue"
@@ -13,9 +19,6 @@ import Cookies from "js-cookie"
 
 const token = Cookies.get("token")
 
-/* -----------------------------
-   STATES
------------------------------- */
 const activeTab = ref("products")
 const showCustomerModal = ref(false)
 
@@ -25,14 +28,10 @@ const customers = ref([])
 const cart = ref([])
 const selectedCustomer = ref(null)
 
-const startDate = ref("")
-const endDate = ref("")
-const dp = ref(0)
+const dp = ref(null)
 const invoice = ref("")
+const status = ref("ongoing") 
 
-/* -----------------------------
-   FETCH DATA
------------------------------- */
 const fetchInvoice = async () => {
   try {
     const res = await Api.get("/api/rentals/invoice/new", {
@@ -84,9 +83,6 @@ const fetchCustomers = async () => {
       .catch((err) => console.error(err));
   }
 };
-/* -----------------------------
-   CART
------------------------------- */
 const addToCart = (p) => {
   const exist = cart.value.find(i => i.id === p.id)
   if (exist) return exist.qty++
@@ -95,8 +91,10 @@ const addToCart = (p) => {
     id: p.id,
     name: p.name,
     qty: 1,
-    rent_price: p.price,
-    icon: p.icon
+    rent_price: Number(p.price || 0),
+    icon: p.icon,
+     start_date: "",
+     end_date: ""
   })
 }
 
@@ -115,34 +113,124 @@ const changeQty = ({ id, delta }) => {
   item.qty += delta
 }
 
-/* -----------------------------
-   TOTAL
------------------------------- */
 const rentPrice = computed(() =>
-  cart.value.reduce((t, i) => t + (Number(i.rent_price) * i.qty), 0)
+  cart.value.reduce(
+    (t, i) => t + (Number(i.rent_price || 0) * i.qty),
+    0
+  )
 )
 
-/* -----------------------------
-   CHECKOUT
------------------------------- */
+// const months = computed(() => {
+//   if (!startDate.value || !endDate.value) return 0
+
+//   const start = dayjs(startDate.value, "DD/MM/YYYY").toDate()
+//   const end = dayjs(endDate.value, "DD/MM/YYYY").toDate()
+
+//   if (end < start) return 0
+
+//   let months = 1
+//   const cursor = new Date(start)
+
+//   while (true) {
+//     cursor.setMonth(cursor.getMonth() + 1)
+
+//     if (end > cursor) {
+//       months++
+//     } else {
+//       break
+//     }
+//   }
+
+//   return months
+// })
+
+
+const totalPreview = computed(() => {
+  let total = 0;
+
+  cart.value.forEach(item => {
+    if (!item.start_date || !item.end_date || !item.rent_price) return;
+
+    const s = dayjs(item.start_date);
+    const e = dayjs(item.end_date);
+
+    // Hitung selisih bulan
+    let months = (e.year() - s.year()) * 12 + (e.month() - s.month());
+
+    // Jika tanggal end > tanggal start, tambah 1 bulan
+    if (e.date() > s.date()) {
+      months += 1;
+    }
+
+    if (months < 1) months = 1;
+
+    total += (item.rent_price * months * item.qty);
+  });
+
+  return total;
+});
+
+
+
+watch(dp, () => {
+  if (dp.value == null) return
+
+  if (dp.value > totalPreview.value) {
+    dp.value = totalPreview.value
+
+    Swal.fire({
+      icon: "warning",
+      title: "DP tidak valid",
+      text: "DP tidak boleh melebihi total bayar",
+      timer: 1500,
+      showConfirmButton: false,
+    })
+  }
+
+  if (dp.value < 0) {
+    dp.value = 0
+  }
+})
+
 const checkout = async () => {
   if (!selectedCustomer.value)
     return Swal.fire("Customer belum dipilih", "", "warning")
 
-  if (!startDate.value || !endDate.value)
-    return Swal.fire("Tanggal sewa wajib diisi!", "", "warning")
+ if (cart.value.some(i => !i.start_date || !i.end_date))
+  return Swal.fire("Tanggal sewa wajib diisi di setiap item!", "", "warning")
+
+  for (const item of cart.value) {
+    const start = dayjs(item.start_date);
+    const end = dayjs(item.end_date);
+
+    if (end.isBefore(start)) {
+      return Swal.fire({
+        icon: "error",
+        title: "Tanggal Tidak Valid",
+        text: `Tanggal selesai tidak boleh lebih awal dari tanggal mulai untuk ${item.name}`,
+      });
+    }
+  }
 
   if (!cart.value.length)
     return Swal.fire("Keranjang kosong!", "", "warning")
+
+    if ((dp.value ?? 0) > totalPreview.value) {
+  return Swal.fire(
+    "DP tidak valid",
+    "DP tidak boleh melebihi total bayar",
+    "warning"
+  )
+}
+
 
   const result = await Swal.fire({
     title: "Konfirmasi Checkout",
     html: `
       <div class="text-center">
-        <p><strong>Total Harga Sewa:</strong> Rp ${rentPrice.value.toLocaleString()}</p>
-        <p><strong>DP:</strong> Rp ${dp.value.toLocaleString()}</p>
-        <p><strong>Tanggal Sewa:</strong> ${startDate.value}</p>
-        <p><strong>Tanggal Kembali:</strong> ${endDate.value}</p>
+      <p><strong>Total Harga Sewa:</strong> Rp ${(totalPreview.value ?? 0).toLocaleString("id-ID")}</p>
+      <p><strong>DP:</strong> Rp ${(dp.value ?? 0).toLocaleString("id-ID")}</p>
+      
       </div>
     `,
     icon: "question",
@@ -156,19 +244,21 @@ const checkout = async () => {
   if (!result.isConfirmed) return;
 
   const payload = {
-    invoice: invoice.value,
-    customer_id: selectedCustomer.value.id,
-    dp: dp.value,
-    rent_price: rentPrice.value,
-    start_date: toISO(startDate.value),
-    end_date: toISO(endDate.value),
-    status: "ongoing",
-    details: cart.value.map(c => ({
-      product_id: c.id,
-      qty: c.qty,
-      rent_price: c.rent_price
-    }))
-  };
+  invoice: invoice.value,
+  customer_id: selectedCustomer.value.id,
+  dp: dp.value || 0,
+  status: status.value,
+  total_rent_price: totalPreview.value,
+  
+  details: cart.value.map(c => ({
+    product_id: c.id,
+    qty: c.qty,
+    rent_price: c.rent_price,
+  start_date: c.start_date,
+  end_date: c.end_date
+  })),
+};
+
 
   try {
     Swal.fire({
@@ -193,24 +283,21 @@ const checkout = async () => {
     // reset
     cart.value = []
     selectedCustomer.value = null
-    dp.value = 0
-    startDate.value = ""
-    endDate.value = ""
+    dp.value = null
 
     window.location.href = "/halaman-data-sewa"
 
   } catch (err) {
-    Swal.fire(
-      "Gagal checkout",
-      err.response?.data?.meta?.message || "Terjadi kesalahan",
-      "error"
-    );
-  }
+  const message =
+    err.response?.data?.message ||
+    err.response?.data?.errors?.[0]?.msg ||
+    "Terjadi kesalahan";
+
+  Swal.fire("Gagal checkout", message, "error");
+}
+
 };
 
-/* -----------------------------
-   SEARCH
------------------------------- */
 const searchQuery = ref("")
 const selectedBrand = ref("Semua")
 
@@ -251,10 +338,6 @@ onMounted(() => {
               : 'bg-white text-gray-700 hover:bg-blue-50 border-2 border-blue-200'
           ]"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
           <span>Daftar Produk</span>
         </button>
 
@@ -299,30 +382,34 @@ onMounted(() => {
             />
           </div>
 
-          <ProductGrid :products="filteredProducts" @add-to-cart="addToCart" />
+              <ProductGrid 
+        :products="filteredProducts"
+        @add-to-cart="addToCart"
+      />
+
         </div>
 
         <div v-show="activeTab === 'cart'" class="animate-fade-in">
           <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-5 border border-blue-200">
 
             <CashierSection
-              :cart="cart"
-              :selected-customer="selectedCustomer"
-             :invoice="invoice"
+            :cart="cart"
+            :selected-customer="selectedCustomer"
+            :invoice="invoice"
+             :months="months"
+             :total-preview="totalPreview"
+            v-model:dp="dp"
+            v-model:status="status"
 
-              :status="status"
+          @select-customer="chooseCustomer"
 
-              v-model:dp="dp"
-              v-model:start_date="startDate"
-              v-model:end_date="endDate"
-
-            @select-customer="chooseCustomer"
-
-              @remove-item="removeFromCart"
-              @open-customer-modal="showCustomerModal = true"
-              @checkout="checkout"
-              @update-status="updateStatus"
-            />
+            @remove-item="removeFromCart"
+            @open-customer-modal="showCustomerModal = true"
+            @checkout="checkout"
+           
+            @change-qty="changeQty"
+          />
+            
 
           </div>
         </div>
@@ -336,11 +423,7 @@ onMounted(() => {
         <div class="md:col-span-2 space-y-5">
           <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200">
             <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent mb-5 flex items-center gap-2">
-              <svg class="w-7 h-7 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-              Daftar Paket
+              Daftar Produk
             </h2>
 
             <FilterSection
@@ -349,7 +432,11 @@ onMounted(() => {
               v-model:brands="categories"
             />
 
-            <ProductGrid :products="filteredProducts" @add-to-cart="addToCart" />
+            <ProductGrid 
+              :products="filteredProducts"
+              @add-to-cart="addToCart"
+            />
+
           </div>
         </div>
 
@@ -368,18 +455,13 @@ onMounted(() => {
             :cart="cart"
             :selected-customer="selectedCustomer"
             :invoice="invoice"
-            :status="status"
-
+            :total-preview="totalPreview"
             v-model:dp="dp"
-            v-model:start_date="startDate"
-            v-model:end_date="endDate"
-
-          @select-customer="chooseCustomer"
-
+            v-model:status="status"
+            @select-customer="chooseCustomer"
             @remove-item="removeFromCart"
             @open-customer-modal="showCustomerModal = true"
             @checkout="checkout"
-            @update-status="updateStatus"
             @change-qty="changeQty"
           />
 

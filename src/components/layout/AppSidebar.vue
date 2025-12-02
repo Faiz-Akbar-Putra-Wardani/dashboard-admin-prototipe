@@ -33,7 +33,7 @@
     />
     <img
       v-else
-      src="/images/logo/logo-icon.svg"
+      src="/images/logo/logo_ses2.png"
       alt="Logo"
       class="w-[30px] mx-auto"
     />
@@ -314,12 +314,7 @@ const menuGroups = [
       {
         icon: WrenchScrewdriverIcon,
         name: "Transaksi Perbaikan",
-        path: "/perbaikan",
-      },
-      {
-        icon: WrenchIcon,
-        name: "Data Perbaikan",
-        path: "/halaman-data-perbaikan",
+        path: "/repairs",
       },
     ],
   },

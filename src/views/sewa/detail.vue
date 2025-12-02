@@ -32,6 +32,58 @@ const formatDate = (val) => {
   });
 };
 
+const getMonths = (start, end) => {
+  if (!start || !end) return 1;
+
+  const s = new Date(start);
+  const e = new Date(end);
+
+  // Hitung selisih bulan dari tahun dan bulan
+  let months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
+
+  // Jika tanggal end LEBIH BESAR dari tanggal start, tambah 1 bulan
+  if (e.getDate() > s.getDate()) {
+    months += 1;
+  }
+
+  return months < 1 ? 1 : months;
+};
+
+
+
+// Cek apakah tanggal tiap produk berbeda
+const hasMultipleDates = (details) => {
+  if (!details || details.length === 0) return false;
+
+  const s = details.map(d => d.start_date);
+  const e = details.map(d => d.end_date);
+
+  return new Set(s).size > 1 || new Set(e).size > 1;
+};
+
+// rentang tanggal utama
+const getRentalDateRange = (details) => {
+  if (!details || details.length === 0) return "-";
+
+  const dates = details.map(d => ({
+    start: new Date(d.start_date),
+    end: new Date(d.end_date)
+  }));
+
+  const minStart = new Date(Math.min(...dates.map(d => d.start)));
+  const maxEnd = new Date(Math.max(...dates.map(d => d.end)));
+
+  return `${formatDate(minStart)} - ${formatDate(maxEnd)}`;
+};
+
+// tooltip detail tanggal per-produk
+const getTooltipDates = (details) => {
+  return details.map(d =>
+    `${d.product?.title} : ${formatDate(d.start_date)} → ${formatDate(d.end_date)}`
+  ).join("\n");
+};
+
+
 // Ambil Detail Rental
 const fetchDetail = async () => {
   try {
@@ -165,24 +217,30 @@ onMounted(() => fetchDetail());
                 </span>
               </div>
 
+              <!-- Tanggal Sewa -->
               <div class="flex justify-between">
-                <span class="text-gray-600">Tanggal Mulai</span>
-                <span>{{ formatDate(rental.start_date) }}</span>
+                <span class="text-gray-600">Tanggal Sewa</span>
+
+                <!-- Jika semua tanggal sama -->
+                <span v-if="!hasMultipleDates(rental.details)">
+                {{ formatDate(rental.details[0]?.start_date) }} - 
+                {{ formatDate(rental.details[0]?.end_date) }}
+              </span>
+
+                <!-- Jika tanggal berbeda -->
+                <span
+                  v-else
+                  class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full cursor-pointer"
+                  :title="getTooltipDates(rental.details)"
+                >
+                  Multiple Dates
+                </span>
               </div>
 
-              <div class="flex justify-between">
-                <span class="text-gray-600">Tanggal Selesai</span>
-                <span>{{ formatDate(rental.end_date) }}</span>
-              </div>
 
               <div class="flex justify-between">
                 <span class="text-gray-600">DP</span>
                 <span>Rp {{ formatRupiah(rental.dp) }}</span>
-              </div>
-
-              <div class="flex justify-between">
-                <span class="text-gray-600">Harga Sewa</span>
-                <span>Rp {{ formatRupiah(rental.rent_price) }}</span>
               </div>
 
               <div class="flex justify-between items-center">
@@ -196,7 +254,7 @@ onMounted(() => fetchDetail());
                 <div class="flex justify-between text-base font-semibold">
                   <span>Total</span>
                   <span class="text-indigo-600">
-                    Rp {{ formatRupiah(rental.rent_price) }}
+                    Rp {{ formatRupiah(rental.total_rent_price) }}
                   </span>
                 </div>
               </div>
@@ -234,36 +292,56 @@ onMounted(() => fetchDetail());
 
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
-                <thead>
-                  <tr class="border-b-2 border-gray-200">
-                    <th class="py-3 text-left">No</th>
-                    <th class="py-3 text-left">Produk</th>
-                    <th class="py-3 text-center">Qty</th>
-                    <th class="py-3 text-right">Harga Sewa</th>
-                  </tr>
-                </thead>
+            <thead>
+              <tr class="border-b-2 border-gray-200">
+                <th class="py-3 text-left">No</th>
+                <th class="py-3 text-left">Produk</th>
+                <th class="py-3 text-center">Qty</th>
 
-                <tbody>
-                  <tr 
-                    v-for="(item, index) in rental.details" 
-                    :key="item.id"
-                    class="border-b"
-                  >
-                    <td class="py-4">{{ index + 1 }}</td>
-                    <td class="py-4 font-medium">{{ item.product?.title }}</td>
-                    <td class="py-4 text-center">{{ item.qty }}</td>
-                    <td class="py-4 text-right">
-                      Rp {{ formatRupiah(item.rent_price) }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                <!-- Harga Sewa Per Bulan -->
+                <th class="py-3 text-right">Harga / Bulan</th>
+                <th class="py-3 text-center">Durasi</th>
+
+                <!-- Subtotal: qty x harga sewa -->
+                <th class="py-3 text-right">Subtotal</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr 
+                v-for="(item, index) in rental.details" 
+                :key="item.id"
+                class="border-b"
+              >
+                <td class="py-4">{{ index + 1 }}</td>
+                <td class="py-4 font-medium">{{ item.product?.title }}</td>
+                <td class="py-4 text-center">{{ item.qty }}</td>
+
+                <!-- Harga per bulan -->
+                <td class="py-4 text-right">
+                  Rp {{ formatRupiah(item.rent_price) }}
+                </td>
+
+                <td class="py-4 text-center">
+                <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+                  {{ getMonths(item.start_date, item.end_date) }} bulan
+                </span>
+              </td>
+
+                <!-- Subtotal -->
+                <td class="py-4 text-right font-semibold">
+                Rp {{ formatRupiah(item.qty * item.rent_price * getMonths(item.start_date, item.end_date)) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
             </div>
 
             <div class="mt-8 text-right">
               <div class="text-lg font-bold text-gray-800">Total</div>
               <div class="text-2xl font-bold text-indigo-600">
-                Rp {{ formatRupiah(rental.rent_price) }}
+                Rp {{ formatRupiah(rental.total_rent_price) }}
               </div>
             </div>
           </div>

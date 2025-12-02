@@ -165,6 +165,7 @@ onMounted(() => {
                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Nama Produk</th>
                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Kategori</th>
                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Harga Jual</th>
+                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Harga Sewa</th>
                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Stok</th>
                 <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
               </tr>
@@ -193,6 +194,9 @@ onMounted(() => {
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                   {{ moneyFormat(product.sell_price) }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                  {{ moneyFormat(product.rent_price ?? "-") }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                   {{ product.stock }}

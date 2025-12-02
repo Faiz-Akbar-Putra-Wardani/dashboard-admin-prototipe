@@ -75,12 +75,12 @@
         </div>
         <div class="flex items-center gap-2 bg-white rounded-xl p-1 shadow-sm">
           <button 
-            @click="changeQty(item.id, -1)" 
+         @click="$emit('change-qty', { id: item.id, delta: -1 })"
             class="w-8 h-8 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 flex items-center justify-center font-bold transition-all active:scale-90"
           >−</button>
           <span class="w-8 text-center font-bold text-gray-800">{{ item.qty }}</span>
           <button 
-            @click="changeQty(item.id, 1)" 
+           @click="$emit('change-qty', { id: item.id, delta: 1 })"
             class="w-8 h-8 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-md flex items-center justify-center font-bold transition-all active:scale-90"
           >+</button>
         </div>
@@ -107,6 +107,7 @@
         <input 
           v-model.number="localExtra" 
           type="number" 
+          min="0"
           class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl"
           placeholder="0"
         />
@@ -120,11 +121,12 @@
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-2">PPH (%)</label>
         <input 
-          v-model.number="localPph" 
-          type="number" 
-          class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl"
-          placeholder="0"
-        />
+        v-model.number="localPph"
+        type="number"
+        min="0"
+        max="100"
+        class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl"
+      />
       </div>
       <div class="flex justify-between text-sm font-semibold text-gray-800 bg-blue-50 px-3 py-2 rounded-xl">
         <span>Total Sebelum Nego</span>
@@ -135,6 +137,8 @@
         <label class="block text-xs font-semibold text-gray-700 mb-2">Harga Nego</label>
         <input 
           v-model.number="localNego" 
+           :max="totalBeforeNego"
+          min="0"
           type="number" 
           class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all" 
           placeholder="0"
@@ -151,6 +155,8 @@
         <input 
           v-model.number="localDp" 
           type="number" 
+          :max="totalBayar"
+          min="0"
           class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all" 
           placeholder="0"
         />
@@ -192,62 +198,68 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps({
-  cart: Array,
-  selectedCustomer: Object,
-  invoice: String,
-  subtotal: Number,
-  subtotalPlusExtra: Number,
-  pphNominal: Number,
-  totalBayar: Number,
+  cart: { type: Array, required: true },
+  selectedCustomer: { type: Object, default: null },
+  invoice: { type: String, default: '' },
+
+  subtotal: { type: Number, required: true },
+  subtotalPlusExtra: { type: Number, required: true },
+  pphNominal: { type: Number, required: true },
+  totalBeforeNego: { type: Number, required: true },
+  totalAfterNego: { type: Number, required: true },
+  totalBayar: { type: Number, required: true },
+
+  extra: Number,
+  pph: Number,
   nego: Number,
   dp: Number,
-  status: String
+  status: String,
 })
 
-const emit = defineEmits(['remove-item', 'select-customer', 'open-customer-modal', 'checkout', 'update-status'])
+const emit = defineEmits([
+  'remove-item',
+  'open-customer-modal',
+  'checkout',
+  'change-qty',
+  'update:extra',
+  'update:pph',
+  'update:nego',
+  'update:dp',
+  'update:status',
+  'select-customer',
+])
 
-const localNego = defineModel('nego', { default: 0 })
-const localDp = defineModel('dp', { default: 0 })
-const localExtra = defineModel('extra', { default: 0 })
-const localPph = defineModel('pph', { default: 0 })
+const localExtra = computed({
+  get: () => Number(props.extra) || 0,
+  set: v => emit('update:extra', Number(v) || 0),
+})
 
-const localStatus = ref(props.status ?? "proses")
+const localPph = computed({
+  get: () => Number(props.pph) || 0,
+  set: v => emit('update:pph', Number(v) || 0),
+})
 
-const updateStatus = () => {
-  emit('update-status', localStatus.value)
-}
+const localNego = computed({
+  get: () => Number(props.nego) || 0,
+  set: v => emit('update:nego', Number(v) || 0),
+})
 
-// QTY + / –
-const changeQty = (id, delta) => {
-  const item = props.cart.find(i => i.id === id)
-  if (!item) return
+const localDp = computed({
+  get: () => Number(props.dp) || 0,
+  set: v => emit('update:dp', Number(v) || 0),
+})
 
-  // Jika qty = 1 dan user klik minus → hapus item
-  if (item.qty === 1 && delta === -1) {
-    emit('remove-item', id)
-    return
-  }
+const localStatus = computed({
+  get: () => props.status || 'proses',
+  set: v => emit('update:status', v),
+})
 
-  // Selain itu, kurangi atau tambah qty
-  item.qty = item.qty + delta
-}
-
-// HAPUS PELANGGAN
-const clearCustomer = () => {
-  emit('select-customer', null)
-}
-
-// HITUNGAN
-const subtotal = computed(() => props.cart.reduce((s, i) => s + i.price * i.qty, 0))
-const subtotalPlusExtra = computed(() => subtotal.value + localExtra.value)
-const pphNominal = computed(() => subtotalPlusExtra.value * (localPph.value / 100))
-const totalBeforeNego = computed(() => subtotalPlusExtra.value - pphNominal.value)
-const totalAfterNego = computed(() => Math.max(0, totalBeforeNego.value - localNego.value))
-const totalBayar = computed(() => Math.max(0, totalAfterNego.value))
+const clearCustomer = () => emit('select-customer', null)
 </script>
+
 
 <style scoped>
 /* Custom scrollbar */

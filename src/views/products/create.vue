@@ -16,6 +16,7 @@ const form = reactive({
   title: "",
   category_id: "",
   sell_price: "",
+  rent_price: "",
   stock: "",
   description: "",
   image: null,
@@ -76,8 +77,18 @@ const storeProduct = async () => {
 
   try {
     const formData = new FormData();
+
     for (const key in form) {
-      formData.append(key, form[key]);
+      if (key === "rent_price") {
+        // Jika kosong → kirim NULL (bukan "-")
+        if (form.rent_price === "" || form.rent_price === null) {
+          formData.append("rent_price", null);
+        } else {
+          formData.append("rent_price", form.rent_price);
+        }
+      } else {
+        formData.append(key, form[key]);
+      }
     }
 
     Api.defaults.headers.common["Authorization"] = token;
@@ -213,10 +224,38 @@ onMounted(fetchCategories);
             peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
             peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600
             peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600">
-            Harga <span class="text-red-500">*</span>
+            Harga Jual <span class="text-red-500">*</span>
           </label>
           <p v-if="errors.sell_price" class="mt-1 text-xs text-red-600">{{ errors.sell_price }}</p>
         </div>
+
+        <!-- Harga Sewa (OPSIONAL) -->
+      <div class="group relative">
+        <input
+          id="rent_price"
+          v-model="form.rent_price"
+          type="number"
+          min="0"
+          :data-filled="form.rent_price"
+          class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm placeholder-transparent focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white transition-all"
+          placeholder="Masukkan harga sewa (opsional)"
+        />
+        <label
+          for="rent_price"
+          class="absolute left-4 top-2.5 bg-white dark:bg-gray-800 px-1 text-sm text-gray-500 transition-all duration-200 ease-out pointer-events-none
+          peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
+          peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600
+          peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600">
+          Harga Sewa <span class="text-gray-400">(opsional)</span>
+        </label>
+
+        <p class="mt-1 text-xs text-gray-500">
+          Kosongkan jika produk tidak disewakan
+        </p>
+        <p v-if="errors.rent_price" class="mt-1 text-xs text-red-600">
+          {{ errors.rent_price }}
+        </p>
+      </div>
 
         <!-- Stok -->
         <div class="group relative">
