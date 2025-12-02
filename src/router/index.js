@@ -145,6 +145,14 @@ const routes = [
         name: 'data penjualan',
         component: () => import( /* webpackChunkName: "home" */ '../views/penjualan/index.vue'),
     },
+    {
+        path: '/halaman-data-penjualan/edit/:id',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'halaman edit data penjualan',
+        component: () => import( /* webpackChunkName: "home" */ '../views/penjualan/CashierUpdate.vue'),
+    },
      {
         path: '/halaman-data-penjualan/detail/:id',
         beforeEnter: (to, from, next) => {
@@ -288,6 +296,15 @@ const routes = [
     },
     name: 'perbaikan print',
     component: () => import( /* webpackChunkName: "home" */ '../views/perbaikan/print.vue'),
+    },
+
+    {
+        path: '/reports',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'rekap data pelanggan',
+        component: () => import( /* webpackChunkName: "home" */ '../views/rekap/index.vue'),
     },
 
 

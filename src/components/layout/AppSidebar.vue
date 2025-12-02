@@ -341,7 +341,7 @@ const menuGroups = [
       {
         icon: UsersIcon,
         name: "Rekap Data Pelanggan",
-        path: "/projects",
+        path: "/reports",
       },
     ],
   },

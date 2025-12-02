@@ -167,7 +167,6 @@ const updateRentPrice = (item, value) => {
         v-for="item in cart"
         :key="item.id"
         class="p-3 border-2 border-blue-200 rounded-2xl bg-blue-50"
-        
       >
 
         <div class="flex justify-between items-center">
@@ -195,6 +194,7 @@ const updateRentPrice = (item, value) => {
   :ref="el => initItemStartDate(el, item)"
   :value="item.start_date"
   class="w-full px-3 py-2 border rounded-xl"
+  placeholder="Masukan tanggal mulai sewa"
 />
 
   <label class="text-xs font-semibold mt-2">Tanggal Selesai</label>
@@ -203,6 +203,7 @@ const updateRentPrice = (item, value) => {
   :ref="el => initItemEndDate(el, item)"
   :value="item.end_date"
   class="w-full px-3 py-2 border rounded-xl"
+  placeholder="Masukan selesai sewa"
 />
 
 </div>
