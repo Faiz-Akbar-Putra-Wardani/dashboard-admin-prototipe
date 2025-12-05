@@ -47,7 +47,7 @@ const calculateMonths = (item) => {
 const initItemStartDate = (el, item) => {
   if (!el) return;
   flatpickr(el, {
-    dateFormat: "Y-m-d",
+    dateFormat: "d-m-Y",
     defaultDate: item.start_date,
     onChange: (dates, str) => {
       item.start_date = str;
@@ -59,7 +59,7 @@ const initItemStartDate = (el, item) => {
 const initItemEndDate = (el, item) => {
   if (!el) return;
   flatpickr(el, {
-    dateFormat: "Y-m-d",
+    dateFormat: "d-m-Y",
     defaultDate: item.end_date,
     onChange: (dates, str) => {
       item.end_date = str;
@@ -189,24 +189,24 @@ const updateRentPrice = (item, value) => {
         </div>
 
          <div class="mt-3">
-  <label class="text-xs font-semibold">Tanggal Mulai</label>
-<input
-  :ref="el => initItemStartDate(el, item)"
-  :value="item.start_date"
-  class="w-full px-3 py-2 border rounded-xl"
-  placeholder="Masukan tanggal mulai sewa"
-/>
+          <label class="text-xs font-semibold">Tanggal Mulai</label>
+        <input
+          :ref="el => initItemStartDate(el, item)"
+          :value="item.start_date"
+          class="w-full px-3 py-2 border rounded-xl"
+          placeholder="Masukan tanggal mulai sewa"
+        />
 
-  <label class="text-xs font-semibold mt-2">Tanggal Selesai</label>
-  
-<input
-  :ref="el => initItemEndDate(el, item)"
-  :value="item.end_date"
-  class="w-full px-3 py-2 border rounded-xl"
-  placeholder="Masukan selesai sewa"
-/>
+          <label class="text-xs font-semibold mt-2">Tanggal Selesai</label>
+          
+        <input
+          :ref="el => initItemEndDate(el, item)"
+          :value="item.end_date"
+          class="w-full px-3 py-2 border rounded-xl"
+          placeholder="Masukan selesai sewa"
+        />
 
-</div>
+        </div>
 
        
       </div>
