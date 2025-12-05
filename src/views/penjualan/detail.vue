@@ -167,7 +167,7 @@ const formatDate = (val) =>
               </div>
 
               <div class="flex justify-between">
-                <span class="text-gray-600">pph</span>
+                <span class="text-gray-600">pph nominal</span>
                 <span>{{ moneyFormat(transaction.pph_nominal) }} </span>
               </div>
 

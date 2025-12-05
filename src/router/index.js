@@ -188,7 +188,16 @@ const routes = [
     },
 
     {
-        path: '/halaman-data-rental/detail/:id',
+        path: '/halaman-data-sewa/edit/:id',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'halaman data edit sewa',
+        component: () => import( /* webpackChunkName: "home" */ '../views/sewa/CashierUpdateSewa.vue'),
+    },
+
+    {
+        path: '/halaman-data-sewa/detail/:id',
         beforeEnter: (to, from, next) => {
             useUser().getToken ? next() : next('/')
         },

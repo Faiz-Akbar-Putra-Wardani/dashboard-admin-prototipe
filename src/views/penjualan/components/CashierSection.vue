@@ -182,18 +182,19 @@
     </div>
 
     <!-- CHECKOUT -->
-    <button 
-      @click="$emit('checkout')" 
-      :disabled="!cart.length"
-      class="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-2xl font-bold text-base hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 disabled:hover:scale-100"
-    >
-      <span class="flex items-center justify-center gap-2">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-        Checkout Sekarang
-      </span>
-    </button>
+   <button 
+  @click="$emit('checkout')" 
+  :disabled="!cart.length"
+  class="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-2xl font-bold text-base hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 disabled:hover:scale-100"
+>
+  <span class="flex items-center justify-center gap-2">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+    {{ buttonText }}
+  </span>
+</button>
+
   </div>
 </template>
 
@@ -217,6 +218,7 @@ const props = defineProps({
   nego: Number,
   dp: Number,
   status: String,
+  buttonText: { type: String, default: 'Checkout Sekarang' } // TAMBAHKAN INI
 })
 
 const emit = defineEmits([
@@ -232,24 +234,72 @@ const emit = defineEmits([
   'select-customer',
 ])
 
+// EXTRA - Hilangkan default 0
 const localExtra = computed({
-  get: () => Number(props.extra) || 0,
-  set: v => emit('update:extra', Number(v) || 0),
+  get: () => {
+    if (props.extra === null || props.extra === 0 || props.extra === '') {
+      return '';
+    }
+    return props.extra;
+  },
+  set: v => {
+    if (v === '' || v === 0 || v === '0') {
+      emit('update:extra', null);
+    } else {
+      emit('update:extra', Number(v));
+    }
+  },
 })
 
+// PPH - Hilangkan default 0
 const localPph = computed({
-  get: () => Number(props.pph) || 0,
-  set: v => emit('update:pph', Number(v) || 0),
+  get: () => {
+    if (props.pph === null || props.pph === 0 || props.pph === '') {
+      return '';
+    }
+    return props.pph;
+  },
+  set: v => {
+    if (v === '' || v === 0 || v === '0') {
+      emit('update:pph', null);
+    } else {
+      emit('update:pph', Number(v));
+    }
+  },
 })
 
+// NEGO - Hilangkan default 0
 const localNego = computed({
-  get: () => Number(props.nego) || 0,
-  set: v => emit('update:nego', Number(v) || 0),
+  get: () => {
+    if (props.nego === null || props.nego === 0 || props.nego === '') {
+      return '';
+    }
+    return props.nego;
+  },
+  set: v => {
+    if (v === '' || v === 0 || v === '0') {
+      emit('update:nego', null);
+    } else {
+      emit('update:nego', Number(v));
+    }
+  },
 })
 
+// DP - Hilangkan default 0
 const localDp = computed({
-  get: () => Number(props.dp) || 0,
-  set: v => emit('update:dp', Number(v) || 0),
+  get: () => {
+    if (props.dp === null || props.dp === 0 || props.dp === '') {
+      return '';
+    }
+    return props.dp;
+  },
+  set: v => {
+    if (v === '' || v === 0 || v === '0') {
+      emit('update:dp', null);
+    } else {
+      emit('update:dp', Number(v));
+    }
+  },
 })
 
 const localStatus = computed({
@@ -257,8 +307,9 @@ const localStatus = computed({
   set: v => emit('update:status', v),
 })
 
-const clearCustomer = () => emit('select-customer', null)
+const clearCustomer = () => emit('select-customer', null);
 </script>
+
 
 
 <style scoped>

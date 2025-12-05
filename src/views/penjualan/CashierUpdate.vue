@@ -187,9 +187,13 @@ const totalBayar = computed(() =>
 )
 
 // VALIDASI WATCHES (SAMA SEPERTI CREATE)
+// VALIDASI WATCHES
 watch([nego, totalBeforeNego], () => {
-  if (nego.value == null) return
-  if (nego.value > totalBeforeNego.value) {
+  if (nego.value === null || nego.value === undefined) return
+  
+  const negoValue = Number(nego.value)
+  
+  if (negoValue > totalBeforeNego.value) {
     nego.value = totalBeforeNego.value
     Swal.fire({
       icon: "warning",
@@ -199,12 +203,15 @@ watch([nego, totalBeforeNego], () => {
       showConfirmButton: false,
     })
   }
-  if (nego.value < 0) nego.value = 0
+  if (negoValue < 0) nego.value = 0
 })
 
 watch([dp, totalBayar], () => {
-  if (dp.value == null) return
-  if (dp.value > totalBayar.value) {
+  if (dp.value === null || dp.value === undefined) return
+  
+  const dpValue = Number(dp.value)
+  
+  if (dpValue > totalBayar.value) {
     dp.value = totalBayar.value
     Swal.fire({
       icon: "warning",
@@ -214,12 +221,15 @@ watch([dp, totalBayar], () => {
       showConfirmButton: false,
     })
   }
-  if (dp.value < 0) dp.value = 0
+  if (dpValue < 0) dp.value = 0
 })
 
 watch([pph, subtotalPlusExtra], () => {
-  if (pph.value == null) return
-  if (pph.value > 100) {
+  if (pph.value === null || pph.value === undefined) return
+  
+  const pphValue = Number(pph.value)
+  
+  if (pphValue > 100) {
     pph.value = 100
     Swal.fire({
       icon: "warning",
@@ -229,8 +239,9 @@ watch([pph, subtotalPlusExtra], () => {
       showConfirmButton: false,
     })
   }
-  if (pph.value < 0) pph.value = 0
+  if (pphValue < 0) pph.value = 0
 })
+
 
 // UPDATE FUNCTION (GANTI CHECKOUT DENGAN UPDATE)
 const updateTransaction = async () => {
