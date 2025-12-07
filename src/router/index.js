@@ -324,6 +324,31 @@ const routes = [
     component: () => import( /* webpackChunkName: "home" */ '../views/rekap/print.vue'),
     },
 
+    {
+        path: '/banks',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'data bank',
+        component: () => import( /* webpackChunkName: "home" */ '../views/bank/index.vue'),
+    },
+    {
+        path: '/banks/create',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'tambah data bank',
+        component: () => import( /* webpackChunkName: "home" */ '../views/bank/create.vue'),
+    },
+     {
+        path: '/banks/edit/:id',
+        beforeEnter: (to, from, next) => {
+            useUser().getToken ? next() : next('/')
+        },
+        name: 'edit data bank',
+        component: () => import( /* webpackChunkName: "home" */ '../views/bank/edit.vue'),
+    },
+
 
 
 ]

@@ -2,16 +2,19 @@
   <div>
     <!-- Tombol Preview dan Download -->
     <div style="margin-bottom: 20px; text-align:right;">
-      <button @click="downloadPdf" class="btn btn-primary">
-        Download PDF
+      <button @click="downloadPdf" class="btn btn-primary" :disabled="loading">
+        <span v-if="loading">Loading...</span>
+        <span v-else>Download PDF</span>
       </button>
     </div>
 
     <!-- AREA INVOICE UNTUK DIEXPORT PDF -->
-    <div class="invoice-print" ref="printArea">
+    <div class="invoice-print" ref="printArea" v-if="!loading">
       <!-- Header Perusahaan -->
       <div class="header">
-        <div class="logo">SES</div>
+        <div class="logo">
+          <img src="/images/logo/logo_ses2.png" alt="SES Logo" />
+        </div>
         <div class="company">
           <h1>SINAR ELEKTRO SEJAHTERA</h1>
           <div class="tagline">
@@ -47,6 +50,7 @@
           <tr>
             <th class="no-col">No</th>
             <th class="item-col">Nama barang</th>
+            <th class="qty-col">QTY</th>
             <th class="bill-col">Total Tagihan</th>
             <th class="unit-price-col">pph {{ pph }}%</th>
             <th class="amount-col">Jumlah</th>
@@ -56,6 +60,7 @@
           <tr v-for="(item, i) in items" :key="i">
             <td class="center">{{ i + 1 }}</td>
             <td>{{ item.name }}</td>
+            <td class="center">{{ item.qty }}</td>
             <td class="right">{{ formatRupiah(subtotalPlusExtra) }}</td>
             <td class="center">{{ formatRupiah(pph_nominal) }}</td>
             <td class="right">{{ formatRupiah(total) }}</td>
@@ -63,21 +68,21 @@
 
           <!-- Sub-total/Terbilang/DP/SISA/TOTAL -->
           <tr class="sub-total-row">
-            <td colspan="3" class="terbilang-cell">
-              Terbilang: {{ terbilang }}
+            <td colspan="4" class="terbilang-cell">
+              Terbilang: {{ terbilangText }}
             </td>
             <td class="right">DP</td>
             <td class="right">{{ formatRupiah(dp) }}</td>
           </tr>
 
           <tr class="sub-total-row">
-            <td colspan="3" class="empty-cell"></td>
+            <td colspan="4" class="empty-cell"></td>
             <td class="right">SISA</td>
             <td class="right">{{ formatRupiah(sisa) }}</td>
           </tr>
 
           <tr class="total-row">
-            <td colspan="3" class="empty-cell"></td>
+            <td colspan="4" class="empty-cell"></td>
             <td class="right">TOTAL</td>
             <td class="right total-amount">Rp {{ formatRupiah(total) }}</td>
           </tr>
@@ -93,10 +98,18 @@
         <div class="account-details">
           <div class="rek-label">Nomor Rekening</div>
           <div class="rek-content">
-            : - Bank BRI<br>
-            ({{ bankBriRek }})<br>
-            : - Bank MANDIRI<br>
-            ({{ bankMandiriRek }})
+            <template v-if="bankAccounts.length > 0">
+              <template v-for="(bank, index) in bankAccounts" :key="bank.id">
+                : - Bank {{ bank.bank_name }}<br>
+                ({{ bank.account_number }})<br v-if="index < bankAccounts.length - 1">
+              </template>
+            </template>
+            <template v-else>
+              : - Bank BRI<br>
+              (2092-0101-1376-504)<br>
+              : - Bank MANDIRI<br>
+              (114-00-2493557-2)
+            </template>
           </div>
         </div>
         <div class="atas-nama">
@@ -104,12 +117,26 @@
           <div class="an-content">: {{ atasNama }}</div>
         </div>
       </div>
+
+      <!-- Signature Section -->
+      <div class="signature-section">
+        <div class="signature-text">Bandar Lampung, {{ formatDate(printDate) }}</div>
+        <div class="signature-text">Sinar Elektro Sejahtera</div>
+        <div class="signature-space"></div>
+        <div class="signature-name">{{ atasNama }}</div>
+        <div class="signature-title">Pelaksana</div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div v-else class="text-center py-20">
+      <p>Memuat data invoice...</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import Api from "@/services/api";
 import Cookies from "js-cookie";
 import html2pdf from "html2pdf.js";
@@ -130,16 +157,116 @@ const subtotalPlusExtra = ref(0);
 const pph = ref(0);
 const pph_nominal = ref(0);
 
-
 const items = ref([]);
 
-const bankBriRek = ref("2092-0101-1376-504");
-const bankMandiriRek = ref("114-00-2493557-2");
-const atasNama = ref("ISWOYO");
+// Bank accounts dari API
+const bankAccounts = ref([]);
+const atasNama = ref("");
 
 const printArea = ref(null);
 
-// FETCH DATA ================================================================
+// KONVERSI ANGKA KE TERBILANG ===============================================
+const numberToWords = (num) => {
+  if (num === 0) return "nol";
+
+  const units = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan"];
+  const teens = ["sepuluh", "sebelas", "dua belas", "tiga belas", "empat belas", "lima belas", 
+                 "enam belas", "tujuh belas", "delapan belas", "sembilan belas"];
+
+  const convertHundreds = (n) => {
+    if (n === 0) return "";
+    if (n < 10) return units[n];
+    if (n >= 10 && n < 20) return teens[n - 10];
+    if (n < 100) {
+      const tens = Math.floor(n / 10);
+      const remainder = n % 10;
+      return (tens === 1 ? "se" : units[tens]) + " puluh" + (remainder > 0 ? " " + units[remainder] : "");
+    }
+    if (n < 200) {
+      const remainder = n % 100;
+      return "seratus" + (remainder > 0 ? " " + convertHundreds(remainder) : "");
+    }
+    if (n < 1000) {
+      const hundreds = Math.floor(n / 100);
+      const remainder = n % 100;
+      return units[hundreds] + " ratus" + (remainder > 0 ? " " + convertHundreds(remainder) : "");
+    }
+    return "";
+  };
+
+  const convertThousands = (n) => {
+    if (n < 1000) return convertHundreds(n);
+    if (n < 2000) {
+      const remainder = n % 1000;
+      return "seribu" + (remainder > 0 ? " " + convertHundreds(remainder) : "");
+    }
+    if (n < 1000000) {
+      const thousands = Math.floor(n / 1000);
+      const remainder = n % 1000;
+      return convertHundreds(thousands) + " ribu" + (remainder > 0 ? " " + convertHundreds(remainder) : "");
+    }
+    return "";
+  };
+
+  const convertMillions = (n) => {
+    if (n < 1000000) return convertThousands(n);
+    if (n < 1000000000) {
+      const millions = Math.floor(n / 1000000);
+      const remainder = n % 1000000;
+      return convertThousands(millions) + " juta" + (remainder > 0 ? " " + convertThousands(remainder) : "");
+    }
+    if (n < 1000000000000) {
+      const billions = Math.floor(n / 1000000000);
+      const remainder = n % 1000000000;
+      return convertThousands(billions) + " miliar" + (remainder > 0 ? " " + convertMillions(remainder) : "");
+    }
+    return "";
+  };
+
+  return convertMillions(num);
+};
+
+// COMPUTED TERBILANG ========================================================
+const terbilangText = computed(() => {
+  if (total.value > 0) {
+    const words = numberToWords(total.value);
+    // Capitalize first letter
+    return words.charAt(0).toUpperCase() + words.slice(1) + " rupiah";
+  }
+  return terbilang.value || "-";
+});
+
+// FETCH BANK DATA ===========================================================
+const fetchBankAccounts = async () => {
+  try {
+    const token = Cookies.get("token");
+    Api.defaults.headers.common["Authorization"] = token;
+
+    const res = await Api.get("/api/banks-all");
+    
+    console.log("Bank API Response:", res.data);
+    
+    if (res.data && res.data.data) {
+      bankAccounts.value = res.data.data;
+      
+      console.log("Bank Accounts:", bankAccounts.value);
+      
+      if (bankAccounts.value.length > 0) {
+        atasNama.value = bankAccounts.value[0]?.account_holder ?? "ISWOYO";
+      } else {
+        atasNama.value = "ISWOYO";
+      }
+    } else {
+      console.warn("Bank data kosong");
+      atasNama.value = "ISWOYO";
+    }
+  } catch (err) {
+    console.error("Gagal load bank accounts:", err.response || err);
+    atasNama.value = "ISWOYO";
+  }
+};
+
+// FETCH INVOICE DATA ========================================================
 const fetchInvoice = async () => {
   try {
     const token = Cookies.get("token");
@@ -152,7 +279,7 @@ const fetchInvoice = async () => {
     customer.value = data.customer?.name_perusahaan ?? "-";
     terbilang.value = data.terbilang ?? "-";
 
-    subtotalPlusExtra.value = Number(data.subtotalPlusExtra) || 0; 
+    subtotalPlusExtra.value = Number(data.subtotalPlusExtra) || 0;
     pph_nominal.value = Number(data.pph_nominal ?? data.pphNominal) || 0;
     pph.value = Number(data.pph ?? data.pph) || 0;
 
@@ -163,21 +290,29 @@ const fetchInvoice = async () => {
 
     items.value = data.transaction_details.map(t => ({
       name: t.product?.title ?? "-",
+      qty: t.qty || 1,
       amount: t.price
     }));
   } catch (err) {
     console.error("Gagal load invoice:", err);
-  } finally {
-    loading.value = false;
   }
 };
-
 
 // MOUNTED ===================================================================
 onMounted(async () => {
   const params = new URLSearchParams(window.location.search);
   invoiceCode.value = params.get("invoice");
-  await fetchInvoice();
+  
+  await Promise.all([
+    fetchInvoice(),
+    fetchBankAccounts()
+  ]);
+  
+  console.log("Final Bank Accounts:", bankAccounts.value);
+  console.log("Final Atas Nama:", atasNama.value);
+  console.log("Terbilang:", terbilangText.value);
+  
+  loading.value = false;
 });
 
 // FORMATTERS ================================================================
@@ -197,24 +332,77 @@ const formatDate = (date) => {
   });
 };
 
-// DOWNLOAD PDF ===============================================================
-const downloadPdf = () => {
+// DOWNLOAD PDF ==============================================================
+const downloadPdf = async () => {
   const element = printArea.value;
 
+  await new Promise(resolve => setTimeout(resolve, 300));
+
   const opt = {
-    margin: 5,
+    margin: [10, 10, 10, 10],
     filename: `Invoice-${invoiceCode.value}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+    image: { 
+      type: "jpeg", 
+      quality: 0.98 
+    },
+    html2canvas: { 
+      scale: 2.5,
+      useCORS: true,
+      logging: false,
+      letterRendering: true,
+      allowTaint: false,
+      backgroundColor: '#ffffff',
+      imageTimeout: 0,
+      onclone: (clonedDoc) => {
+        const clonedElement = clonedDoc.querySelector('.invoice-print');
+        if (clonedElement) {
+          clonedElement.style.maxWidth = '100%';
+          clonedElement.style.padding = '20px';
+        }
+        
+        const header = clonedDoc.querySelector('.header');
+        if (header) {
+          header.style.display = 'flex';
+          header.style.alignItems = 'flex-start';
+          header.style.gap = '15px';
+        }
+        
+        const logo = clonedDoc.querySelector('.logo');
+        if (logo) {
+          logo.style.width = '70px';
+          logo.style.height = '70px';
+          logo.style.flexShrink = '0';
+          logo.style.display = 'flex';
+        }
+        
+        const logoImg = clonedDoc.querySelector('.logo img');
+        if (logoImg) {
+          logoImg.style.width = '70px';
+          logoImg.style.height = '70px';
+          logoImg.style.objectFit = 'contain';
+          logoImg.style.display = 'block';
+        }
+        
+        const company = clonedDoc.querySelector('.company');
+        if (company) {
+          company.style.flex = '1';
+        }
+      }
+    },
+    jsPDF: { 
+      unit: "mm", 
+      format: "a4", 
+      orientation: "portrait",
+      compress: true
+    }
   };
 
   html2pdf().set(opt).from(element).save();
 };
 </script>
 
-
 <style scoped>
+/* ... CSS tetap sama seperti sebelumnya ... */
 .invoice-print {
   font-family: "Times New Roman", Times, serif;
   max-width: 800px;
@@ -222,136 +410,140 @@ const downloadPdf = () => {
   padding: 40px;
   background: #fff;
   color: #000;
-  font-size: 12pt; /* Use pt for print-like accuracy */
+  font-size: 12pt;
   line-height: 1.5;
+  box-sizing: border-box;
 }
 
-/* Helper classes */
 .underline {
   text-decoration: underline;
 }
 
-/* Header */
 .header {
   display: flex;
   align-items: flex-start;
+  gap: 15px;
   margin-bottom: 10px;
-  padding-bottom: 5px; /* Reduced padding to bring line closer */
-  border-bottom: 1px solid #0033A0; /* Thinner line */
+  padding-bottom: 8px;
+  border-bottom: 4px solid #0033A0;
   position: relative;
-}
-.header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 3px; /* Thicker line */
-  background-color: #0033A0;
+  page-break-after: avoid;
 }
 
 .logo {
   width: 70px;
   height: 70px;
-  background: #0033A0;
-  color: #fff;
-  font-weight: bold;
-  font-size: 30pt;
+  min-width: 70px;
+  min-height: 70px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 15px;
-  /* Octagon shape */
-  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
-  border: 2px solid #0033A0; /* Border color to match image */
+  overflow: hidden;
+  margin-right: 0;
 }
+
+.logo img {
+  width: 70px;
+  height: 70px;
+  max-width: 70px;
+  max-height: 70px;
+  object-fit: contain;
+  display: block;
+}
+
 .company {
-  flex-grow: 1;
+  flex: 1;
+  min-width: 0;
 }
+
 .company h1 {
-  margin: 0 0 2px 0;
+  margin: 0 0 4px 0;
+  padding: 0;
   font-size: 20pt;
-  color: #000; /* Black text */
+  color: #000;
   text-transform: uppercase;
   font-weight: bold;
-  text-decoration: underline; /* Underline the company name */
-  text-decoration-color: #0033A0; /* Blue underline */
+  text-decoration: underline;
+  text-decoration-color: #0033A0;
+  text-decoration-thickness: 2px;
+  line-height: 1.2;
 }
+
 .tagline, .address {
   font-size: 10pt;
   margin: 0;
-  line-height: 1.2;
-}
-.tagline {
-  margin-bottom: 2px;
+  padding: 0;
+  line-height: 1.3;
 }
 
-/* Tempat & Tanggal */
+.tagline {
+  margin-bottom: 3px;
+}
+
+.address {
+  margin-top: 3px;
+}
+
 .place-date {
   text-align: right;
   margin: 15px 0 20px 0;
   font-size: 12pt;
 }
 
-/* Judul Invoice */
 .title-section {
   margin: 20px 0;
 }
+
 .invoice-title {
   font-weight: bold;
   font-size: 12pt;
   margin-bottom: 5px;
 }
+
 .title-section p {
   margin: 0;
 }
 
-/* Kepada Yth */
 .customer {
   margin-bottom: 25px;
 }
+
 .customer p {
   margin: 4px 0;
 }
+
 .customer .name {
   font-weight: bold;
   font-size: 12pt;
 }
 
-/* Tabel */
 .items {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 30px;
   font-size: 12pt;
 }
+
 .items th, .items td {
   border: 1px solid #000;
   padding: 5px 8px;
   vertical-align: top;
 }
+
 .items th {
-  background-color: #f0f0f0; /* Light gray background for header */
+  background-color: #f0f0f0;
   font-weight: bold;
   text-align: center;
 }
-.items td {
-  border-top: none;
-  border-bottom: none;
-}
 
-/* Specific column widths and alignment */
 .no-col { width: 5%; }
-.item-col { width: 55%; text-align: left; }
+.item-col { width: 40%; text-align: left; }
+.qty-col { width: 8%; text-align: center; }
+.bill-col { width: 17%; text-align: right; }
 .unit-price-col { width: 15%; text-align: center; }
-.amount-col { width: 25%; text-align: center; }
-.bill-col {
-  width: 15%;
-  text-align: right;
-}
+.amount-col { width: 15%; text-align: right; }
 
-
-/* Table body styling to match image */
 .items thead th {
   border-top: 2px solid #000;
   border-bottom: 2px solid #000;
@@ -360,32 +552,36 @@ const downloadPdf = () => {
   padding: 8px 10px;
   text-align: center;
   font-weight: bold;
-  background: none; /* Remove background */
+  background: none;
 }
+
 .items tbody tr:first-child td {
   border-top: 2px solid #000;
 }
+
 .items tbody tr:last-child td {
   border-bottom: 2px solid #000;
 }
+
 .items tbody td {
   border: 1px solid #000;
   padding: 5px 8px;
 }
 
 .items .center { text-align: center; }
-.items .right  { text-align: right; }
+.items .right { text-align: right; }
 
-/* Sub-total/Terbilang/DP/SISA/TOTAL */
 .sub-total-row td {
   border-top: none;
   border-bottom: none;
 }
+
 .terbilang-cell {
   font-style: italic;
   font-weight: bold;
   border-right: none !important;
 }
+
 .empty-cell {
   border-right: none !important;
 }
@@ -394,30 +590,87 @@ const downloadPdf = () => {
   font-weight: bold;
   border-top: 1px solid #000;
 }
+
 .total-amount {
   font-weight: bold;
 }
 
-/* Payment Section */
 .payment {
   margin-top: 20px;
   line-height: 1.5;
   font-size: 12pt;
 }
+
 .payment p { margin: 5px 0; }
 
 .account-details, .atas-nama {
   display: flex;
   margin-left: 10px;
 }
+
 .rek-label, .an-label {
   width: 150px;
   flex-shrink: 0;
 }
+
 .rek-content, .an-content {
   flex-grow: 1;
 }
+
 .atas-nama {
   margin-top: 10px;
+}
+
+.signature-section {
+  margin-top: 50px;
+  text-align: right;
+  padding-right: 90px;
+  font-size: 11pt;
+}
+
+.signature-text {
+  margin: 2px 0;
+}
+
+.signature-space {
+  height: 60px;
+}
+
+.signature-name {
+  margin-top: 5px;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.signature-title {
+  margin-top: 2px;
+  font-size: 10pt;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.py-20 {
+  padding: 80px 0;
+}
+
+@media print {
+  .header {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 15px !important;
+  }
+  
+  .logo {
+    width: 70px !important;
+    height: 70px !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .logo img {
+    width: 70px !important;
+    height: 70px !important;
+  }
 }
 </style>

@@ -1,4 +1,3 @@
-
 <template>
   <div class="space-y-5 text-sm">
     <!-- INVOICE -->
@@ -75,12 +74,12 @@
         </div>
         <div class="flex items-center gap-2 bg-white rounded-xl p-1 shadow-sm">
           <button 
-         @click="$emit('change-qty', { id: item.id, delta: -1 })"
+            @click="$emit('change-qty', { id: item.id, delta: -1 })"
             class="w-8 h-8 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 flex items-center justify-center font-bold transition-all active:scale-90"
           >−</button>
           <span class="w-8 text-center font-bold text-gray-800">{{ item.qty }}</span>
           <button 
-           @click="$emit('change-qty', { id: item.id, delta: 1 })"
+            @click="$emit('change-qty', { id: item.id, delta: 1 })"
             class="w-8 h-8 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-md flex items-center justify-center font-bold transition-all active:scale-90"
           >+</button>
         </div>
@@ -95,39 +94,69 @@
       </div>
     </div>
 
-        <!-- SUMMARY -->
-        <div class="space-y-3 border-t-2 border-blue-200 pt-4">
-          <div class="flex justify-between text-sm text-gray-700">
-            <span class="font-medium">Subtotal</span>
-            <span class="font-semibold">Rp {{ subtotal.toLocaleString('id-ID') }}</span>
-          </div>
-          <!-- Tambahan Biaya -->
+    <!-- SUMMARY -->
+    <div class="space-y-3 border-t-2 border-blue-200 pt-4">
+      <div class="flex justify-between text-sm text-gray-700">
+        <span class="font-medium">Subtotal</span>
+        <span class="font-semibold">Rp {{ subtotal.toLocaleString('id-ID') }}</span>
+      </div>
+
+      <!-- PPH (%) -->
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-2">Tambahan Biaya</label>
+        <label class="block text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+          PPH (%)
+          <span class="text-gray-400 text-[10px]">(Optional)</span>
+        </label>
+        <input 
+          v-model.number="localPph"
+          type="number"
+          min="0"
+          max="100"
+          step="0.01"
+          placeholder="Masukkan persentase PPH (opsional)"
+          class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all" 
+        />
+      </div>
+
+      <div class="flex justify-between text-sm text-gray-700">
+        <span class="font-medium">PPH Nominal</span>
+        <span class="font-semibold">Rp {{ pphNominal.toLocaleString('id-ID') }}</span>
+      </div>
+
+      <!-- Tambahan Biaya (Disabled jika PPH kosong) -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+          Tambahan Biaya
+          <span v-if="!isPphFilled" class="text-red-500 text-[10px]">
+            (Isi PPH terlebih dahulu)
+          </span>
+        </label>
         <input 
           v-model.number="localExtra" 
           type="number" 
           min="0"
-          class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl"
-          placeholder="0"
+          :disabled="!isPphFilled"
+          placeholder="Masukkan tambahan biaya"
+          :class="[
+            'w-full px-4 py-2 border-2 rounded-xl text-sm transition-all',
+            isPphFilled 
+              ? 'border-blue-200 focus:outline-none focus:border-cyan-500 bg-white' 
+              : 'border-gray-200 bg-gray-100 cursor-not-allowed text-gray-400'
+          ]"
         />
+        <p v-if="!isPphFilled" class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Field ini akan aktif setelah PPH diisi
+        </p>
       </div>
-      <div class="flex justify-between text-sm text-gray-700">
-            <span class="font-medium">Total tambahan biaya</span>
-            <span class="font-semibold">Rp {{ subtotalPlusExtra.toLocaleString('id-ID') }}</span>
-          </div>
 
-      <!-- PPH (%) -->
-      <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-2">PPH (%)</label>
-        <input 
-        v-model.number="localPph"
-        type="number"
-        min="0"
-        max="100"
-        class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl"
-      />
+      <div class="flex justify-between text-sm text-gray-700">
+        <span class="font-medium">Total Tambahan Biaya</span>
+        <span class="font-semibold">Rp {{ subtotalPlusExtra.toLocaleString('id-ID') }}</span>
       </div>
+
       <div class="flex justify-between text-sm font-semibold text-gray-800 bg-blue-50 px-3 py-2 rounded-xl">
         <span>Total Sebelum Nego</span>
         <span>Rp {{ totalBeforeNego.toLocaleString('id-ID') }}</span>
@@ -137,11 +166,11 @@
         <label class="block text-xs font-semibold text-gray-700 mb-2">Harga Nego</label>
         <input 
           v-model.number="localNego" 
-           :max="totalBeforeNego"
+          :max="totalBeforeNego"
           min="0"
-          type="number" 
+          type="number"
+          placeholder="Masukkan harga nego (opsional)"
           class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all" 
-          placeholder="0"
         />
       </div>
 
@@ -157,8 +186,8 @@
           type="number" 
           :max="totalBayar"
           min="0"
+          placeholder="Masukkan DP (opsional)"
           class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all" 
-          placeholder="0"
         />
       </div>
 
@@ -182,19 +211,18 @@
     </div>
 
     <!-- CHECKOUT -->
-   <button 
-  @click="$emit('checkout')" 
-  :disabled="!cart.length"
-  class="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-2xl font-bold text-base hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 disabled:hover:scale-100"
->
-  <span class="flex items-center justify-center gap-2">
-    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-    </svg>
-    {{ buttonText }}
-  </span>
-</button>
-
+    <button 
+      @click="$emit('checkout')" 
+      :disabled="!cart.length"
+      class="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-2xl font-bold text-base hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 disabled:hover:scale-100"
+    >
+      <span class="flex items-center justify-center gap-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        {{ buttonText }}
+      </span>
+    </button>
   </div>
 </template>
 
@@ -218,7 +246,7 @@ const props = defineProps({
   nego: Number,
   dp: Number,
   status: String,
-  buttonText: { type: String, default: 'Checkout Sekarang' } // TAMBAHKAN INI
+  buttonText: { type: String, default: 'Checkout Sekarang' }
 })
 
 const emit = defineEmits([
@@ -234,15 +262,27 @@ const emit = defineEmits([
   'select-customer',
 ])
 
-// EXTRA - Hilangkan default 0
+// Computed untuk cek apakah PPH sudah diisi
+const isPphFilled = computed(() => {
+  return props.pph !== null && props.pph !== 0 && props.pph !== '' && props.pph !== undefined
+})
+
+// EXTRA - Disabled jika PPH kosong, dan reset ketika PPH dikosongkan
 const localExtra = computed({
   get: () => {
+    if (!isPphFilled.value) {
+      return '';
+    }
     if (props.extra === null || props.extra === 0 || props.extra === '') {
       return '';
     }
     return props.extra;
   },
   set: v => {
+    if (!isPphFilled.value) {
+      emit('update:extra', null);
+      return;
+    }
     if (v === '' || v === 0 || v === '0') {
       emit('update:extra', null);
     } else {
@@ -262,6 +302,8 @@ const localPph = computed({
   set: v => {
     if (v === '' || v === 0 || v === '0') {
       emit('update:pph', null);
+      // Reset extra ketika PPH dikosongkan
+      emit('update:extra', null);
     } else {
       emit('update:pph', Number(v));
     }
@@ -309,8 +351,6 @@ const localStatus = computed({
 
 const clearCustomer = () => emit('select-customer', null);
 </script>
-
-
 
 <style scoped>
 /* Custom scrollbar */

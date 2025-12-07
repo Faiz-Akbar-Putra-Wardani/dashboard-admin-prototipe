@@ -158,7 +158,7 @@ onMounted(() => {
                 :id="c.id"
                 endpoint="/api/customers"
                 :fetchData="fetchData"
-                class="p-2 bg-red-100 rounded-xl"
+                 class="p-2 rounded-xl transition-all"
               >
                 <template #trigger>🗑️</template>
               </delete-modal>

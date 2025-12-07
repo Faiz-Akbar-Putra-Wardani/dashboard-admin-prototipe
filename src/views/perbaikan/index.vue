@@ -293,7 +293,7 @@ onMounted(() => {
                           :id="r.id"
                           endpoint="/api/repairs"
                           :fetchData="fetchData"
-                          class="text-red-600 hover:text-red-700 hover:bg-red-50 p-2.5 rounded-xl transition-all"
+                           class="p-2 rounded-xl transition-all"
                         >
                           <template #trigger>
                             <svg
