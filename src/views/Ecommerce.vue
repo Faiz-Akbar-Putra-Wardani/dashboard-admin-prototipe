@@ -9,13 +9,10 @@
         <monthly-sale />
       </div>
 
-      <div class="col-span-12">
-        <statistics-chart />
-      </div>
 
-      <div class="col-span-12 xl:col-span-7">
-        <recent-orders />
-      </div>
+      <div class="col-span-12">
+  <recent-orders />
+</div>
     </div>
   </admin-layout>
 </template>
@@ -26,7 +23,6 @@ import EcommerceMetrics from '../components/ecommerce/EcommerceMetrics.vue'
 import MonthlyTarget from '../components/ecommerce/MonthlySale.vue'
 import MonthlySale from '../components/ecommerce/MonthlyTarget.vue'
 import CustomerDemographic from '../components/ecommerce/CustomerDemographic.vue'
-import StatisticsChart from '../components/ecommerce/StatisticsChart.vue'
 import RecentOrders from '../components/ecommerce/RecentOrders.vue'
 export default {
   components: {
@@ -35,7 +31,6 @@ export default {
     MonthlyTarget,
     MonthlySale,
     CustomerDemographic,
-    StatisticsChart,
     RecentOrders,
   },
   name: 'Ecommerce',

@@ -315,6 +315,14 @@ const routes = [
         name: 'rekap data pelanggan',
         component: () => import( /* webpackChunkName: "home" */ '../views/rekap/index.vue'),
     },
+      {
+    path: '/reports/print',
+    beforeEnter: (to, from, next) => {
+        useUser().getToken ? next() : next('/')
+    },
+    name: 'rekap data pelanggan print',
+    component: () => import( /* webpackChunkName: "home" */ '../views/rekap/print.vue'),
+    },
 
 
 

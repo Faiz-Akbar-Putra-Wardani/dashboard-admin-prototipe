@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, watch} from "vue"
 import Swal from "sweetalert2"
 import dayjs from "dayjs"
-import { moneyFormat } from "@/utils/moneyFormat"
 
 import customParseFormat from "dayjs/plugin/customParseFormat"
 
@@ -173,6 +172,7 @@ const totalPreview = computed(() => {
 
 
 
+
 watch(dp, () => {
   if (dp.value == null) return
 
@@ -223,6 +223,7 @@ const checkout = async () => {
     "warning"
   )
 }
+
 
   const result = await Swal.fire({
     title: "Konfirmasi Checkout",

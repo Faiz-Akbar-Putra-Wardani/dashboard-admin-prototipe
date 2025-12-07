@@ -7,9 +7,9 @@
     >
       <div class="flex justify-between">
         <div>
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Monthly Target</h3>
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Total Pemasukan</h3>
           <p class="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
-            Target you’ve set for each month
+            Total pemasukan dari semua sumber transaksi
           </p>
         </div>
         <div>
@@ -33,123 +33,186 @@
           </DropdownMenu>
         </div>
       </div>
-      <div class="relative max-h-[195px]">
+      
+      <!-- Loading State -->
+      <div v-if="isLoading" class="relative max-h-[195px] flex items-center justify-center py-16">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600"></div>
+      </div>
+
+      <!-- Chart Display -->
+      <div v-else class="relative max-h-[195px]">
         <div id="chartTwo" class="h-full">
           <div class="radial-bar-chart">
-            <VueApexCharts type="radialBar" height="330" :options="chartOptions" :series="series" />
+            <VueApexCharts type="radialBar" :height="330" :options="chartOptions" :series="series" />
           </div>
         </div>
         <span
           class="absolute left-1/2 top-[85%] -translate-x-1/2 -translate-y-[85%] rounded-full bg-success-50 px-3 py-1 text-xs font-medium text-success-600 dark:bg-success-500/15 dark:text-success-500"
-          >+10%</span
         >
+          Total: Rp {{ revenue.total.toLocaleString("id-ID") }}
+        </span>
       </div>
+      
       <p class="mx-auto mt-1.5 w-full max-w-[380px] text-center text-sm text-gray-500 sm:text-base">
-        You earn $3287 today, it's higher than last month. Keep up your good work!
+        Total pemasukan dari {{ totalTransactions }} transaksi
       </p>
     </div>
 
     <div class="flex items-center justify-center gap-5 px-6 py-3.5 sm:gap-8 sm:py-5">
+      <!-- PERBAIKAN -->
       <div>
         <p class="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
-          Target
+          Perbaikan
         </p>
         <p
           class="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg"
         >
-          $20K
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M7.26816 13.6632C7.4056 13.8192 7.60686 13.9176 7.8311 13.9176C7.83148 13.9176 7.83187 13.9176 7.83226 13.9176C8.02445 13.9178 8.21671 13.8447 8.36339 13.6981L12.3635 9.70076C12.6565 9.40797 12.6567 8.9331 12.3639 8.6401C12.0711 8.34711 11.5962 8.34694 11.3032 8.63973L8.5811 11.36L8.5811 2.5C8.5811 2.08579 8.24531 1.75 7.8311 1.75C7.41688 1.75 7.0811 2.08579 7.0811 2.5L7.0811 11.3556L4.36354 8.63975C4.07055 8.34695 3.59568 8.3471 3.30288 8.64009C3.01008 8.93307 3.01023 9.40794 3.30321 9.70075L7.26816 13.6632Z"
-              fill="#D92D20"
-            />
-          </svg>
+          <span v-if="isLoading" class="inline-block w-16 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+          <span v-else>Rp {{ formatCurrency(revenue.perbaikan) }}</span>
+        </p>
+        <p class="text-center text-xs text-gray-400 mt-1">
+          {{ revenuePercentage.perbaikan }}%
         </p>
       </div>
 
       <div class="w-px bg-gray-200 h-7 dark:bg-gray-800"></div>
 
+      <!-- PENJUALAN -->
       <div>
         <p class="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
-          Revenue
+          Penjualan
         </p>
         <p
           class="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg"
         >
-          $20K
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M7.60141 2.33683C7.73885 2.18084 7.9401 2.08243 8.16435 2.08243C8.16475 2.08243 8.16516 2.08243 8.16556 2.08243C8.35773 2.08219 8.54998 2.15535 8.69664 2.30191L12.6968 6.29924C12.9898 6.59203 12.9899 7.0669 12.6971 7.3599C12.4044 7.6529 11.9295 7.65306 11.6365 7.36027L8.91435 4.64004L8.91435 13.5C8.91435 13.9142 8.57856 14.25 8.16435 14.25C7.75013 14.25 7.41435 13.9142 7.41435 13.5L7.41435 4.64442L4.69679 7.36025C4.4038 7.65305 3.92893 7.6529 3.63613 7.35992C3.34333 7.06693 3.34348 6.59206 3.63646 6.29926L7.60141 2.33683Z"
-              fill="#039855"
-            />
-          </svg>
+          <span v-if="isLoading" class="inline-block w-16 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+          <span v-else>Rp {{ formatCurrency(revenue.penjualan) }}</span>
+        </p>
+        <p class="text-center text-xs text-gray-400 mt-1">
+          {{ revenuePercentage.penjualan }}%
         </p>
       </div>
 
       <div class="w-px bg-gray-200 h-7 dark:bg-gray-800"></div>
 
+      <!-- SEWA -->
       <div>
         <p class="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
-          Today
+          Sewa
         </p>
         <p
           class="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg"
         >
-          $20K
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M7.60141 2.33683C7.73885 2.18084 7.9401 2.08243 8.16435 2.08243C8.16475 2.08243 8.16516 2.08243 8.16556 2.08243C8.35773 2.08219 8.54998 2.15535 8.69664 2.30191L12.6968 6.29924C12.9898 6.59203 12.9899 7.0669 12.6971 7.3599C12.4044 7.6529 11.9295 7.65306 11.6365 7.36027L8.91435 4.64004L8.91435 13.5C8.91435 13.9142 8.57856 14.25 8.16435 14.25C7.75013 14.25 7.41435 13.9142 7.41435 13.5L7.41435 4.64442L4.69679 7.36025C4.4038 7.65305 3.92893 7.6529 3.63613 7.35992C3.34333 7.06693 3.34348 6.59206 3.63646 6.29926L7.60141 2.33683Z"
-              fill="#039855"
-            />
-          </svg>
+          <span v-if="isLoading" class="inline-block w-16 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+          <span v-else>Rp {{ formatCurrency(revenue.sewa) }}</span>
+        </p>
+        <p class="text-center text-xs text-gray-400 mt-1">
+          {{ revenuePercentage.sewa }}%
         </p>
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, computed } from 'vue'
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import DropdownMenu from '../common/DropdownMenu.vue'
-const menuItems = [
-  { label: 'View More', onClick: () => console.log('View More clicked') },
-  { label: 'Delete', onClick: () => console.log('Delete clicked') },
-]
 import VueApexCharts from 'vue3-apexcharts'
+import Api from '@/services/api'
+import Cookies from 'js-cookie'
 
-const props = defineProps({
-  value: {
-    type: Number,
-    default: 75.55,
-  },
+const menuItems = [
+  { label: 'Refresh Data', onClick: () => fetchRevenue() },
+  { label: 'View Details', onClick: () => console.log('View Details') },
+]
+
+const isLoading = ref(true)
+const revenue = ref({
+  penjualan: 0,
+  sewa: 0,
+  perbaikan: 0,
+  total: 0
 })
 
-const series = computed(() => [props.value])
+const stats = ref({
+  penjualan: { count: 0 },
+  sewa: { count: 0 },
+  perbaikan: { count: 0 }
+})
 
+// Hitung total transaksi
+const totalTransactions = computed(() => {
+  return stats.value.penjualan.count + stats.value.sewa.count + stats.value.perbaikan.count
+})
+
+// Hitung persentase revenue per sumber
+const revenuePercentage = computed(() => {
+  if (revenue.value.total === 0) {
+    return { penjualan: '0.0', sewa: '0.0', perbaikan: '0.0' }
+  }
+  
+  return {
+    penjualan: ((revenue.value.penjualan / revenue.value.total) * 100).toFixed(1),
+    sewa: ((revenue.value.sewa / revenue.value.total) * 100).toFixed(1),
+    perbaikan: ((revenue.value.perbaikan / revenue.value.total) * 100).toFixed(1),
+  }
+})
+
+// Series untuk chart - menggunakan persentase tertinggi
+const series = computed(() => {
+  const percentages = [
+    parseFloat(revenuePercentage.value.penjualan),
+    parseFloat(revenuePercentage.value.sewa),
+    parseFloat(revenuePercentage.value.perbaikan)
+  ]
+  return [Math.max(...percentages)]
+})
+
+// Format currency
+const formatCurrency = (value) => {
+  if (value >= 1000000000) {
+    return (value / 1000000000).toFixed(1) + 'M'
+  } else if (value >= 1000000) {
+    return (value / 1000000).toFixed(1) + 'jt'
+  } else if (value >= 1000) {
+    return (value / 1000).toFixed(0) + 'rb'
+  }
+  return value.toLocaleString('id-ID')
+}
+
+// Fetch revenue data
+const fetchRevenue = async () => {
+  try {
+    isLoading.value = true
+    const token = Cookies.get('token')
+    Api.defaults.headers.common.Authorization = token
+
+    // Fetch revenue stats
+    const revenueRes = await Api.get('/api/profits/revenue-stats')
+    
+    if (revenueRes.data?.success) {
+      const data = revenueRes.data.data
+      revenue.value = {
+        penjualan: data.bySource.penjualan?.total || 0,
+        sewa: data.bySource.sewa?.total || 0,
+        perbaikan: data.bySource.perbaikan?.total || 0,
+        total: data.totalRevenue || 0
+      }
+      
+      stats.value = {
+        penjualan: { count: data.bySource.penjualan?.count || 0 },
+        sewa: { count: data.bySource.sewa?.count || 0 },
+        perbaikan: { count: data.bySource.perbaikan?.count || 0 }
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching revenue:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Chart options
 const chartOptions = {
   colors: ['#465FFF'],
   chart: {
@@ -179,8 +242,8 @@ const chartOptions = {
           fontWeight: '600',
           offsetY: 60,
           color: '#1D2939',
-          formatter: function (val: number) {
-            return val.toFixed(2) + '%'
+          formatter: function (val) {
+            return val.toFixed(1) + '%'
           },
         },
       },
@@ -195,6 +258,10 @@ const chartOptions = {
   },
   labels: ['Progress'],
 }
+
+onMounted(() => {
+  fetchRevenue()
+})
 </script>
 
 <style scoped>

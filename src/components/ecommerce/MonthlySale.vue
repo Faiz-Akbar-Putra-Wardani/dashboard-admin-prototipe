@@ -3,9 +3,27 @@
     class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6"
   >
     <div class="flex items-center justify-between">
-      <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Monthly Sales</h3>
+      <div>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+          Statistik Pemasukan Bulanan
+        </h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          Total pemasukan per bulan tahun {{ selectedYear }}
+        </p>
+      </div>
 
-      <div class="relative h-fit">
+      <div class="flex items-center gap-3">
+        <!-- Year Selector -->
+        <select
+          v-model="selectedYear"
+          @change="fetchMonthlyData"
+          class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm"
+        >
+          <option v-for="year in years" :key="year" :value="year">
+            {{ year }}
+          </option>
+        </select>
+
         <DropdownMenu :menu-items="menuItems">
           <template #icon>
             <svg
@@ -27,32 +45,92 @@
       </div>
     </div>
 
-    <div class="max-w-full overflow-x-auto custom-scrollbar">
+    <!-- Loading State -->
+    <div v-if="isLoading" class="flex justify-center items-center py-16">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+    </div>
+
+    <!-- Chart -->
+    <div v-else class="max-w-full overflow-x-auto custom-scrollbar">
       <div id="chartOne" class="-ml-5 min-w-[650px] xl:min-w-full pl-2">
-        <VueApexCharts type="bar" height="180" :options="chartOptions" :series="series" />
+        <VueApexCharts type="bar" height="280" :options="chartOptions" :series="series" />
+      </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-3 gap-4 mt-4 pb-5">
+      <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <p class="text-xs text-gray-500 dark:text-gray-400">Total Tahun Ini</p>
+        <p class="text-lg font-bold text-gray-800 dark:text-white mt-1">
+          Rp {{ formatCurrency(totalYearly) }}
+        </p>
+      </div>
+      <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <p class="text-xs text-gray-500 dark:text-gray-400">Rata-rata/Bulan</p>
+        <p class="text-lg font-bold text-gray-800 dark:text-white mt-1">
+          Rp {{ formatCurrency(averageMonthly) }}
+        </p>
+      </div>
+      <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <p class="text-xs text-gray-500 dark:text-gray-400">Bulan Tertinggi</p>
+        <p class="text-lg font-bold text-gray-800 dark:text-white mt-1">
+          {{ highestMonth }}
+        </p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import DropdownMenu from '../common/DropdownMenu.vue'
+import VueApexCharts from 'vue3-apexcharts'
+import Api from '@/services/api'
+import Cookies from 'js-cookie'
+
+const isLoading = ref(false)
+const selectedYear = ref(new Date().getFullYear())
+
+// Generate years for selector (5 tahun terakhir + tahun depan)
+const years = computed(() => {
+  const currentYear = new Date().getFullYear()
+  return Array.from({ length: 7 }, (_, i) => currentYear - 5 + i)
+})
+
 const menuItems = [
-  { label: 'View More', onClick: () => console.log('View More clicked') },
-  { label: 'Delete', onClick: () => console.log('Delete clicked') },
+  { label: 'Refresh Data', onClick: () => fetchMonthlyData() },
+  { 
+    label: 'Download Report', 
+    onClick: () => console.log('Download report for', selectedYear.value) 
+  },
 ]
 
-import VueApexCharts from 'vue3-apexcharts'
+const monthlyRevenue = ref(Array(12).fill(0))
 
-const series = ref([
+const series = computed(() => [
   {
-    name: 'Sales',
-    data: [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
+    name: 'Pemasukan',
+    data: monthlyRevenue.value,
   },
 ])
 
-const chartOptions = ref({
+// Calculate statistics
+const totalYearly = computed(() => {
+  return monthlyRevenue.value.reduce((sum, val) => sum + val, 0)
+})
+
+const averageMonthly = computed(() => {
+  return totalYearly.value / 12
+})
+
+const highestMonth = computed(() => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+  const maxValue = Math.max(...monthlyRevenue.value)
+  const maxIndex = monthlyRevenue.value.indexOf(maxValue)
+  return months[maxIndex]
+})
+
+const chartOptions = {
   colors: ['#465fff'],
   chart: {
     fontFamily: 'Outfit, sans-serif',
@@ -64,8 +142,8 @@ const chartOptions = ref({
   plotOptions: {
     bar: {
       horizontal: false,
-      columnWidth: '39%',
-      borderRadius: 5,
+      columnWidth: '55%',
+      borderRadius: 6,
       borderRadiusApplication: 'end',
     },
   },
@@ -79,18 +157,8 @@ const chartOptions = ref({
   },
   xaxis: {
     categories: [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
     ],
     axisBorder: {
       show: false,
@@ -110,6 +178,14 @@ const chartOptions = ref({
   },
   yaxis: {
     title: false,
+    labels: {
+      formatter: function (val) {
+        if (val >= 1000000) {
+          return 'Rp ' + (val / 1000000).toFixed(1) + 'jt'
+        }
+        return 'Rp ' + (val / 1000).toFixed(0) + 'rb'
+      },
+    },
   },
   grid: {
     yaxis: {
@@ -122,18 +198,48 @@ const chartOptions = ref({
     opacity: 1,
   },
   tooltip: {
-    x: {
-      show: false,
-    },
     y: {
       formatter: function (val) {
-        return val.toString()
+        return 'Rp ' + val.toLocaleString('id-ID')
       },
     },
   },
-})
+}
+
+// Format currency helper
+const formatCurrency = (value) => {
+  if (value >= 1000000000) {
+    return (value / 1000000000).toFixed(1) + 'M'
+  } else if (value >= 1000000) {
+    return (value / 1000000).toFixed(1) + 'jt'
+  } else if (value >= 1000) {
+    return (value / 1000).toFixed(0) + 'rb'
+  }
+  return value.toLocaleString('id-ID')
+}
+
+// Fetch monthly data
+const fetchMonthlyData = async () => {
+  try {
+    isLoading.value = true
+    const token = Cookies.get('token')
+    Api.defaults.headers.common.Authorization = token
+
+    const response = await Api.get('/api/profits/monthly-revenue', {
+      params: { year: selectedYear.value }
+    })
+
+    if (response.data?.success) {
+      monthlyRevenue.value = response.data.data.monthlyRevenue
+    }
+  } catch (error) {
+    console.error('Error fetching monthly data:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
 
 onMounted(() => {
-  // Any additional setup can be done here if needed
+  fetchMonthlyData()
 })
 </script>

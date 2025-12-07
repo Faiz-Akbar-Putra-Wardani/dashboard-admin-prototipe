@@ -1,13 +1,52 @@
+<script setup>
+import { ref, onMounted } from "vue";
+import Api from "@/services/api";
+import Cookies from "js-cookie";
+
+const stats = ref({
+  penjualan: 0,
+  sewa: 0,
+  perbaikan: 0,
+  total: 0
+});
+
+const isLoading = ref(true);
+
+const fetchStats = async () => {
+  try {
+    isLoading.value = true;
+    const token = Cookies.get("token");
+    Api.defaults.headers.common.Authorization = token;
+
+    const res = await Api.get("/api/reports/transaction-stats");
+    
+    if (res.data?.success) {
+      stats.value = res.data.data;
+    }
+  } catch (error) {
+    console.error("Error fetching stats:", error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchStats();
+});
+</script>
+
 <template>
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
+    
+    <!-- CARD PERBAIKAN -->
     <div
       class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6"
     >
       <div
-        class="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800"
+        class="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-xl dark:bg-orange-900/30"
       >
         <svg
-          class="fill-gray-800 dark:fill-white/90"
+          class="fill-orange-600 dark:fill-orange-400"
           width="24"
           height="24"
           viewBox="0 0 24 24"
@@ -17,7 +56,7 @@
           <path
             fill-rule="evenodd"
             clip-rule="evenodd"
-            d="M8.80443 5.60156C7.59109 5.60156 6.60749 6.58517 6.60749 7.79851C6.60749 9.01185 7.59109 9.99545 8.80443 9.99545C10.0178 9.99545 11.0014 9.01185 11.0014 7.79851C11.0014 6.58517 10.0178 5.60156 8.80443 5.60156ZM5.10749 7.79851C5.10749 5.75674 6.76267 4.10156 8.80443 4.10156C10.8462 4.10156 12.5014 5.75674 12.5014 7.79851C12.5014 9.84027 10.8462 11.4955 8.80443 11.4955C6.76267 11.4955 5.10749 9.84027 5.10749 7.79851ZM4.86252 15.3208C4.08769 16.0881 3.70377 17.0608 3.51705 17.8611C3.48384 18.0034 3.5211 18.1175 3.60712 18.2112C3.70161 18.3141 3.86659 18.3987 4.07591 18.3987H13.4249C13.6343 18.3987 13.7992 18.3141 13.8937 18.2112C13.9797 18.1175 14.017 18.0034 13.9838 17.8611C13.7971 17.0608 13.4132 16.0881 12.6383 15.3208C11.8821 14.572 10.6899 13.955 8.75042 13.955C6.81096 13.955 5.61877 14.572 4.86252 15.3208ZM3.8071 14.2549C4.87163 13.2009 6.45602 12.455 8.75042 12.455C11.0448 12.455 12.6292 13.2009 13.6937 14.2549C14.7397 15.2906 15.2207 16.5607 15.4446 17.5202C15.7658 18.8971 14.6071 19.8987 13.4249 19.8987H4.07591C2.89369 19.8987 1.73504 18.8971 2.05628 17.5202C2.28015 16.5607 2.76117 15.2906 3.8071 14.2549ZM15.3042 11.4955C14.4702 11.4955 13.7006 11.2193 13.0821 10.7533C13.3742 10.3314 13.6054 9.86419 13.7632 9.36432C14.1597 9.75463 14.7039 9.99545 15.3042 9.99545C16.5176 9.99545 17.5012 9.01185 17.5012 7.79851C17.5012 6.58517 16.5176 5.60156 15.3042 5.60156C14.7039 5.60156 14.1597 5.84239 13.7632 6.23271C13.6054 5.73284 13.3741 5.26561 13.082 4.84371C13.7006 4.37777 14.4702 4.10156 15.3042 4.10156C17.346 4.10156 19.0012 5.75674 19.0012 7.79851C19.0012 9.84027 17.346 11.4955 15.3042 11.4955ZM19.9248 19.8987H16.3901C16.7014 19.4736 16.9159 18.969 16.9827 18.3987H19.9248C20.1341 18.3987 20.2991 18.3141 20.3936 18.2112C20.4796 18.1175 20.5169 18.0034 20.4837 17.861C20.2969 17.0607 19.913 16.088 19.1382 15.3208C18.4047 14.5945 17.261 13.9921 15.4231 13.9566C15.2232 13.6945 14.9995 13.437 14.7491 13.1891C14.5144 12.9566 14.262 12.7384 13.9916 12.5362C14.3853 12.4831 14.8044 12.4549 15.2503 12.4549C17.5447 12.4549 19.1291 13.2008 20.1936 14.2549C21.2395 15.2906 21.7206 16.5607 21.9444 17.5202C22.2657 18.8971 21.107 19.8987 19.9248 19.8987Z"
+            d="M14.2788 2.15224C14.3723 1.97033 14.5515 1.84614 14.7537 1.82094C14.9559 1.79574 15.1582 1.87281 15.2961 2.02709L17.7961 4.82709C17.9341 4.98137 18 5.18935 18 5.4V16.6C18 16.8106 17.9341 17.0186 17.7961 17.1729L15.2961 19.9729C15.1582 20.1272 14.9559 20.2043 14.7537 20.1791C14.5515 20.1539 14.3723 20.0297 14.2788 19.8478L2.27885 1.84775C2.17569 1.6518 2.18146 1.41699 2.29381 1.22598C2.40617 1.03497 2.61229 0.916748 2.83618 0.916748H13.1638C13.3877 0.916748 13.5938 1.03497 13.7062 1.22598L14.2788 2.15224ZM3.36502 2.41675L13.9462 17.4167H15.9615L14.7115 16.0667V5.6L15.9615 4.25H13.9462L3.36502 2.41675ZM19.2961 6.32709C19.1582 6.18281 19 6.10574 18.7961 6.10574C18.5923 6.10574 18.4341 6.18281 18.2961 6.32709L16.7961 8.32709C16.6582 8.48137 16.5923 8.68935 16.5923 8.9V15.1C16.5923 15.3106 16.6582 15.5186 16.7961 15.6729L18.2961 17.6729C18.4341 17.8272 18.5923 17.9043 18.7961 17.9043C19 17.9043 19.1582 17.8272 19.2961 17.6729L20.7961 15.6729C20.9341 15.5186 21 15.3106 21 15.1V8.9C21 8.68935 20.9341 8.48137 20.7961 8.32709L19.2961 6.32709Z"
             fill=""
           />
         </svg>
@@ -25,42 +64,24 @@
 
       <div class="flex items-end justify-between mt-5">
         <div>
-          <span class="text-sm text-gray-500 dark:text-gray-400">Customers</span>
-          <h4 class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">3,782</h4>
+          <span class="text-sm text-gray-500 dark:text-gray-400">Total Perbaikan</span>
+          <h4 class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+            <span v-if="isLoading" class="inline-block w-20 h-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+            <span v-else>{{ stats.perbaikan.toLocaleString("id-ID") }} transaksi</span>
+          </h4>
         </div>
-
-        <span
-          class="flex items-center gap-1 rounded-full bg-success-50 py-0.5 pl-2 pr-2.5 text-sm font-medium text-success-600 dark:bg-success-500/15 dark:text-success-500"
-        >
-          <svg
-            class="fill-current"
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M5.56462 1.62393C5.70193 1.47072 5.90135 1.37432 6.12329 1.37432C6.1236 1.37432 6.12391 1.37432 6.12422 1.37432C6.31631 1.37415 6.50845 1.44731 6.65505 1.59381L9.65514 4.5918C9.94814 4.88459 9.94831 5.35947 9.65552 5.65246C9.36273 5.94546 8.88785 5.94562 8.59486 5.65283L6.87329 3.93247L6.87329 10.125C6.87329 10.5392 6.53751 10.875 6.12329 10.875C5.70908 10.875 5.37329 10.5392 5.37329 10.125L5.37329 3.93578L3.65516 5.65282C3.36218 5.94562 2.8873 5.94547 2.5945 5.65248C2.3017 5.35949 2.30185 4.88462 2.59484 4.59182L5.56462 1.62393Z"
-              fill=""
-            />
-          </svg>
-
-          11.01%
-        </span>
       </div>
     </div>
 
+    <!-- CARD PENJUALAN -->
     <div
       class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6"
     >
       <div
-        class="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800"
+        class="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl dark:bg-blue-900/30"
       >
         <svg
-          class="fill-gray-800 dark:fill-white/90"
+          class="fill-blue-600 dark:fill-blue-400"
           width="24"
           height="24"
           viewBox="0 0 24 24"
@@ -78,32 +99,51 @@
 
       <div class="flex items-end justify-between mt-5">
         <div>
-          <span class="text-sm text-gray-500 dark:text-gray-400">Orders</span>
-          <h4 class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">5,359</h4>
+          <span class="text-sm text-gray-500 dark:text-gray-400">Total Penjualan</span>
+          <h4 class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+            <span v-if="isLoading" class="inline-block w-20 h-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+            <span v-else>{{ stats.penjualan.toLocaleString("id-ID") }} transaksi</span>
+          </h4>
         </div>
-
-        <span
-          class="flex items-center gap-1 rounded-full bg-error-50 py-0.5 pl-2 pr-2.5 text-sm font-medium text-error-600 dark:bg-error-500/15 dark:text-error-500"
-        >
-          <svg
-            class="fill-current"
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M5.31462 10.3761C5.45194 10.5293 5.65136 10.6257 5.87329 10.6257C5.8736 10.6257 5.8739 10.6257 5.87421 10.6257C6.0663 10.6259 6.25845 10.5527 6.40505 10.4062L9.40514 7.4082C9.69814 7.11541 9.69831 6.64054 9.40552 6.34754C9.11273 6.05454 8.63785 6.05438 8.34486 6.34717L6.62329 8.06753L6.62329 1.875C6.62329 1.46079 6.28751 1.125 5.87329 1.125C5.45908 1.125 5.12329 1.46079 5.12329 1.875L5.12329 8.06422L3.40516 6.34719C3.11218 6.05439 2.6373 6.05454 2.3445 6.34752C2.0517 6.64051 2.05185 7.11538 2.34484 7.40818L5.31462 10.3761Z"
-              fill=""
-            />
-          </svg>
-
-          9.05%
-        </span>
       </div>
     </div>
+
+    
+
+    <!-- CARD SEWA -->
+    <div
+      class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6"
+    >
+      <div
+        class="flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl dark:bg-green-900/30"
+      >
+        <svg
+          class="fill-green-600 dark:fill-green-400"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M12 2.75C6.89137 2.75 2.75 6.89137 2.75 12C2.75 17.1086 6.89137 21.25 12 21.25C17.1086 21.25 21.25 17.1086 21.25 12C21.25 6.89137 17.1086 2.75 12 2.75ZM1.25 12C1.25 6.06294 6.06294 1.25 12 1.25C17.9371 1.25 22.75 6.06294 22.75 12C22.75 17.9371 17.9371 22.75 12 22.75C6.06294 22.75 1.25 17.9371 1.25 12ZM12 7.25C12.4142 7.25 12.75 7.58579 12.75 8V11.6893L15.0303 13.9697C15.3232 14.2626 15.3232 14.7374 15.0303 15.0303C14.7374 15.3232 14.2626 15.3232 13.9697 15.0303L11.4697 12.5303C11.329 12.3897 11.25 12.1989 11.25 12V8C11.25 7.58579 11.5858 7.25 12 7.25Z"
+            fill=""
+          />
+        </svg>
+      </div>
+
+      <div class="flex items-end justify-between mt-5">
+        <div>
+          <span class="text-sm text-gray-500 dark:text-gray-400">Total Sewa</span>
+          <h4 class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+            <span v-if="isLoading" class="inline-block w-20 h-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+            <span v-else>{{ stats.sewa.toLocaleString("id-ID") }} transaksi</span>
+          </h4>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>

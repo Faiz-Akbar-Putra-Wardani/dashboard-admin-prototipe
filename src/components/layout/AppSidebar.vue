@@ -262,7 +262,7 @@ const menuGroups = [
     items: [
       {
         icon: TagIcon,
-        name: "Data Categories",
+        name: "Data Kategori Produk",
         path: "/categories",
       },
       {
@@ -331,6 +331,11 @@ const menuGroups = [
         icon: BuildingStorefrontIcon,
         name: "Klien",
         path: "/clients",
+      },
+      {
+        icon: BuildingStorefrontIcon,
+        name: "Bank",
+        path: "/banks",
       },
     ],
   },
