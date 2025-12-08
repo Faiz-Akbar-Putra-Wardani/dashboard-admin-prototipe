@@ -30,7 +30,7 @@ const selectedCustomer = ref(null)
 
 const dp = ref(null)
 const invoice = ref("")
-const status = ref("ongoing") 
+const status = ref("berlangsung") 
 
 const fetchInvoice = async () => {
   try {

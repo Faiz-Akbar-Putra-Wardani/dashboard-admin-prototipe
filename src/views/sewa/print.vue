@@ -14,7 +14,31 @@ const status = ref("");
 const printDate = ref(new Date());
 const items = ref([]);
 
+// Bank accounts dari API
+const bankAccounts = ref([]);
+
 const printArea = ref(null);
+
+// COMPUTED ==================================================================
+// Untuk signature name - ambil account_holder pertama
+const signatureName = computed(() => {
+  if (bankAccounts.value.length > 0) {
+    return bankAccounts.value[0]?.account_holder ?? "ISWOYO";
+  }
+  return "ISWOYO";
+});
+
+// Untuk mendapatkan unique account holders (hapus duplikat)
+const uniqueAccountHolders = computed(() => {
+  if (bankAccounts.value.length === 0) {
+    return [];
+  }
+  
+  const holders = bankAccounts.value.map(bank => bank.account_holder);
+  const unique = [...new Set(holders)];
+  
+  return unique;
+});
 
 // Format Functions
 const formatRupiah = (num) =>
@@ -26,6 +50,7 @@ const formatDate = (date) =>
     month: "long",
     year: "numeric",
   });
+
 const formatPrintDate = (date) =>
   new Date(date).toLocaleDateString("id-ID", {
     day: "2-digit",
@@ -33,21 +58,38 @@ const formatPrintDate = (date) =>
     year: "numeric",
   });
 
- const getMonths = (start, end) => {
+const getMonths = (start, end) => {
   if (!start || !end) return 1;
 
   const s = new Date(start);
   const e = new Date(end);
 
-  // Hitung selisih bulan dari tahun dan bulan
   let months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
 
-  // Jika tanggal end LEBIH BESAR dari tanggal start, tambah 1 bulan
   if (e.getDate() > s.getDate()) {
     months += 1;
   }
 
   return months < 1 ? 1 : months;
+};
+
+// FETCH BANK DATA ===========================================================
+const fetchBankAccounts = async () => {
+  try {
+    const token = Cookies.get("token");
+    Api.defaults.headers.common["Authorization"] = token;
+
+    const res = await Api.get("/api/banks-all");
+    
+    if (res.data && res.data.data) {
+      bankAccounts.value = res.data.data;
+    } else {
+      bankAccounts.value = [];
+    }
+  } catch (err) {
+    console.error("Gagal load bank accounts:", err.response || err);
+    bankAccounts.value = [];
+  }
 };
 
 // Fetch Data
@@ -65,35 +107,33 @@ const fetchRental = async () => {
     dp.value = Number(data.dp);
     status.value = data.status;
 
-   items.value = data.details.map((d) => {
-  const start = new Date(d.start_date);
-  const end = new Date(d.end_date);
+    items.value = data.details.map((d) => {
+      const start = new Date(d.start_date);
+      const end = new Date(d.end_date);
 
-  let months = 0;
+      let months = 0;
 
-  // Hitung dengan logika yang benar
-  if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-    months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-    
-    // Jika tanggal end > tanggal start, tambah 1 bulan
-    if (end.getDate() > start.getDate()) {
-      months += 1;
-    }
-  }
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+        
+        if (end.getDate() > start.getDate()) {
+          months += 1;
+        }
+      }
 
-  if (months < 1) months = 1;
+      if (months < 1) months = 1;
 
-  const total = months * Number(d.rent_price ?? 0) * Number(d.qty ?? 0);
+      const total = months * Number(d.rent_price ?? 0) * Number(d.qty ?? 0);
 
-  return {
-    name: d.product?.title ?? "-",
-    qty: Number(d.qty ?? 0),
-    price: Number(d.rent_price ?? 0),
-    total,
-    start_date: d.start_date,
-    end_date: d.end_date,
-  };
-});
+      return {
+        name: d.product?.title ?? "-",
+        qty: Number(d.qty ?? 0),
+        price: Number(d.rent_price ?? 0),
+        total,
+        start_date: d.start_date,
+        end_date: d.end_date,
+      };
+    });
 
   } catch (err) {
     console.error("Gagal memuat rental:", err);
@@ -111,39 +151,125 @@ const sisa = computed(() => {
   const total = Number(total_rent_price.value ?? 0);
   const down = Number(dp.value ?? 0);
 
-  // Jika dp = 0 → sisa = 0
   if (down === 0) return 0;
 
-  // Jika dp lebih kecil dari total → normal
   const result = total - down;
 
-  // Jika dp melebihi total → jangan minus
   return result > 0 ? result : 0;
 });
 
+// Download PDF dengan html2pdf yang sudah diperbaiki
+const downloadPdf = async () => {
+  const element = printArea.value;
 
+  await new Promise(resolve => setTimeout(resolve, 300));
 
-
-// Download PDF
-const downloadPdf = () => {
   const opt = {
-    margin: 5,
+    margin: [10, 10, 10, 10], // Naikkan margin
     filename: `Rental-${invoiceCode.value}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    image: { 
+      type: "jpeg", 
+      quality: 0.95
+    },
+    html2canvas: { 
+      scale: 2.2, // Naikkan sedikit dari 2
+      useCORS: true,
+      logging: false,
+      letterRendering: true,
+      allowTaint: false,
+      backgroundColor: '#ffffff',
+      imageTimeout: 0,
+      windowHeight: 1400, // Naikkan dari 1200
+      onclone: (clonedDoc) => {
+        const clonedElement = clonedDoc.querySelector('.invoice-print');
+        if (clonedElement) {
+          clonedElement.style.maxWidth = '100%';
+          clonedElement.style.padding = '20px 35px';
+          clonedElement.style.fontSize = '10pt'; // Naikkan
+        }
+        
+        const header = clonedDoc.querySelector('.header');
+        if (header) {
+          header.style.display = 'flex';
+          header.style.alignItems = 'flex-start';
+          header.style.gap = '15px';
+          header.style.marginBottom = '15px';
+        }
+        
+        const logo = clonedDoc.querySelector('.logo');
+        if (logo) {
+          logo.style.width = '65px';
+          logo.style.height = '65px';
+          logo.style.flexShrink = '0';
+          logo.style.display = 'flex';
+        }
+        
+        const logoImg = clonedDoc.querySelector('.logo img');
+        if (logoImg) {
+          logoImg.style.width = '65px';
+          logoImg.style.height = '65px';
+        }
+        
+        const company = clonedDoc.querySelector('.company');
+        if (company) {
+          company.style.flex = '1';
+        }
+
+        // Tambah spacing untuk semua section
+        const sections = clonedDoc.querySelectorAll('.title-section, .customer, .payment');
+        sections.forEach(section => {
+          section.style.marginTop = '15px';
+          section.style.marginBottom = '15px';
+        });
+
+        // Ukuran table lebih besar
+        const table = clonedDoc.querySelector('.items');
+        if (table) {
+          table.style.fontSize = '10pt';
+          table.style.marginBottom = '18px';
+        }
+
+        // Signature dengan spacing lebih besar
+        const signature = clonedDoc.querySelector('.signature-section');
+        if (signature) {
+          signature.style.marginTop = '30px';
+        }
+
+        const signatureSpace = clonedDoc.querySelector('.signature-space');
+        if (signatureSpace) {
+          signatureSpace.style.height = '45px';
+        }
+      }
+    },
+    jsPDF: { 
+      unit: "mm", 
+      format: "a4", 
+      orientation: "portrait",
+      compress: true
+    },
+    pagebreak: { 
+      mode: ['avoid-all', 'css', 'legacy'],
+      avoid: ['.signature-section', '.payment', '.header']
+    }
   };
 
-  html2pdf().set(opt).from(printArea.value).save();
+  html2pdf().set(opt).from(element).save();
 };
 
+
+
 // On Mounted
-onMounted(() => {
+onMounted(async () => {
   const params = new URLSearchParams(window.location.search);
   invoiceCode.value = params.get("invoice");
-  fetchRental();
+  
+  await Promise.all([
+    fetchRental(),
+    fetchBankAccounts()
+  ]);
 });
 </script>
+
 <template>
   <div>
     <!-- Tombol Download PDF -->
@@ -156,15 +282,17 @@ onMounted(() => {
 
       <!-- Header Perusahaan -->
       <div class="header">
-        <div class="logo">SES</div>
+        <div class="logo">
+          <img src="/images/logo/logo_ses2.png" alt="SES Logo" />
+        </div>
         <div class="company">
           <h1>SINAR ELEKTRO SEJAHTERA</h1>
           <div class="tagline">
-            service: Rewinding Elektro motor 1 dan 3 phase, Genset<br>
+            service:Rewinding Elektro motor1 dan 3phase, ,Genset<br>
             <span class="underline">Generator Jual-Beli dan Sewa Genset</span>
           </div>
           <div class="address">
-            Alamat: <span class="underline">JL. Cendanall Gg. H. JANUR – Jatimulyo – Lampung Selatan • Tlp. 0853-8312-0656</span>
+            Alamat:<span class="underline">JL.Cendanall Gg.H.JANUR Jatimulyo-Lampung Selatan Tlp.0853-8312-0656</span>
           </div>
         </div>
       </div>
@@ -178,6 +306,7 @@ onMounted(() => {
       <div class="title-section">
         <p class="invoice-title"><u>Invoice Rental</u></p>
         <p>Tanggal Cetak: {{ formatPrintDate(printDate) }}</p>
+        <p>No Invoice: {{ invoiceCode }}</p>
       </div>
 
       <!-- Kepada Yth -->
@@ -186,31 +315,17 @@ onMounted(() => {
         <p class="name">{{ customer }}</p>
       </div>
 
-      <!-- Data Utama Rental -->
-      <table class="info-table">
-      <tbody>
-        <tr>
-          <td>Invoice</td>
-          <td>: {{ invoiceCode }}</td>
-        </tr>
-        <tr>
-          <td>Status</td>
-          <td>: {{ status }}</td>
-        </tr>
-        </tbody>
-      </table>
-
       <!-- Tabel Produk Disewa -->
       <table class="items">
         <thead>
           <tr>
-            <th>No</th>
-            <th>Nama Barang</th>
-            <th>Qty</th>
-            <th>Tanggal Sewa</th>
-            <th>Durasi Sewa</th>
-            <th>Harga Sewa</th>
-            <th>Total</th>
+            <th class="no-col">No</th>
+            <th class="item-col">Nama Barang</th>
+            <th class="qty-col">Qty</th>
+            <th class="date-col">Tanggal Sewa</th>
+            <th class="duration-col">Durasi Sewa</th>
+            <th class="price-col">Harga Sewa</th>
+            <th class="total-col">Total</th>
           </tr>
         </thead>
         <tbody>
@@ -218,7 +333,6 @@ onMounted(() => {
             <td class="center">{{ i + 1 }}</td>
             <td>{{ item.name }}</td>
             <td class="center">{{ item.qty }}</td>
-            <!-- TANGGAL PER PRODUK -->
             <td class="center">
               {{ formatDate(item.start_date) }} - {{ formatDate(item.end_date) }}
             </td>
@@ -229,143 +343,424 @@ onMounted(() => {
             <td class="right">Rp {{ formatRupiah(item.total) }}</td>
           </tr>
 
-          <tr class="total-row">
-            <td colspan="6" class="right"><b>DP</b></td>
-            <td class="right"><b>Rp {{ formatRupiah(dp) }}</b></td>
+          <tr class="sub-total-row">
+            <td colspan="5" class="empty-cell"></td>
+            <td class="right">DP</td>
+            <td class="right">{{ formatRupiah(dp) }}</td>
+          </tr>
+
+          <tr class="sub-total-row">
+            <td colspan="5" class="empty-cell"></td>
+            <td class="right">SISA</td>
+            <td class="right">{{ formatRupiah(sisa) }}</td>
           </tr>
 
           <tr class="total-row">
-            <td colspan="6" class="right"><b>Sisa</b></td>
-            <td class="right"><b>Rp {{ formatRupiah(sisa) }}</b></td>
+            <td colspan="5" class="empty-cell"></td>
+            <td class="right">TOTAL</td>
+            <td class="right total-amount">Rp {{ formatRupiah(total_rent_price) }}</td>
           </tr>
-
-          <tr class="total-row">
-            <td colspan="6" class="right"><b>Total</b></td>
-            <td class="right"><b>Rp {{ formatRupiah(total_rent_price) }}</b></td>
-          </tr>
-
         </tbody>
       </table>
 
       <!-- Informasi Pembayaran -->
       <div class="payment">
-        <p><strong>Pembayaran</strong><br>Mohon ditransfer ke:</p>
-
+        <p>
+          <strong>Pembayaran</strong><br>
+          Mohon ditransfer ke
+        </p>
+        
+        <!-- Nomor Rekening -->
         <div class="account-details">
           <div class="rek-label">Nomor Rekening</div>
           <div class="rek-content">
-            : - Bank BRI <br> (2092-0101-1376-504) <br>
-            : - Bank Mandiri <br> (114-00-2493557-2)
+            <template v-if="bankAccounts.length > 0">
+              <template v-for="(bank, index) in bankAccounts" :key="bank.id">
+                : - Bank {{ bank.bank_name }}<br>
+                ({{ bank.account_number }})<br v-if="index < bankAccounts.length - 1">
+              </template>
+            </template>
+            <template v-else>
+              : - Bank BRI<br>
+              (2092-0101-1376-504)<br>
+              : - Bank MANDIRI<br>
+              (114-00-2493557-2)
+            </template>
           </div>
         </div>
-
+        
+        <!-- Atas Nama - DINAMIS -->
         <div class="atas-nama">
           <div class="an-label">Atas Nama</div>
-          <div class="an-content">: ISWOYO</div>
+          <div class="an-content">
+            <template v-if="uniqueAccountHolders.length > 0">
+              <template v-for="(holder, index) in uniqueAccountHolders" :key="'holder-' + index">
+                : {{ holder }}<br v-if="index < uniqueAccountHolders.length - 1">
+              </template>
+            </template>
+            <template v-else>
+              : ISWOYO
+            </template>
+          </div>
         </div>
       </div>
+
+      <!-- Signature Section -->
+      <div class="signature-section">
+        <div class="signature-text">Bandar Lampung, {{ formatPrintDate(printDate) }}</div>
+        <div class="signature-text">Sinar Elektro Sejahtera</div>
+        <div class="signature-space"></div>
+        <div class="signature-name">{{ signatureName }}</div>
+        <div class="signature-title">Pelaksana</div>
+      </div>
+
     </div>
   </div>
 </template>
+
 <style scoped>
 .invoice-print {
-  font-family: "Times New Roman";
+  font-family: "Times New Roman", Times, serif;
   max-width: 800px;
   margin: 0 auto;
-  padding: 40px;
+  padding: 25px 40px; /* Tambah padding */
   background: #fff;
   color: #000;
-  font-size: 12pt;
-  line-height: 1.5;
+  font-size: 11pt; /* Naikkan dari 10pt */
+  line-height: 1.4; /* Naikkan dari 1.3 */
+  box-sizing: border-box;
+  min-height: 1000px; /* Tambahkan min-height agar memenuhi halaman */
 }
 
+.underline {
+  text-decoration: underline;
+}
+
+/* Header dengan spacing yang cukup */
 .header {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 10px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #0033A0;
+  gap: 15px; /* Tambah dari 12px */
+  margin-bottom: 15px; /* Tambah spacing */
+  padding-bottom: 8px; /* Tambah padding */
+  border-bottom: 4px solid #0033A0; /* Kembalikan ke 4px */
   position: relative;
-}
-.header::after {
-  content: "";
-  position: absolute;
-  bottom: -1px;
-  width: 100%;
-  height: 3px;
-  background: #0033A0;
+  page-break-after: avoid;
 }
 
 .logo {
-  width: 70px;
-  height: 70px;
-  background: #0033A0;
-  color: #fff;
-  font-weight: bold;
-  font-size: 30pt;
+  width: 65px; /* Naikkan dari 55px */
+  height: 65px;
+  min-width: 65px;
+  min-height: 65px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 15px;
-  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+  overflow: hidden;
+  margin-right: 0;
+}
+
+.logo img {
+  width: 65px;
+  height: 65px;
+  max-width: 65px;
+  max-height: 65px;
+  object-fit: contain;
+  display: block;
+}
+
+.company {
+  flex: 1;
+  min-width: 0;
 }
 
 .company h1 {
-  margin: 0 0 2px 0;
-  font-size: 20pt;
+  margin: 0 0 5px 0; /* Tambah spacing */
+  padding: 0;
+  font-size: 18pt; /* Naikkan dari 16pt */
+  color: #000;
   text-transform: uppercase;
   font-weight: bold;
   text-decoration: underline;
   text-decoration-color: #0033A0;
+  text-decoration-thickness: 2px;
+  line-height: 1.2;
+}
+
+.tagline, .address {
+  font-size: 9.5pt; /* Naikkan dari 8.5pt */
+  margin: 0;
+  padding: 0;
+  line-height: 1.4; /* Tambah line height */
+}
+
+.tagline {
+  margin-bottom: 3px; /* Tambah spacing */
+}
+
+.address {
+  margin-top: 3px;
 }
 
 .place-date {
   text-align: right;
-  margin: 15px 0;
+  margin: 15px 0 18px 0; /* Tambah spacing */
+  font-size: 11pt; /* Naikkan dari 10pt */
 }
 
-.title-section { margin: 20px 0; }
-.invoice-title { font-size: 14pt; font-weight: bold; }
-
-.customer .name { font-weight: bold; }
-
-/* Table Info Rental */
-.info-table {
-  width: 100%;
-  margin-bottom: 20px;
-  font-size: 12pt;
-}
-.info-table td {
-  padding: 4px;
+.title-section {
+  margin: 18px 0; /* Tambah spacing */
 }
 
-/* Items Table */
+.invoice-title {
+  font-weight: bold;
+  font-size: 12pt; /* Naikkan dari 11pt */
+  margin-bottom: 5px; /* Tambah spacing */
+}
+
+.title-section p {
+  margin: 3px 0; /* Tambah spacing */
+  font-size: 10pt; /* Naikkan dari 9pt */
+}
+
+.customer {
+  margin-bottom: 18px; /* Tambah spacing */
+}
+
+.customer p {
+  margin: 4px 0; /* Tambah spacing */
+  font-size: 11pt; /* Naikkan dari 10pt */
+}
+
+.customer .name {
+  font-weight: bold;
+  font-size: 11pt;
+}
+
+/* Items Table dengan spacing yang lebih besar */
 .items {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  margin-bottom: 20px; /* Tambah spacing */
+  font-size: 10pt; /* Naikkan dari 9pt */
 }
+
 .items th, .items td {
   border: 1px solid #000;
-  padding: 6px;
+  padding: 6px 8px; /* Tambah padding */
+  vertical-align: middle;
+  line-height: 1.4; /* Tambah line height */
 }
-.right { text-align: right; }
-.center { text-align: center; }
+
+.items th {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  text-align: center;
+  font-size: 10pt; /* Naikkan dari 9pt */
+  padding: 8px; /* Tambah padding */
+}
+
+/* Column widths */
+.no-col { width: 5%; }
+.item-col { width: 25%; text-align: left; }
+.qty-col { width: 7%; text-align: center; }
+.date-col { width: 20%; text-align: center; }
+.duration-col { width: 10%; text-align: center; }
+.price-col { width: 15%; text-align: right; }
+.total-col { width: 18%; text-align: right; }
+
+.items thead th {
+  border-top: 2px solid #000;
+  border-bottom: 2px solid #000;
+  border-left: 1px solid #000;
+  border-right: 1px solid #000;
+  padding: 8px; /* Tambah padding */
+  text-align: center;
+  font-weight: bold;
+  background: none;
+}
+
+.items tbody tr:first-child td {
+  border-top: 2px solid #000;
+}
+
+.items tbody tr:last-child td {
+  border-bottom: 2px solid #000;
+}
+
+.items tbody td {
+  border: 1px solid #000;
+  padding: 6px 8px; /* Tambah padding */
+  font-size: 10pt; /* Naikkan dari 9pt */
+}
+
+.items .center { text-align: center; }
+.items .right { text-align: right; }
+
+/* Sub-total rows dengan spacing yang cukup */
+.sub-total-row td {
+  border-top: none;
+  border-bottom: none;
+  padding: 5px 8px !important; /* Tambah padding */
+}
+
+.empty-cell {
+  border-right: none !important;
+  border-left: 1px solid #000;
+}
 
 .total-row td {
   font-weight: bold;
-  background: #f8f8f8;
+  border-top: 1px solid #000;
+  padding: 6px 8px; /* Tambah padding */
 }
 
-/* Payment */
-.payment { margin-top: 25px; }
+.total-amount {
+  font-weight: bold;
+}
+
+/* Payment Section dengan spacing lebih besar */
+.payment {
+  margin-top: 25px; /* Tambah spacing */
+  line-height: 1.5; /* Tambah line height */
+  font-size: 10pt; /* Naikkan dari 9pt */
+  page-break-inside: avoid;
+}
+
+.payment p { 
+  margin: 5px 0; /* Tambah spacing */
+  font-size: 10pt; /* Naikkan dari 9pt */
+  line-height: 1.5;
+}
+
+.payment strong {
+  font-size: 11pt; /* Naikkan dari 10pt */
+}
 
 .account-details, .atas-nama {
   display: flex;
-  margin-left: 10px;
+  margin-left: 12px; /* Tambah indent */
+  font-size: 10pt; /* Naikkan dari 9pt */
+  line-height: 1.5; /* Tambah line height */
+  margin-top: 6px; /* Tambah spacing */
 }
 
 .rek-label, .an-label {
-  width: 150px;
+  width: 130px; /* Tambah dari 120px */
+  flex-shrink: 0;
+}
+
+.rek-content, .an-content {
+  flex-grow: 1;
+  line-height: 1.5;
+}
+
+.atas-nama {
+  margin-top: 8px; /* Tambah spacing */
+}
+
+/* Signature Section dengan spacing lebih besar */
+.signature-section {
+  margin-top: 35px; /* Tambah spacing besar */
+  margin-left: auto;
+  margin-right: 0;
+  width: 45%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 10pt; /* Naikkan dari 9pt */
+  page-break-inside: avoid;
+}
+
+.signature-text {
+  margin: 3px 0; /* Tambah spacing */
+  text-align: center;
+  font-size: 10pt; /* Naikkan dari 9pt */
+  line-height: 1.4;
+}
+
+.signature-space {
+  height: 50px; /* Naikkan dari 40px */
+  width: 100%;
+}
+
+.signature-name {
+  margin-top: 5px; /* Tambah spacing */
+  font-weight: bold;
+  text-decoration: underline;
+  text-align: center;
+  font-size: 10pt; /* Naikkan dari 9pt */
+}
+
+.signature-title {
+  margin-top: 3px; /* Tambah spacing */
+  font-size: 9pt; /* Naikkan dari 8.5pt */
+  text-align: center;
+}
+
+/* Print Optimization */
+@media print {
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  .invoice-print {
+    padding: 20px 35px !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+  }
+
+  .header {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 15px !important;
+    page-break-after: avoid !important;
+    margin-bottom: 15px !important;
+    padding-bottom: 8px !important;
+  }
+  
+  .logo {
+    width: 65px !important;
+    height: 65px !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .logo img {
+    width: 65px !important;
+    height: 65px !important;
+  }
+
+  .signature-section {
+    page-break-inside: avoid !important;
+    margin-top: 30px !important;
+  }
+
+  .payment {
+    page-break-inside: avoid !important;
+    margin-top: 20px !important;
+  }
+
+  .items {
+    page-break-inside: auto !important;
+  }
+
+  .items tbody tr {
+    page-break-inside: avoid !important;
+  }
+
+  /* Pastikan spacing tetap di PDF */
+  .items td, .items th {
+    padding: 6px 8px !important;
+  }
+
+  .sub-total-row td {
+    padding: 5px 8px !important;
+  }
 }
 </style>
+
+
+

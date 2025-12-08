@@ -211,9 +211,9 @@ onMounted(fetchDetail);
                 v-model="newStatus"
                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="process">Process</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
+               <option value="masuk">Masuk</option>
+            <option value="proses">Proses</option>
+            <option value="selesai">Selesai</option>
               </select>
 
               <button

@@ -90,40 +90,53 @@
       </table>
 
       <!-- Informasi Pembayaran -->
-      <div class="payment">
-        <p>
-          <strong>Pembayaran</strong><br>
-          Mohon ditransfer ke
-        </p>
-        <div class="account-details">
-          <div class="rek-label">Nomor Rekening</div>
-          <div class="rek-content">
-            <template v-if="bankAccounts.length > 0">
-              <template v-for="(bank, index) in bankAccounts" :key="bank.id">
-                : - Bank {{ bank.bank_name }}<br>
-                ({{ bank.account_number }})<br v-if="index < bankAccounts.length - 1">
-              </template>
+    <div class="payment">
+      <p>
+        <strong>Pembayaran</strong><br>
+        Mohon ditransfer ke
+      </p>
+      
+      <!-- Nomor Rekening -->
+      <div class="account-details">
+        <div class="rek-label">Nomor Rekening</div>
+        <div class="rek-content">
+          <template v-if="bankAccounts.length > 0">
+            <template v-for="(bank, index) in bankAccounts" :key="bank.id">
+              : -  {{ bank.bank_name }}<br>
+              ({{ bank.account_number }})<br v-if="index < bankAccounts.length - 1">
             </template>
-            <template v-else>
-              : - Bank BRI<br>
-              (2092-0101-1376-504)<br>
-              : - Bank MANDIRI<br>
-              (114-00-2493557-2)
-            </template>
-          </div>
-        </div>
-        <div class="atas-nama">
-          <div class="an-label">Atas Nama</div>
-          <div class="an-content">: {{ atasNama }}</div>
+          </template>
+          <template v-else>
+            : - Bank BRI<br>
+            (2092-0101-1376-504)<br>
+            : - Bank MANDIRI<br>
+            (114-00-2493557-2)
+          </template>
         </div>
       </div>
+      
+      <!-- Atas Nama - UNIQUE ONLY -->
+      <div class="atas-nama">
+        <div class="an-label">Atas Nama</div>
+        <div class="an-content">
+          <template v-if="uniqueAccountHolders.length > 0">
+            <template v-for="(holder, index) in uniqueAccountHolders" :key="'holder-' + index">
+              : {{ holder }}<br v-if="index < uniqueAccountHolders.length - 1">
+            </template>
+          </template>
+          <template v-else>
+            : ISWOYO
+          </template>
+        </div>
+      </div>
+    </div>
 
       <!-- Signature Section -->
       <div class="signature-section">
         <div class="signature-text">Bandar Lampung, {{ formatDate(printDate) }}</div>
         <div class="signature-text">Sinar Elektro Sejahtera</div>
         <div class="signature-space"></div>
-        <div class="signature-name">{{ atasNama }}</div>
+        <div class="signature-name">{{ signatureName }}</div>
         <div class="signature-title">Pelaksana</div>
       </div>
     </div>
@@ -161,9 +174,17 @@ const items = ref([]);
 
 // Bank accounts dari API
 const bankAccounts = ref([]);
-const atasNama = ref("");
 
 const printArea = ref(null);
+
+// COMPUTED ==================================================================
+// Untuk signature name - ambil account_holder pertama
+const signatureName = computed(() => {
+  if (bankAccounts.value.length > 0) {
+    return bankAccounts.value[0]?.account_holder ?? "ISWOYO";
+  }
+  return "ISWOYO";
+});
 
 // KONVERSI ANGKA KE TERBILANG ===============================================
 const numberToWords = (num) => {
@@ -230,7 +251,6 @@ const numberToWords = (num) => {
 const terbilangText = computed(() => {
   if (total.value > 0) {
     const words = numberToWords(total.value);
-    // Capitalize first letter
     return words.charAt(0).toUpperCase() + words.slice(1) + " rupiah";
   }
   return terbilang.value || "-";
@@ -248,21 +268,14 @@ const fetchBankAccounts = async () => {
     
     if (res.data && res.data.data) {
       bankAccounts.value = res.data.data;
-      
       console.log("Bank Accounts:", bankAccounts.value);
-      
-      if (bankAccounts.value.length > 0) {
-        atasNama.value = bankAccounts.value[0]?.account_holder ?? "ISWOYO";
-      } else {
-        atasNama.value = "ISWOYO";
-      }
     } else {
       console.warn("Bank data kosong");
-      atasNama.value = "ISWOYO";
+      bankAccounts.value = [];
     }
   } catch (err) {
     console.error("Gagal load bank accounts:", err.response || err);
-    atasNama.value = "ISWOYO";
+    bankAccounts.value = [];
   }
 };
 
@@ -309,13 +322,23 @@ onMounted(async () => {
   ]);
   
   console.log("Final Bank Accounts:", bankAccounts.value);
-  console.log("Final Atas Nama:", atasNama.value);
+  console.log("Signature Name:", signatureName.value);
   console.log("Terbilang:", terbilangText.value);
   
   loading.value = false;
 });
 
-// FORMATTERS ================================================================
+const uniqueAccountHolders = computed(() => {
+  if (bankAccounts.value.length === 0) {
+    return [];
+  }
+  const holders = bankAccounts.value.map(bank => bank.account_holder);
+  
+  const unique = [...new Set(holders)];
+  
+  return unique;
+});
+
 const formatRupiah = (num) => {
   return new Intl.NumberFormat("id-ID", {
     minimumFractionDigits: 0,
@@ -402,7 +425,6 @@ const downloadPdf = async () => {
 </script>
 
 <style scoped>
-/* ... CSS tetap sama seperti sebelumnya ... */
 .invoice-print {
   font-family: "Times New Roman", Times, serif;
   max-width: 800px;
@@ -621,30 +643,38 @@ const downloadPdf = async () => {
   margin-top: 10px;
 }
 
+/* Signature Section - PUSHED TO RIGHT */
 .signature-section {
   margin-top: 50px;
-  text-align: right;
-  padding-right: 90px;
+  margin-left: 50%; /* Geser 50% ke kanan */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   font-size: 11pt;
 }
 
 .signature-text {
   margin: 2px 0;
+  text-align: center;
 }
 
 .signature-space {
   height: 60px;
+  width: 100%;
 }
 
 .signature-name {
   margin-top: 5px;
   font-weight: bold;
   text-decoration: underline;
+  text-align: center;
 }
 
 .signature-title {
   margin-top: 2px;
   font-size: 10pt;
+  text-align: center;
 }
 
 .text-center {

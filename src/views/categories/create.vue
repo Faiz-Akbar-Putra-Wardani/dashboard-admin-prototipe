@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
 import Cookies from "js-cookie";
 import Swal from "sweetalert2";
@@ -22,10 +22,19 @@ const isSubmitting = ref(false);
 const previewUrl = ref(null);
 const fileInputRef = ref(null);
 
+// ✅ FIX: Tambahkan computed fileName
+const fileName = computed(() => {
+  return form.image ? form.image.name : '';
+});
+
 // Handle file upload
 const handleFileChange = (e) => {
   const file = e.target.files[0];
-  if (!file) return;
+  if (!file) {
+    form.image = null;
+    previewUrl.value = null;
+    return;
+  }
 
   if (!file.type.match("image.*")) {
     Swal.fire({
@@ -35,6 +44,7 @@ const handleFileChange = (e) => {
     });
     fileInputRef.value.value = "";
     form.image = null;
+    previewUrl.value = null;
     return;
   }
 
@@ -63,7 +73,9 @@ const storeCategory = async () => {
   try {
     const formData = new FormData();
     formData.append("name", form.name);
-    formData.append("image", form.image);
+    if (form.image) {
+      formData.append("image", form.image);
+    }
 
     Api.defaults.headers.common["Authorization"] = token;
     const response = await Api.post("/api/categories", formData);
@@ -71,9 +83,7 @@ const storeCategory = async () => {
     await Swal.fire({
       icon: "success",
       title: "Berhasil!",
-      text:
-        response.data.meta?.message ||
-        "Data kategori berhasil disimpan.",
+      text: response.data.meta?.message || "Data kategori berhasil disimpan.",
       timer: 2000,
       showConfirmButton: false,
     });
@@ -161,61 +171,69 @@ const goBack = () => {
           </p>
         </div>
 
-       <!-- Upload Gambar -->
+        <!-- Upload Gambar -->
         <div class="group relative">
-        <label
+          <label
             for="image"
             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-        >
+          >
             Upload Gambar <span class="text-red-500">*</span>
-        </label>
+          </label>
 
-        <!-- Tombol upload custom -->
-        <div
-            class="flex items-center gap-3"
-        >
+          <!-- Tombol upload custom -->
+          <div class="flex items-center gap-3">
             <!-- Tombol upload -->
             <button
-            type="button"
-            @click="$refs.fileInputRef.click()"
-            class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 focus:ring focus:ring-blue-300"
+              type="button"
+              @click="fileInputRef.click()"
+              class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 focus:ring focus:ring-blue-300"
             >
-            Pilih Gambar
+              Pilih Gambar
             </button>
 
             <!-- Nama file -->
-            <span v-if="fileName" class="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[150px]">
-            {{ fileName }}
+            <span 
+              v-if="fileName" 
+              class="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[150px]"
+            >
+              {{ fileName }}
             </span>
-        </div>
+            <span 
+              v-else
+              class="text-sm text-gray-400 dark:text-gray-500"
+            >
+              Belum ada file dipilih
+            </span>
+          </div>
 
-        <!-- Input file disembunyikan -->
-        <input
+          <!-- Input file disembunyikan -->
+          <input
             id="image"
             type="file"
             accept="image/*"
             ref="fileInputRef"
             @change="handleFileChange"
             class="hidden"
-        />
+          />
 
-        <!-- Pesan error -->
-        <p
+          <!-- Pesan error -->
+          <p
             v-if="errors.image"
             class="mt-1 text-xs text-red-600 dark:text-red-400"
-        >
+          >
             {{ errors.image }}
-        </p>
+          </p>
 
-        <!-- Preview Gambar -->
-        <div v-if="previewUrl" class="mt-3">
+          <!-- Preview Gambar -->
+          <div v-if="previewUrl" class="mt-3">
             <img
-            :src="previewUrl"
-            alt="Preview"
-            class="w-24 h-24 object-cover rounded-lg border border-gray-300 dark:border-gray-700"
+              :src="previewUrl"
+              alt="Preview"
+              class="w-24 h-24 object-cover rounded-lg border border-gray-300 dark:border-gray-700"
             />
+          </div>
         </div>
-        </div>
+
         <!-- Tombol Aksi -->
         <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
@@ -258,5 +276,3 @@ const goBack = () => {
     </div>
   </admin-layout>
 </template>
-
-

@@ -1,7 +1,12 @@
 <template>
   <div class="relative" v-click-outside="closeDropdown" ref="dropdown">
-    <!-- Dropdown Trigger Button -->
-    <button @click="toggleDropdown" :class="buttonClass">
+    <!-- ✅ FIX: Tambah aria-label dan aria-expanded -->
+    <button 
+      @click="toggleDropdown" 
+      :class="buttonClass"
+      aria-label="Open menu options"
+      :aria-expanded="open"
+    >
       <slot name="icon">
         <!-- Default icon -->
         <svg
@@ -87,9 +92,9 @@ const closeDropdown = () => {
 
 const handleMenuItemClick = (callback) => {
   if (typeof callback === 'function') {
-    callback() // Execute the provided callback function
+    callback()
   }
-  closeDropdown() // Close the dropdown after the item is clicked
+  closeDropdown()
 }
 </script>
 

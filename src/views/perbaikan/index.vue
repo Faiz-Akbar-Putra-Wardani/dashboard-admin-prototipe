@@ -246,12 +246,12 @@ onMounted(() => {
                       <span
                         :class="[
                           'px-3 py-1 rounded-xl text-xs font-semibold',
-                          r.status === 'process'
+                          r.status === 'masuk'
                             ? 'bg-blue-100 text-blue-700'
-                            : r.status === 'completed'
-                            ? 'bg-green-100 text-green-700'
-                            : r.status === 'pending'
+                            : r.status === 'proses'
                             ? 'bg-yellow-100 text-yellow-700'
+                            : r.status === 'selesai'
+                            ? 'bg-green-100 text-green-700'
                             : 'bg-gray-200 text-gray-700'
                         ]"
                       >

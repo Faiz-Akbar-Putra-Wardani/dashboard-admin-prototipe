@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ChevronDownIcon, LogoutIcon } from '@/icons'
 import { useUser } from '@/stores/user'
@@ -10,6 +10,9 @@ const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 const router = useRouter()
 const userStore = useUser()
+
+// PERBAIKAN: Ambil user dari store menggunakan computed
+const user = computed(() => userStore.getUser)
 
 const toggleDropdown = () => {
   dropdownOpen.value = !dropdownOpen.value
@@ -24,14 +27,12 @@ const signOut = async () => {
     await userStore.logout()
     closeDropdown()
 
-    // 🔥 Tampilkan notifikasi sukses
     toast.success('Berhasil logout!', {
       position: 'top-right',
       autoClose: 4000,
       theme: 'colored'
     })
 
-    // Redirect ke halaman signin setelah sedikit delay
     setTimeout(() => {
       router.push('/')
     }, 1500)
@@ -56,24 +57,19 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
-})
+});
 </script>
-
-
 
 <template>
   <div class="relative" ref="dropdownRef">
-    <!-- Tombol Profil -->
+    <!-- ✅ FIX: Tambah aria-label dan aria-expanded -->
     <button
-      class="flex items-center text-gray-700 dark:text-gray-400"
       @click.prevent="toggleDropdown"
+      aria-label="User menu"
+      :aria-expanded="dropdownOpen"
+      class="flex items-center text-gray-700 dark:text-gray-400"
     >
-      <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img src="/images/user/owner.jpg" alt="User" />
-      </span>
-
       <span class="block mr-1 font-medium text-theme-sm">{{ user?.name || 'User' }}</span>
-
       <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
     </button>
 
@@ -92,18 +88,15 @@ onUnmounted(() => {
         </span>
       </div>
 
-      <!-- Logout -->
+      <!-- ✅ FIX: aria-label sudah OK karena ada text "Sign out" -->
       <button
         @click="signOut"
         class="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300 w-full text-left"
       >
-        <LogoutIcon
-          class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
-        />
+        <LogoutIcon class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300" />
         Sign out
       </button>
     </div>
   </div>
 </template>
-
 

@@ -270,9 +270,9 @@ onMounted(() => {
                       <span
                         :class="[
                           'px-3 py-1 rounded-xl text-xs font-semibold',
-                          r.status === 'ongoing'
+                          r.status === 'berlangsung'
                             ? 'bg-yellow-100 text-yellow-700'
-                            : r.status === 'completed'
+                            : r.status === 'selesai'
                             ? 'bg-green-100 text-green-700'
                             : 'bg-gray-200 text-gray-700'
                         ]"

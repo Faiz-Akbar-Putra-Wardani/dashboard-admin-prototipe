@@ -42,17 +42,16 @@ const calculateMonths = (item) => {
   item.months = months;
 };
 
-
-
-
 const initItemStartDate = (el, item) => {
   if (!el) return;
   flatpickr(el, {
-    dateFormat: "Y-m-d",
+    dateFormat: "Y-m-d",        
+    altInput: true,              
+    altFormat: "d-m-Y",      
     defaultDate: item.start_date,
     onChange: (dates, str) => {
-      item.start_date = str;
-       calculateMonths(item); 
+      item.start_date = str;     
+      calculateMonths(item); 
     }
   });
 };
@@ -60,11 +59,13 @@ const initItemStartDate = (el, item) => {
 const initItemEndDate = (el, item) => {
   if (!el) return;
   flatpickr(el, {
-    dateFormat: "Y-m-d",
+    dateFormat: "Y-m-d",        
+    altInput: true,             
+    altFormat: "d-m-Y",         
     defaultDate: item.end_date,
     onChange: (dates, str) => {
-      item.end_date = str;
-       calculateMonths(item); 
+      item.end_date = str;       
+      calculateMonths(item); 
     }
   });
 };
@@ -88,7 +89,7 @@ const localDp = computed({
 })
 
 const localStatus = computed({
-  get: () => props.status ?? "ongoing",
+  get: () => props.status ?? "berlangsung",
   set: v => emit("update:status", v)
 })
 
@@ -128,7 +129,7 @@ const updateRentPrice = (item, value) => {
           :value="selectedCustomer?.name ?? ''"
           readonly
           placeholder="Pilih pelanggan..."
-          class="w-full px-4 py-3 border-2 border-blue-200 rounded-2xl bg-white"
+          class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
       </div>
 
@@ -195,7 +196,8 @@ const updateRentPrice = (item, value) => {
 <input
   :ref="el => initItemStartDate(el, item)"
   :value="item.start_date"
-  class="w-full px-3 py-2 border rounded-xl"
+   class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+ placeholder="Masukan tanggal mulai"
 />
 
   <label class="text-xs font-semibold mt-2">Tanggal Selesai</label>
@@ -203,7 +205,8 @@ const updateRentPrice = (item, value) => {
 <input
   :ref="el => initItemEndDate(el, item)"
   :value="item.end_date"
-  class="w-full px-3 py-2 border rounded-xl"
+ class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+ placeholder="Masukan tanggal selesai"
 />
 
 </div>
@@ -219,21 +222,21 @@ const updateRentPrice = (item, value) => {
         v-model="localDp"
         placeholder="0"
         type="number"
-        class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl"
+        class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
       />
     </div>
 
     <!-- STATUS -->
-   <select
-      v-model="localStatus"
-      class="w-full px-4 py-2 border-2 rounded-xl"
-    >
-      <option value="ongoing">Ongoing</option>
-      <option value="returned">Returned</option>
-      <option value="late">Late</option>
-      <option value="cancelled">Cancelled</option>
-    </select>
-
+<div>
+  <label class="block text-xs font-semibold text-gray-700 mb-2">STATUS SEWA</label>
+  <select
+    v-model="localStatus"
+    class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+  >
+    <option value="berlangsung">Berlangsung</option>
+    <option value="selesai">Selesai</option>
+  </select>
+</div>
 
     <!-- TOTAL -->
    <div class="flex justify-between text-lg font-bold bg-gradient-to-r from-cyan-600 to-blue-700 text-white px-4 py-3 rounded-2xl">

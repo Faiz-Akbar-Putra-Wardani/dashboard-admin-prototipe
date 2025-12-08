@@ -13,42 +13,56 @@ export const useUser = defineStore('user', {
         return {
             user: Cookies.get('user') ? JSON.parse(Cookies.get('user')) : {},
             token: Cookies.get('token') || '',
+            isLoading: false, // PERBAIKAN: Tambah isLoading
         }
     },
     actions: {
         //action "login"
         async login(credentials) {
-            //fetch API
             await Api.post('/api/login', credentials)
             .then((response) => {
-
-                //set state
                 this.user = response.data.data.user
                 this.token = response.data.data.token
 
-                //set cookies untuk menyimpan token dan data user
                 Cookies.set('token', response.data.data.token)
                 Cookies.set('user', JSON.stringify(response.data.data.user))
-
             })
+        },
+
+        // PERBAIKAN: Action untuk fetch user profile (opsional)
+        async fetchProfile() {
+            try {
+                this.isLoading = true
+                const token = Cookies.get('token')
+                
+                if (!token) return
+                
+                Api.defaults.headers.common.Authorization = `Bearer ${token}`
+                const response = await Api.get('/api/admins') // Sesuaikan endpoint
+                
+                if (response.data?.success) {
+                    this.user = response.data.data
+                    Cookies.set('user', JSON.stringify(response.data.data))
+                }
+            } catch (error) {
+                console.error('Error fetching profile:', error)
+            } finally {
+                this.isLoading = false
+            }
         },
 
         //action "logout"
         async logout() {
-            
-            //set state
             this.user = {}
             this.token = ''
 
-            //remove cookies
             Cookies.remove('token')
             Cookies.remove('user')
-
         },
-
     },
     getters: {
         getUser: (state) => state.user,
-        getToken: (state) => state.token
+        getToken: (state) => state.token,
+        isAuthenticated: (state) => !!state.token, // PERBAIKAN: Tambah getter
     }
 })

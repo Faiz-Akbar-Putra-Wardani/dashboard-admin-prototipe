@@ -22,7 +22,6 @@ import AdminLayout from '../components/layout/AdminLayout.vue'
 import EcommerceMetrics from '../components/ecommerce/EcommerceMetrics.vue'
 import MonthlyTarget from '../components/ecommerce/MonthlySale.vue'
 import MonthlySale from '../components/ecommerce/MonthlyTarget.vue'
-import CustomerDemographic from '../components/ecommerce/CustomerDemographic.vue'
 import RecentOrders from '../components/ecommerce/RecentOrders.vue'
 export default {
   components: {
@@ -30,7 +29,6 @@ export default {
     EcommerceMetrics,
     MonthlyTarget,
     MonthlySale,
-    CustomerDemographic,
     RecentOrders,
   },
   name: 'Ecommerce',

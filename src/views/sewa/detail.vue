@@ -270,9 +270,8 @@ onMounted(() => fetchDetail());
                   v-model="newStatus"
                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="ongoing">Ongoing</option>
-                  <option value="returned">Returned</option>
-                  <option value="completed">Completed</option>
+                 <option value="berlangsung">Berlangsung</option>
+                 <option value="selesai">Selesai</option>
                 </select>
               </div>
 

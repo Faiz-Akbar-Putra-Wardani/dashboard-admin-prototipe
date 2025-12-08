@@ -13,24 +13,26 @@
       </div>
 
       <div class="flex items-center gap-3">
-        <select
-          v-model="selectedSource"
-          @change="fetchTransactions"
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
-        >
-          <option value="">Semua</option>
-          <option value="penjualan">Penjualan</option>
-          <option value="sewa">Sewa</option>
-          <option value="perbaikan">Perbaikan</option>
-        </select>
+      <label for="source-filter" class="sr-only">Filter Sumber Transaksi</label>
+      <select
+        id="source-filter"
+        v-model="selectedSource"
+        @change="fetchTransactions"
+        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+      >
+        <option value="">Semua</option>
+        <option value="penjualan">Penjualan</option>
+        <option value="sewa">Sewa</option>
+        <option value="perbaikan">Perbaikan</option>
+      </select>
 
-        <button
-          @click="goToTransactionList"
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
-        >
-          Lihat Semua
-        </button>
-      </div>
+      <button
+        @click="goToTransactionList"
+        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+      >
+        Lihat Semua
+      </button>
+    </div>
     </div>
 
     <!-- Loading -->
@@ -231,30 +233,54 @@ const getSourceBadgeClass = (source) => {
   return classes[source] || 'bg-gray-50 text-gray-600'
 }
 
+// ✅ UPDATE: Status label untuk 3 fitur
 const getStatusLabel = (status) => {
   const labels = {
+    // Penjualan: proses, dikirim, selesai
+    proses: 'Proses',
+    dikirim: 'Dikirim',
+    
+    // Sewa: berlangsung, selesai
+    berlangsung: 'Berlangsung',
+    
+    // Perbaikan: masuk, proses, selesai
+    masuk: 'Masuk',
+    
+    // Universal
+    selesai: 'Selesai',
+    
+    // Legacy (fallback)
     completed: 'Selesai',
     ongoing: 'Berlangsung',
-    returned: 'Dikembalikan',
-    late: 'Terlambat',
-    cancelled: 'Dibatalkan',
-    process: 'Diproses',
-    pending: 'Pending'
+    pending: 'Pending',
+    cancelled: 'Dibatalkan'
   }
-  return labels[status] || status
+  return labels[status] || status.charAt(0).toUpperCase() + status.slice(1)
 }
 
+// ✅ UPDATE: Status badge class untuk 3 fitur
 const getStatusBadgeClass = (status) => {
   const classes = {
-    completed: 'bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-500',
-    ongoing: 'bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-500',
-    returned: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-500',
-    late: 'bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400',
-    cancelled: 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-500',
-    process: 'bg-yellow-50 text-yellow-600 dark:bg-yellow-500/15 dark:text-yellow-500',
-    pending: 'bg-gray-50 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400'
+    // Penjualan
+    proses: 'bg-yellow-50 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400',
+    dikirim: 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+    
+    // Sewa
+    berlangsung: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400',
+    
+    // Perbaikan
+    masuk: 'bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400',
+    
+    // Universal
+    selesai: 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-500',
+    
+    // Legacy (fallback)
+    completed: 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-500',
+    ongoing: 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-500',
+    pending: 'bg-gray-50 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400',
+    cancelled: 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-500'
   }
-  return classes[status] || 'bg-gray-50 text-gray-600'
+  return classes[status] || 'bg-gray-50 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400'
 }
 
 const viewDetail = (transaction) => {
@@ -276,8 +302,9 @@ const goToTransactionList = () => {
 
 onMounted(() => {
   fetchTransactions()
-})
+});
 </script>
+
 
 <style scoped>
 .custom-scrollbar::-webkit-scrollbar {

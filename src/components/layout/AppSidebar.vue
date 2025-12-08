@@ -13,65 +13,76 @@
     @mouseenter="!isExpanded && (isHovered = true)"
     @mouseleave="isHovered = false"
   >
-   <div
-  :class="[
-    'py-6 flex items-center justify-center w-full',
-  ]"
->
-  <router-link to="/" class="flex justify-center w-full">
-    <img
-      v-if="isExpanded || isHovered || isMobileOpen"
-      class="dark:hidden w-[100px] mx-auto"
-      src="/images/logo/logo_ses2.png"
-      alt="Logo"
-    />
-    <img
-      v-if="isExpanded || isHovered || isMobileOpen"
-      class="hidden dark:block w-[100px] mx-auto"
-      src="/images/logo/logo_ses2.png"
-      alt="Logo"
-    />
-    <img
-      v-else
-      src="/images/logo/logo_ses2.png"
-      alt="Logo"
-      class="w-[30px] mx-auto"
-    />
-  </router-link>
-</div>
-    <div
-      class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar"
-    >
+    <div :class="['py-6 flex items-center justify-center w-full']">
+      <router-link to="/" class="flex justify-center w-full">
+        <picture v-if="isExpanded || isHovered || isMobileOpen">
+          <source srcset="/images/logo/logo_ses2_100x100.webp" type="image/webp">
+          <img
+            class="dark:hidden w-[100px] mx-auto"
+            src="/images/logo/logo_ses2_100x100.png"
+            alt="Logo Sinar Elektro Sejahtera"
+            width="100"
+            height="100"
+            loading="eager"
+            fetchpriority="high"
+          />
+        </picture>
+        <picture v-if="isExpanded || isHovered || isMobileOpen">
+          <source srcset="/images/logo/logo_ses2_100x100.webp" type="image/webp">
+          <img
+            class="hidden dark:block w-[100px] mx-auto"
+            src="/images/logo/logo_ses2_100x100.png"
+            alt="Logo Sinar Elektro Sejahtera"
+            width="100"
+            height="100"
+            loading="eager"
+            fetchpriority="high"
+          />
+        </picture>
+        <picture v-else>
+          <source srcset="/images/logo/logo_ses2_40x40.webp" type="image/webp">
+          <img
+            src="/images/logo/logo_ses2_40x40.png"
+            alt="Logo"
+            class="w-[30px] mx-auto"
+            width="40"
+            height="40"
+            loading="eager"
+            fetchpriority="high"
+          />
+        </picture>
+      </router-link>
+    </div>
+
+    <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
       <nav class="mb-6">
         <div class="flex flex-col gap-4">
           <div v-for="(menuGroup, groupIndex) in menuGroups" :key="groupIndex">
             <h2
               :class="[
                 'mb-4 text-xs uppercase flex leading-[20px] text-gray-400',
-                !isExpanded && !isHovered
-                  ? 'lg:justify-center'
-                  : 'justify-start',
+                !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
               ]"
             >
               <template v-if="isExpanded || isHovered || isMobileOpen">
                 {{ menuGroup.title }}
               </template>
-              <HorizontalDots v-else />
+              <EllipsisHorizontalIcon v-else class="w-5 h-5" />
             </h2>
             <ul class="flex flex-col gap-4">
               <li v-for="(item, index) in menuGroup.items" :key="item.name">
                 <button
                   v-if="item.subItems"
                   @click="toggleSubmenu(groupIndex, index)"
+                  :aria-label="`Toggle ${item.name} menu`"
+                  :aria-expanded="isSubmenuOpen(groupIndex, index)"
                   :class="[
                     'menu-item group w-full',
                     {
                       'menu-item-active': isSubmenuOpen(groupIndex, index),
                       'menu-item-inactive': !isSubmenuOpen(groupIndex, index),
                     },
-                    !isExpanded && !isHovered
-                      ? 'lg:justify-center'
-                      : 'lg:justify-start',
+                    !isExpanded && !isHovered ? 'lg:justify-center' : 'lg:justify-start',
                   ]"
                 >
                   <span
@@ -81,23 +92,16 @@
                         : 'menu-item-icon-inactive',
                     ]"
                   >
-                  <component :is="item.icon" class="w-5 h-5" />
+                    <component :is="item.icon" class="w-5 h-5" />
                   </span>
-                  <span
-                    v-if="isExpanded || isHovered || isMobileOpen"
-                    class="menu-item-text"
-                    >{{ item.name }}</span
-                  >
+                  <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">
+                    {{ item.name }}
+                  </span>
                   <ChevronDownIcon
                     v-if="isExpanded || isHovered || isMobileOpen"
                     :class="[
                       'ml-auto w-5 h-5 transition-transform duration-200',
-                      {
-                        'rotate-180 text-brand-500': isSubmenuOpen(
-                          groupIndex,
-                          index
-                        ),
-                      },
+                      { 'rotate-180 text-brand-500': isSubmenuOpen(groupIndex, index) },
                     ]"
                   />
                 </button>
@@ -111,21 +115,17 @@
                       'menu-item-inactive': !isActive(item.path),
                     },
                   ]"
-                ><span
-                :class="[
-                  isActive(item.path)
-                    ? 'menu-item-icon-active'
-                    : 'menu-item-icon-inactive',
-                ]"
-              >
-                <component :is="item.icon" class="w-5 h-5" />
-              </span>
-
+                >
                   <span
-                    v-if="isExpanded || isHovered || isMobileOpen"
-                    class="menu-item-text"
-                    >{{ item.name }}</span
+                    :class="[
+                      isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive',
+                    ]"
                   >
+                    <component :is="item.icon" class="w-5 h-5" />
+                  </span>
+                  <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">
+                    {{ item.name }}
+                  </span>
                 </router-link>
                 <transition
                   @enter="startTransition"
@@ -134,10 +134,7 @@
                   @after-leave="endTransition"
                 >
                   <div
-                    v-show="
-                      isSubmenuOpen(groupIndex, index) &&
-                      (isExpanded || isHovered || isMobileOpen)
-                    "
+                    v-show="isSubmenuOpen(groupIndex, index) && (isExpanded || isHovered || isMobileOpen)"
                   >
                     <ul class="mt-2 space-y-1 ml-9">
                       <li v-for="subItem in item.subItems" :key="subItem.name">
@@ -146,20 +143,15 @@
                           :class="[
                             'menu-dropdown-item',
                             {
-                              'menu-dropdown-item-active': isActive(
-                                subItem.path
-                              ),
-                              'menu-dropdown-item-inactive': !isActive(
-                                subItem.path
-                              ),
+                              'menu-dropdown-item-active': isActive(subItem.path),
+                              'menu-dropdown-item-inactive': !isActive(subItem.path),
                             },
                           ]"
                         >
-                        <!-- ICON SUBMENU -->
-                        <component
-                          :is="subItem.icon"
-                          class="w-5 h-5 text-gray-400 group-hover:text-brand-500 transition"
-                        />
+                          <component
+                            :is="subItem.icon"
+                            class="w-5 h-5 text-gray-400 group-hover:text-brand-500 transition"
+                          />
                           <span>{{ subItem.name }}</span>
                           <span class="flex items-center gap-1 ml-auto">
                             <span
@@ -167,12 +159,8 @@
                               :class="[
                                 'menu-dropdown-badge',
                                 {
-                                  'menu-dropdown-badge-active': isActive(
-                                    subItem.path
-                                  ),
-                                  'menu-dropdown-badge-inactive': !isActive(
-                                    subItem.path
-                                  ),
+                                  'menu-dropdown-badge-active': isActive(subItem.path),
+                                  'menu-dropdown-badge-inactive': !isActive(subItem.path),
                                 },
                               ]"
                             >
@@ -183,12 +171,8 @@
                               :class="[
                                 'menu-dropdown-badge',
                                 {
-                                  'menu-dropdown-badge-active': isActive(
-                                    subItem.path
-                                  ),
-                                  'menu-dropdown-badge-inactive': !isActive(
-                                    subItem.path
-                                  ),
+                                  'menu-dropdown-badge-active': isActive(subItem.path),
+                                  'menu-dropdown-badge-inactive': !isActive(subItem.path),
                                 },
                               ]"
                             >
@@ -225,46 +209,30 @@ import {
   ClipboardDocumentListIcon,
   ClipboardDocumentCheckIcon,
   WrenchScrewdriverIcon,
-  WrenchIcon,
   BriefcaseIcon,
   BuildingStorefrontIcon,
-  SunIcon,
-  MoonIcon,
   ChevronDownIcon,
+  EllipsisHorizontalIcon,
 } from "@heroicons/vue/24/outline";
 
 import SidebarWidget from "./SidebarWidget.vue";
 import { useSidebar } from "@/composables/useSidebar";
 
 const route = useRoute();
-
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
 const menuGroups = [
   {
     title: "Menu",
     items: [
-      {
-        icon: HomeIcon,
-        name: "Dashboard",
-        path: "/"
-      },
-      {
-        icon: UsersIcon,
-        name: "Data Pelanggan",
-        path: "/data-pelanggan",
-      },
+      { icon: HomeIcon, name: "Dashboard", path: "/" },
+      { icon: UsersIcon, name: "Data Pelanggan", path: "/data-pelanggan" },
     ],
   },
-
   {
     title: "Menu Produk",
     items: [
-      {
-        icon: TagIcon,
-        name: "Data Kategori Produk",
-        path: "/categories",
-      },
+      { icon: TagIcon, name: "Data Kategori Produk", path: "/categories" },
       {
         icon: CubeIcon,
         name: "Tentang Produk",
@@ -275,85 +243,41 @@ const menuGroups = [
       },
     ],
   },
-
   {
     title: "Sistem Penjualan",
     items: [
-      {
-        icon: ShoppingCartIcon,
-        name: "Transaksi Penjualan",
-        path: "/penjualan",
-      },
-      {
-        icon: DocumentTextIcon,
-        name: "Data Penjualan",
-        path: "/halaman-data-penjualan",
-      },
+      { icon: ShoppingCartIcon, name: "Transaksi Penjualan", path: "/penjualan" },
+      { icon: DocumentTextIcon, name: "Data Penjualan", path: "/halaman-data-penjualan" },
     ],
   },
-
   {
     title: "Sistem Sewa Barang",
     items: [
-      {
-        icon: ClipboardDocumentCheckIcon,
-        name: "Transaksi Sewa",
-        path: "/sewa",
-      },
-      {
-        icon: ClipboardDocumentListIcon,
-        name: "Data Sewa",
-        path: "/halaman-data-sewa",
-      },
+      { icon: ClipboardDocumentCheckIcon, name: "Transaksi Sewa", path: "/sewa" },
+      { icon: ClipboardDocumentListIcon, name: "Data Sewa", path: "/halaman-data-sewa" },
     ],
   },
-
   {
     title: "Sistem Perbaikan Barang",
     items: [
-      {
-        icon: WrenchScrewdriverIcon,
-        name: "Transaksi Perbaikan",
-        path: "/repairs",
-      },
+      { icon: WrenchScrewdriverIcon, name: "Transaksi Perbaikan", path: "/repairs" },
     ],
   },
-
   {
     title: "Manajemen Konten",
     items: [
-      {
-        icon: BriefcaseIcon,
-        name: "Proyek",
-        path: "/projects",
-      },
-      {
-        icon: BuildingStorefrontIcon,
-        name: "Klien",
-        path: "/clients",
-      },
-      {
-        icon: BuildingStorefrontIcon,
-        name: "Bank",
-        path: "/banks",
-      },
+      { icon: BriefcaseIcon, name: "Proyek", path: "/projects" },
+      { icon: BuildingStorefrontIcon, name: "Klien", path: "/clients" },
+      { icon: BuildingStorefrontIcon, name: "Bank", path: "/banks" },
     ],
   },
-
   {
     title: "Rekap",
     items: [
-      {
-        icon: UsersIcon,
-        name: "Rekap Data Pelanggan",
-        path: "/reports",
-      },
+      { icon: UsersIcon, name: "Rekap Data Pelanggan", path: "/reports" },
     ],
   },
-
-  
 ];
-
 
 const isActive = (path) => route.path === path;
 
@@ -386,7 +310,7 @@ const startTransition = (el) => {
   el.style.height = "auto";
   const height = el.scrollHeight;
   el.style.height = "0px";
-  el.offsetHeight; // force reflow
+  el.offsetHeight;
   el.style.height = height + "px";
 };
 

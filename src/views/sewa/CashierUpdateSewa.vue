@@ -28,7 +28,7 @@ const selectedCustomer = ref(null)
 
 const dp = ref(null)
 const invoice = ref("")
-const status = ref("ongoing")
+const status = ref("berlangsung")
 
 // FETCH RENTAL DETAIL UNTUK EDIT
 const fetchRentalDetail = async () => {

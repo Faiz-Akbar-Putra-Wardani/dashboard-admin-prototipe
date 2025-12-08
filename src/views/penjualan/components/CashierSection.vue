@@ -198,9 +198,9 @@
           @change="$emit('update:status', $event.target.value)"
           class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl text-sm bg-white focus:outline-none focus:border-cyan-500 transition-all"
         >
-          <option value="proses">🔄 Proses</option>
-          <option value="dikirim">🚚 Dikirim</option>
-          <option value="selesai">✅ Selesai</option>
+          <option value="proses">Proses</option>
+          <option value="dikirim">Dikirim</option>
+          <option value="selesai">Selesai</option>
         </select>
       </div>
 

@@ -64,11 +64,12 @@ onMounted(() => {
 
       <div class="flex items-end justify-between mt-5">
         <div>
-          <span class="text-sm text-gray-500 dark:text-gray-400">Total Perbaikan</span>
-          <h4 class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+          <span class="text-sm text-gray-600 dark:text-gray-300">Total Perbaikan</span>
+          <!-- ✅ FIX: Ganti h4 ke p dengan styling yang sama -->
+          <p class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
             <span v-if="isLoading" class="inline-block w-20 h-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
             <span v-else>{{ stats.perbaikan.toLocaleString("id-ID") }} transaksi</span>
-          </h4>
+          </p>
         </div>
       </div>
     </div>
@@ -99,16 +100,15 @@ onMounted(() => {
 
       <div class="flex items-end justify-between mt-5">
         <div>
-          <span class="text-sm text-gray-500 dark:text-gray-400">Total Penjualan</span>
-          <h4 class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+          <span class="text-sm text-gray-600 dark:text-gray-300">Total Penjualan</span>
+          <!-- ✅ FIX: Ganti h4 ke p -->
+          <p class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
             <span v-if="isLoading" class="inline-block w-20 h-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
             <span v-else>{{ stats.penjualan.toLocaleString("id-ID") }} transaksi</span>
-          </h4>
+          </p>
         </div>
       </div>
     </div>
-
-    
 
     <!-- CARD SEWA -->
     <div
@@ -117,7 +117,7 @@ onMounted(() => {
       <div
         class="flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl dark:bg-green-900/30"
       >
-        <svg
+         <svg
           class="fill-green-600 dark:fill-green-400"
           width="24"
           height="24"
@@ -136,14 +136,16 @@ onMounted(() => {
 
       <div class="flex items-end justify-between mt-5">
         <div>
-          <span class="text-sm text-gray-500 dark:text-gray-400">Total Sewa</span>
-          <h4 class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+          <span class="text-sm text-gray-600 dark:text-gray-300">Total Sewa</span>
+          <!-- ✅ FIX: Ganti h4 ke p -->
+          <p class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
             <span v-if="isLoading" class="inline-block w-20 h-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
             <span v-else>{{ stats.sewa.toLocaleString("id-ID") }} transaksi</span>
-          </h4>
+          </p>
         </div>
       </div>
     </div>
 
   </div>
 </template>
+

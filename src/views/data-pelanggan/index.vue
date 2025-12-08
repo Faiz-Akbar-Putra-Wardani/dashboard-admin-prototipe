@@ -12,6 +12,7 @@ import Cookies from "js-cookie";
 
 const customers = ref([]);
 const keywords = ref("");
+const isLoading = ref(true);
 
 const pagination = ref({
   currentPage: 1,
@@ -42,11 +43,17 @@ const fetchData = async (pageNumber = 1, search = "") => {
   } catch (error) {
     console.error("Gagal ambil data:", error);
     toast.error("Gagal mengambil data pelanggan.");
+  } finally {
+    isLoading.value = false;
   }
 };
 
 const searchHandler = () => {
   fetchData(1, keywords.value);
+};
+
+const goToPage = (page) => {
+  fetchData(page, keywords.value);
 };
 
 onMounted(() => {

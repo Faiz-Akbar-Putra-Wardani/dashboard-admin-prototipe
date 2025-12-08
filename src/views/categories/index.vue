@@ -53,6 +53,10 @@ const searchHandler = () => {
     fetchData(1, keywords.value);
 }
 
+const goToPage = (page) => {
+  fetchData(page, keywords.value);
+};
+
 onMounted(() => {
     fetchData();
 });
