@@ -197,6 +197,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
+import { useUser } from "@/stores/user"; // Import user store
 
 import {
   HomeIcon,
@@ -220,22 +221,25 @@ import { useSidebar } from "@/composables/useSidebar";
 
 const route = useRoute();
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
+const userStore = useUser(); 
 
 const menuGroups = [
   {
     title: "Menu",
     items: [
-      { icon: HomeIcon, name: "Dashboard", path: "/" },
-      { icon: UsersIcon, name: "Data Pelanggan", path: "/data-pelanggan" },
+      { icon: HomeIcon, name: "Dashboard", path: "/", roles: ['super_admin'] }, 
+      { icon: UsersIcon, name: "Data Pelanggan", path: "/data-pelanggan", roles: ['super_admin', 'admin'] },
+      { icon: UsersIcon, name: "Data Admin", path: "/data-admin", roles: ['super_admin'] }, 
     ],
   },
   {
     title: "Menu Produk",
     items: [
-      { icon: TagIcon, name: "Data Kategori Produk", path: "/categories" },
+      { icon: TagIcon, name: "Data Kategori Produk", path: "/categories", roles: ['super_admin', 'admin'] },
       {
         icon: CubeIcon,
         name: "Tentang Produk",
+        roles: ['super_admin', 'admin'],
         subItems: [
           { name: "Produk", path: "/products", pro: false, icon: CubeIcon },
           { name: "Detail Produk", path: "/detail-products", pro: false, icon: CubeTransparentIcon },
@@ -246,38 +250,52 @@ const menuGroups = [
   {
     title: "Sistem Penjualan",
     items: [
-      { icon: ShoppingCartIcon, name: "Transaksi Penjualan", path: "/penjualan" },
-      { icon: DocumentTextIcon, name: "Data Penjualan", path: "/halaman-data-penjualan" },
+      { icon: ShoppingCartIcon, name: "Transaksi Penjualan", path: "/penjualan", roles: ['super_admin', 'admin'] },
+      { icon: DocumentTextIcon, name: "Data Penjualan", path: "/halaman-data-penjualan", roles: ['super_admin', 'admin'] },
     ],
   },
   {
     title: "Sistem Sewa Barang",
     items: [
-      { icon: ClipboardDocumentCheckIcon, name: "Transaksi Sewa", path: "/sewa" },
-      { icon: ClipboardDocumentListIcon, name: "Data Sewa", path: "/halaman-data-sewa" },
+      { icon: ClipboardDocumentCheckIcon, name: "Transaksi Sewa", path: "/sewa", roles: ['super_admin', 'admin'] },
+      { icon: ClipboardDocumentListIcon, name: "Data Sewa", path: "/halaman-data-sewa", roles: ['super_admin', 'admin'] },
     ],
   },
   {
     title: "Sistem Perbaikan Barang",
     items: [
-      { icon: WrenchScrewdriverIcon, name: "Transaksi Perbaikan", path: "/repairs" },
+      { icon: WrenchScrewdriverIcon, name: "Transaksi Perbaikan", path: "/repairs", roles: ['super_admin', 'admin'] },
     ],
   },
   {
     title: "Manajemen Konten",
     items: [
-      { icon: BriefcaseIcon, name: "Proyek", path: "/projects" },
-      { icon: BuildingStorefrontIcon, name: "Klien", path: "/clients" },
-      { icon: BuildingStorefrontIcon, name: "Bank", path: "/banks" },
+      { icon: BriefcaseIcon, name: "Proyek", path: "/projects", roles: ['super_admin', 'admin'] },
+      { icon: BuildingStorefrontIcon, name: "Klien", path: "/clients", roles: ['super_admin', 'admin'] },
+      { icon: BuildingStorefrontIcon, name: "Bank", path: "/banks", roles: ['super_admin', 'admin'] },
     ],
   },
   {
     title: "Rekap",
     items: [
-      { icon: UsersIcon, name: "Rekap Data Pelanggan", path: "/reports" },
+      { icon: UsersIcon, name: "Rekap Data Pelanggan", path: "/reports", roles: ['super_admin'] }, // Hanya super_admin
     ],
   },
 ];
+
+const filteredMenuGroups = computed(() => {
+  const userRole = userStore.userRole;
+  
+  return menuGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => {
+    
+      if (!item.roles) return true;
+     
+      return item.roles.includes(userRole);
+    })
+  })).filter(group => group.items.length > 0); 
+});
 
 const isActive = (path) => route.path === path;
 
@@ -287,7 +305,7 @@ const toggleSubmenu = (groupIndex, itemIndex) => {
 };
 
 const isAnySubmenuRouteActive = computed(() => {
-  return menuGroups.some((group) =>
+  return filteredMenuGroups.value.some((group) =>
     group.items.some(
       (item) =>
         item.subItems && item.subItems.some((subItem) => isActive(subItem.path))
@@ -300,7 +318,7 @@ const isSubmenuOpen = (groupIndex, itemIndex) => {
   return (
     openSubmenu.value === key ||
     (isAnySubmenuRouteActive.value &&
-      menuGroups[groupIndex].items[itemIndex].subItems?.some((subItem) =>
+      filteredMenuGroups.value[groupIndex].items[itemIndex].subItems?.some((subItem) =>
         isActive(subItem.path)
       ))
   );

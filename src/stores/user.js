@@ -63,6 +63,9 @@ export const useUser = defineStore('user', {
     getters: {
         getUser: (state) => state.user,
         getToken: (state) => state.token,
-        isAuthenticated: (state) => !!state.token, // PERBAIKAN: Tambah getter
+        isAuthenticated: (state) => !!state.token, 
+        userRole: (state) => state.user?.role || '',
+        isSuperAdmin: (state) => state.user?.role === 'super_admin',
+        isAdmin: (state) => state.user?.role === 'admin',
     }
 })

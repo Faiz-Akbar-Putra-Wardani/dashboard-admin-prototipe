@@ -22,7 +22,6 @@ const isSubmitting = ref(false);
 const previewUrl = ref(null);
 const fileInputRef = ref(null);
 
-// ✅ FIX: Tambahkan computed fileName
 const fileName = computed(() => {
   return form.image ? form.image.name : '';
 });
