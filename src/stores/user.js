@@ -13,7 +13,7 @@ export const useUser = defineStore('user', {
         return {
             user: Cookies.get('user') ? JSON.parse(Cookies.get('user')) : {},
             token: Cookies.get('token') || '',
-            isLoading: false, // PERBAIKAN: Tambah isLoading
+            isLoading: false,
         }
     },
     actions: {
@@ -24,8 +24,8 @@ export const useUser = defineStore('user', {
                 this.user = response.data.data.user
                 this.token = response.data.data.token
 
-                Cookies.set('token', response.data.data.token)
-                Cookies.set('user', JSON.stringify(response.data.data.user))
+                Cookies.set('token', response.data.data.token, { expires: 7 })
+                Cookies.set('user', JSON.stringify(response.data.data.user), { expires: 7 })
             })
         },
 
@@ -51,13 +51,23 @@ export const useUser = defineStore('user', {
             }
         },
 
-        //action "logout"
-        async logout() {
+        //action "logout" - TERIMA PARAMETER ROUTER
+        async logout(router) {  // ← TAMBAHKAN PARAMETER INI
+            // Hapus data user
             this.user = {}
             this.token = ''
 
+            // Hapus cookies
             Cookies.remove('token')
             Cookies.remove('user')
+
+            // Hapus Authorization header
+            delete Api.defaults.headers.common['Authorization']
+
+            // Redirect ke halaman login
+            if (router) {
+                await router.push('/').catch(() => {})
+            }
         },
     },
     getters: {

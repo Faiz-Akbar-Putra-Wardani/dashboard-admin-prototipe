@@ -14,7 +14,7 @@
     @mouseleave="isHovered = false"
   >
     <div :class="['py-6 flex items-center justify-center w-full']">
-      <router-link to="/" class="flex justify-center w-full">
+      <router-link to="/Ecommerce" class="flex justify-center w-full">
         <picture v-if="isExpanded || isHovered || isMobileOpen">
           <source srcset="/images/logo/logo_ses2_100x100.webp" type="image/webp">
           <img
@@ -57,7 +57,8 @@
     <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
       <nav class="mb-6">
         <div class="flex flex-col gap-4">
-          <div v-for="(menuGroup, groupIndex) in menuGroups" :key="groupIndex">
+          <!-- GANTI menuGroups dengan filteredMenuGroups -->
+          <div v-for="(menuGroup, groupIndex) in filteredMenuGroups" :key="groupIndex">
             <h2
               :class="[
                 'mb-4 text-xs uppercase flex leading-[20px] text-gray-400',
@@ -197,7 +198,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
-import { useUser } from "@/stores/user"; // Import user store
+import { useUser } from "@/stores/user";
 
 import {
   HomeIcon,
@@ -221,13 +222,13 @@ import { useSidebar } from "@/composables/useSidebar";
 
 const route = useRoute();
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
-const userStore = useUser(); 
+const userStore = useUser();
 
 const menuGroups = [
   {
     title: "Menu",
     items: [
-      { icon: HomeIcon, name: "Dashboard", path: "/", roles: ['super_admin'] }, 
+      { icon: HomeIcon, name: "Dashboard", path: "/Ecommerce", roles: ['super_admin'] }, 
       { icon: UsersIcon, name: "Data Pelanggan", path: "/data-pelanggan", roles: ['super_admin', 'admin'] },
       { icon: UsersIcon, name: "Data Admin", path: "/data-admin", roles: ['super_admin'] }, 
     ],
@@ -278,23 +279,25 @@ const menuGroups = [
   {
     title: "Rekap",
     items: [
-      { icon: UsersIcon, name: "Rekap Data Pelanggan", path: "/reports", roles: ['super_admin'] }, // Hanya super_admin
+      { icon: UsersIcon, name: "Rekap Data Pelanggan", path: "/reports", roles: ['super_admin'] },
     ],
   },
 ];
 
+// Filter menu berdasarkan role user
 const filteredMenuGroups = computed(() => {
   const userRole = userStore.userRole;
   
   return menuGroups.map(group => ({
     ...group,
     items: group.items.filter(item => {
-    
+      // Jika item tidak punya roles, tampilkan ke semua user
       if (!item.roles) return true;
-     
+      
+      // Cek apakah role user ada di array roles item
       return item.roles.includes(userRole);
     })
-  })).filter(group => group.items.length > 0); 
+  })).filter(group => group.items.length > 0); // Hapus group kosong
 });
 
 const isActive = (path) => route.path === path;

@@ -3,15 +3,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ChevronDownIcon, LogoutIcon } from '@/icons'
 import { useUser } from '@/stores/user'
-import { toast } from 'vue3-toastify'
-import 'vue3-toastify/dist/index.css'
+import Swal from 'sweetalert2'
 
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 const router = useRouter()
 const userStore = useUser()
 
-// PERBAIKAN: Ambil user dari store menggunakan computed
 const user = computed(() => userStore.getUser)
 
 const toggleDropdown = () => {
@@ -23,25 +21,44 @@ const closeDropdown = () => {
 }
 
 const signOut = async () => {
-  try {
-    await userStore.logout()
-    closeDropdown()
+  // Tampilkan konfirmasi logout dengan SweetAlert2
+  const result = await Swal.fire({
+    title: 'Konfirmasi Logout',
+    text: 'Apakah Anda yakin ingin keluar?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Ya, Logout',
+    cancelButtonText: 'Batal'
+  })
 
-    toast.success('Berhasil logout!', {
-      position: 'top-right',
-      autoClose: 4000,
-      theme: 'colored'
-    })
+  // Jika user mengkonfirmasi
+  if (result.isConfirmed) {
+    try {
+      // Panggil logout dengan router
+      await userStore.logout(router)
+      closeDropdown()
 
-    setTimeout(() => {
-      router.push('/')
-    }, 1500)
-  } catch (error) {
-    toast.error('Gagal logout. Coba lagi.', {
-      position: 'top-right',
-      autoClose: 2500,
-      theme: 'colored'
-    })
+      // Tampilkan toast sukses
+      await Swal.fire({
+        title: 'Berhasil!',
+        text: 'Anda telah berhasil logout',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      })
+
+      // Router.push sudah dilakukan di dalam store.logout()
+    } catch (error) {
+      // Tampilkan pesan error
+      Swal.fire({
+        title: 'Gagal!',
+        text: 'Gagal logout. Silakan coba lagi.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      })
+    }
   }
 }
 
@@ -57,12 +74,11 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
-});
+})
 </script>
 
 <template>
   <div class="relative" ref="dropdownRef">
-    <!-- ✅ FIX: Tambah aria-label dan aria-expanded -->
     <button
       @click.prevent="toggleDropdown"
       aria-label="User menu"
@@ -87,8 +103,6 @@ onUnmounted(() => {
           {{ user?.email || 'No email' }}
         </span>
       </div>
-
-      <!-- ✅ FIX: aria-label sudah OK karena ada text "Sign out" -->
       <button
         @click="signOut"
         class="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300 w-full text-left"
@@ -99,4 +113,3 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
-

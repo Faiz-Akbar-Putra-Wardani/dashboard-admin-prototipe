@@ -15,25 +15,38 @@ const routes = [
     component: () => import(/* webpackChunkName: "signin" */ '../views/Auth/Signin.vue'),
     beforeEnter: (to, from, next) => {
       const user = useUser()
-      // jika sudah login langsung ke Ecommerce
+      // jika sudah login langsung ke dashboard sesuai role
       if (user.getToken) {
-        next('/Ecommerce')
+        const role = user.userRole;
+        if (role === 'super_admin') {
+          next('/Ecommerce')
+        } else if (role === 'admin') {
+          next('/data-pelanggan')
+        } else {
+          next('/')
+        }
       } else {
         next()
       }
     },
-    meta: { title: 'Signin' },
+    meta: { title: 'Signin', public: true },
   },
 
   {
     path: '/Ecommerce',
     beforeEnter: (to, from, next) => {
-      useUser().getToken ? next() : next('/')
+      const user = useUser()
+      if (!user.getToken) {
+        next('/')
+      } else {
+        next()
+      }
     },
     name: 'Ecommerce',
     component: () => import(/* webpackChunkName: "ecommerce" */ '../views/Ecommerce.vue'),
     meta: { title: 'eCommerce Dashboard', requiresAuth: true, roles: ['super_admin'] },
   },
+
 
   {
     path: '/data-pelanggan',

@@ -51,36 +51,57 @@ const loginHandler = async () => {
     // 🔹 Proses login
     await userStore.login({ email: email.value, password: password.value })
 
+    // 🔹 DEBUG - CEK DATA SETELAH LOGIN
+    console.log('=== DEBUG LOGIN ===')
+    console.log('User Store:', userStore.user)
+    console.log('Token:', userStore.token)
+    console.log('User Role:', userStore.userRole)
+    console.log('Is Authenticated:', userStore.isAuthenticated)
+    console.log('=================')
+
     // 🔹 Keep login
     if (keepLoggedIn.value) {
       localStorage.setItem('keepLoggedIn', 'true')
     }
 
     // 🔹 Notifikasi sukses
-    Swal.fire({
+    await Swal.fire({
       icon: 'success',
       title: 'Berhasil login!',
+      text: `Selamat datang, ${userStore.user.name}!`,
       timer: 1500,
       showConfirmButton: false
     })
 
-    // 🔹 Redirect
-    setTimeout(() => {
-      router.push('/Ecommerce')
-    }, 1500)
+    // 🔹 Redirect berdasarkan role
+    const userRole = userStore.userRole
+    
+    console.log('Redirecting with role:', userRole) // DEBUG
+    
+    if (userRole === 'super_admin') {
+      console.log('Redirecting to /Ecommerce') // DEBUG
+      await router.push('/Ecommerce')
+    } else if (userRole === 'admin') {
+      console.log('Redirecting to /data-pelanggan') // DEBUG
+      await router.push('/data-pelanggan')
+    } else {
+      // Fallback jika role tidak dikenali
+      console.warn('Role tidak dikenali:', userRole, '- Redirecting to login page') // DEBUG
+      await router.push('/')
+    }
 
   } catch (error) {
+    console.error('Login error:', error) // DEBUG
+    
     // 🔹 Jika kredensial salah
     if (error.response?.data?.message) {
       loginFailed.value = error.response.data.message
 
-      Swal.fire({
+      await Swal.fire({
         icon: 'error',
         title: 'Login gagal',
         text: loginFailed.value || 'Email atau password salah.',
         confirmButtonColor: '#d33'
-      }).then(() => {
-        window.location.reload()
       })
 
       return
@@ -99,21 +120,19 @@ const loginHandler = async () => {
 }
 </script>
 
-
+<!-- Template tetap sama -->
 <template>
   <FullScreenLayout>
     <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-300 p-4">
-
       <!-- Card -->
       <div class="w-full max-w-md bg-white shadow-xl rounded-2xl p-8 border border-blue-200">
-
         <!-- Logo / Title -->
         <div class="text-center mb-8">
-          <div class="inline-flex items-center justify-center w-16 h-16  rounded-2xl shadow-md">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl shadow-md">
            <img
             src="/images/logo/logo_ses2.png"
             alt="Logo SES"
-            class="w-15h-15 object-contain"
+            class="w-15 h-15 object-contain"
           />
           </div>
 
