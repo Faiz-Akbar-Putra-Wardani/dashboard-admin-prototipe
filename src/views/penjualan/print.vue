@@ -362,25 +362,27 @@ const downloadPdf = async () => {
   await new Promise(resolve => setTimeout(resolve, 300));
 
   const opt = {
-    margin: [10, 10, 10, 10],
+    margin: [10, 10, 10, 10], // Sama dengan rental
     filename: `Invoice-${invoiceCode.value}.pdf`,
     image: { 
       type: "jpeg", 
-      quality: 0.98 
+      quality: 0.95 // Turunkan dari 0.98
     },
     html2canvas: { 
-      scale: 2.5,
+      scale: 2.2, // Sama dengan rental
       useCORS: true,
       logging: false,
       letterRendering: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
       imageTimeout: 0,
+      windowHeight: 1400, // Sama dengan rental
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector('.invoice-print');
         if (clonedElement) {
           clonedElement.style.maxWidth = '100%';
-          clonedElement.style.padding = '20px';
+          clonedElement.style.padding = '20px 35px';
+          clonedElement.style.fontSize = '10pt'; // Turunkan dari 12pt
         }
         
         const header = clonedDoc.querySelector('.header');
@@ -388,27 +390,51 @@ const downloadPdf = async () => {
           header.style.display = 'flex';
           header.style.alignItems = 'flex-start';
           header.style.gap = '15px';
+          header.style.marginBottom = '12px'; // Compact
         }
         
         const logo = clonedDoc.querySelector('.logo');
         if (logo) {
-          logo.style.width = '70px';
-          logo.style.height = '70px';
+          logo.style.width = '65px';
+          logo.style.height = '65px';
           logo.style.flexShrink = '0';
           logo.style.display = 'flex';
         }
         
         const logoImg = clonedDoc.querySelector('.logo img');
         if (logoImg) {
-          logoImg.style.width = '70px';
-          logoImg.style.height = '70px';
-          logoImg.style.objectFit = 'contain';
-          logoImg.style.display = 'block';
+          logoImg.style.width = '65px';
+          logoImg.style.height = '65px';
         }
         
         const company = clonedDoc.querySelector('.company');
         if (company) {
           company.style.flex = '1';
+        }
+
+        // Compact spacing untuk semua section
+        const sections = clonedDoc.querySelectorAll('.title-section, .customer, .payment');
+        sections.forEach(section => {
+          section.style.marginTop = '12px';
+          section.style.marginBottom = '12px';
+        });
+
+        // Table compact
+        const table = clonedDoc.querySelector('.items');
+        if (table) {
+          table.style.fontSize = '9.5pt';
+          table.style.marginBottom = '15px';
+        }
+
+        // Signature compact
+        const signature = clonedDoc.querySelector('.signature-section');
+        if (signature) {
+          signature.style.marginTop = '25px';
+        }
+
+        const signatureSpace = clonedDoc.querySelector('.signature-space');
+        if (signatureSpace) {
+          signatureSpace.style.height = '40px';
         }
       }
     },
@@ -417,11 +443,16 @@ const downloadPdf = async () => {
       format: "a4", 
       orientation: "portrait",
       compress: true
+    },
+    pagebreak: { 
+      mode: ['avoid-all', 'css', 'legacy'],
+      avoid: ['.signature-section', '.payment', '.header']
     }
   };
 
   html2pdf().set(opt).from(element).save();
 };
+
 </script>
 
 <style scoped>
@@ -429,23 +460,25 @@ const downloadPdf = async () => {
   font-family: "Times New Roman", Times, serif;
   max-width: 800px;
   margin: 0 auto;
-  padding: 40px;
+  padding: 25px 40px; /* Sesuaikan dengan rental */
   background: #fff;
   color: #000;
-  font-size: 12pt;
-  line-height: 1.5;
+  font-size: 10pt; /* Turunkan dari 12pt */
+  line-height: 1.4; /* Turunkan dari 1.5 */
   box-sizing: border-box;
+  min-height: 1000px;
 }
 
 .underline {
   text-decoration: underline;
 }
 
+/* Header dengan spacing optimal */
 .header {
   display: flex;
   align-items: flex-start;
   gap: 15px;
-  margin-bottom: 10px;
+  margin-bottom: 12px; /* Turunkan dari 15px */
   padding-bottom: 8px;
   border-bottom: 4px solid #0033A0;
   position: relative;
@@ -453,10 +486,10 @@ const downloadPdf = async () => {
 }
 
 .logo {
-  width: 70px;
-  height: 70px;
-  min-width: 70px;
-  min-height: 70px;
+  width: 65px; /* Turunkan dari 70px */
+  height: 65px;
+  min-width: 65px;
+  min-height: 65px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -466,10 +499,10 @@ const downloadPdf = async () => {
 }
 
 .logo img {
-  width: 70px;
-  height: 70px;
-  max-width: 70px;
-  max-height: 70px;
+  width: 65px; /* Turunkan dari 70px */
+  height: 65px;
+  max-width: 65px;
+  max-height: 65px;
   object-fit: contain;
   display: block;
 }
@@ -482,7 +515,7 @@ const downloadPdf = async () => {
 .company h1 {
   margin: 0 0 4px 0;
   padding: 0;
-  font-size: 20pt;
+  font-size: 18pt; /* Turunkan dari 20pt */
   color: #000;
   text-transform: uppercase;
   font-weight: bold;
@@ -493,85 +526,92 @@ const downloadPdf = async () => {
 }
 
 .tagline, .address {
-  font-size: 10pt;
+  font-size: 9.5pt; /* Turunkan dari 10pt */
   margin: 0;
   padding: 0;
   line-height: 1.3;
 }
 
 .tagline {
-  margin-bottom: 3px;
+  margin-bottom: 2px; /* Turunkan dari 3px */
 }
 
 .address {
-  margin-top: 3px;
+  margin-top: 2px; /* Turunkan dari 3px */
 }
 
 .place-date {
   text-align: right;
-  margin: 15px 0 20px 0;
-  font-size: 12pt;
+  margin: 12px 0 15px 0; /* Turunkan dari 15px 0 20px 0 */
+  font-size: 10pt; /* Turunkan dari 12pt */
 }
 
 .title-section {
-  margin: 20px 0;
+  margin: 15px 0; /* Turunkan dari 20px */
 }
 
 .invoice-title {
   font-weight: bold;
-  font-size: 12pt;
-  margin-bottom: 5px;
+  font-size: 11pt; /* Turunkan dari 12pt */
+  margin-bottom: 4px; /* Turunkan dari 5px */
 }
 
 .title-section p {
-  margin: 0;
+  margin: 2px 0; /* Turunkan dari 4px */
+  font-size: 9.5pt; /* Tambahkan sizing */
 }
 
 .customer {
-  margin-bottom: 25px;
+  margin-bottom: 18px; /* Turunkan dari 25px */
 }
 
 .customer p {
-  margin: 4px 0;
+  margin: 3px 0; /* Turunkan dari 4px */
+  font-size: 10pt; /* Turunkan dari 12pt */
 }
 
 .customer .name {
   font-weight: bold;
-  font-size: 12pt;
+  font-size: 10pt; /* Turunkan dari 12pt */
 }
 
+/* Items Table - Compact */
 .items {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 30px;
-  font-size: 12pt;
+  margin-bottom: 18px; /* Turunkan dari 30px */
+  font-size: 9.5pt; /* Turunkan dari 12pt */
 }
 
 .items th, .items td {
   border: 1px solid #000;
-  padding: 5px 8px;
-  vertical-align: top;
+  padding: 5px 6px; /* Turunkan dari 5px 8px */
+  vertical-align: middle; /* Ubah dari top */
+  line-height: 1.3; /* Tambahkan */
 }
 
 .items th {
   background-color: #f0f0f0;
   font-weight: bold;
   text-align: center;
+  font-size: 9.5pt; /* Turunkan dari 12pt */
+  padding: 6px; /* Turunkan dari 8px 10px */
 }
 
+/* Column widths - Sesuaikan dengan konten penjualan */
 .no-col { width: 5%; }
-.item-col { width: 40%; text-align: left; }
+.item-col { width: 38%; text-align: left; } /* Turunkan dari 40% */
 .qty-col { width: 8%; text-align: center; }
-.bill-col { width: 17%; text-align: right; }
+.bill-col { width: 16%; text-align: right; } /* Turunkan dari 17% */
 .unit-price-col { width: 15%; text-align: center; }
-.amount-col { width: 15%; text-align: right; }
+.amount-col { width: 18%; text-align: right; } /* Naikkan dari 15% */
 
 .items thead th {
   border-top: 2px solid #000;
   border-bottom: 2px solid #000;
   border-left: 1px solid #000;
   border-right: 1px solid #000;
-  padding: 8px 10px;
+  padding: 6px; /* Turunkan dari 8px 10px */
   text-align: center;
   font-weight: bold;
   background: none;
@@ -587,93 +627,119 @@ const downloadPdf = async () => {
 
 .items tbody td {
   border: 1px solid #000;
-  padding: 5px 8px;
+  padding: 5px 6px; /* Turunkan */
+  font-size: 9.5pt; /* Turunkan dari 12pt */
 }
 
 .items .center { text-align: center; }
 .items .right { text-align: right; }
 
+/* Sub-total rows - Compact */
 .sub-total-row td {
   border-top: none;
   border-bottom: none;
+  padding: 4px 6px !important; /* Turunkan */
 }
 
 .terbilang-cell {
   font-style: italic;
   font-weight: bold;
   border-right: none !important;
+  font-size: 9pt; /* Tambahkan */
 }
 
 .empty-cell {
   border-right: none !important;
+  border-left: 1px solid #000;
 }
 
 .total-row td {
   font-weight: bold;
   border-top: 1px solid #000;
+  padding: 5px 6px; /* Turunkan */
 }
 
 .total-amount {
   font-weight: bold;
 }
 
+/* Payment Section - Compact */
 .payment {
-  margin-top: 20px;
-  line-height: 1.5;
-  font-size: 12pt;
+  margin-top: 20px; /* Turunkan dari 25px */
+  line-height: 1.4; /* Turunkan dari 1.5 */
+  font-size: 9.5pt; /* Turunkan dari 12pt */
+  page-break-inside: avoid;
 }
 
-.payment p { margin: 5px 0; }
+.payment p { 
+  margin: 4px 0; /* Turunkan dari 5px */
+  font-size: 9.5pt; /* Turunkan */
+  line-height: 1.4;
+}
+
+.payment strong {
+  font-size: 10pt; /* Turunkan dari 11pt */
+}
 
 .account-details, .atas-nama {
   display: flex;
-  margin-left: 10px;
+  margin-left: 10px; /* Turunkan dari 12px */
+  font-size: 9.5pt; /* Turunkan dari 10pt */
+  line-height: 1.4; /* Turunkan */
+  margin-top: 5px; /* Turunkan dari 6px */
 }
 
 .rek-label, .an-label {
-  width: 150px;
+  width: 130px; /* Sama seperti rental */
   flex-shrink: 0;
 }
 
 .rek-content, .an-content {
   flex-grow: 1;
+  line-height: 1.4;
 }
 
 .atas-nama {
-  margin-top: 10px;
+  margin-top: 6px; /* Turunkan dari 10px */
 }
 
-/* Signature Section - PUSHED TO RIGHT */
+/* Signature Section - Compact & Pushed Right */
 .signature-section {
-  margin-top: 50px;
-  margin-left: 50%; /* Geser 50% ke kanan */
+  margin-top: 28px; /* Turunkan dari 50px */
+  margin-left: auto;
+  margin-right: 0;
+  width: 45%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 11pt;
+  font-size: 9.5pt; /* Turunkan dari 11pt */
+  page-break-inside: avoid;
 }
 
 .signature-text {
   margin: 2px 0;
   text-align: center;
+  font-size: 9.5pt; /* Turunkan dari 11pt */
+  line-height: 1.3;
 }
 
 .signature-space {
-  height: 60px;
+  height: 45px; /* Turunkan dari 60px */
   width: 100%;
 }
 
 .signature-name {
-  margin-top: 5px;
+  margin-top: 4px; /* Turunkan dari 5px */
   font-weight: bold;
   text-decoration: underline;
   text-align: center;
+  font-size: 9.5pt; /* Turunkan dari 11pt */
 }
 
 .signature-title {
   margin-top: 2px;
-  font-size: 10pt;
+  font-size: 9pt; /* Turunkan dari 10pt */
   text-align: center;
 }
 
@@ -685,22 +751,65 @@ const downloadPdf = async () => {
   padding: 80px 0;
 }
 
+/* Print Optimization */
 @media print {
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  .invoice-print {
+    padding: 20px 35px !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+  }
+
   .header {
     display: flex !important;
     align-items: flex-start !important;
     gap: 15px !important;
+    page-break-after: avoid !important;
+    margin-bottom: 12px !important;
+    padding-bottom: 8px !important;
   }
   
   .logo {
-    width: 70px !important;
-    height: 70px !important;
+    width: 65px !important;
+    height: 65px !important;
     flex-shrink: 0 !important;
   }
   
   .logo img {
-    width: 70px !important;
-    height: 70px !important;
+    width: 65px !important;
+    height: 65px !important;
+  }
+
+  .signature-section {
+    page-break-inside: avoid !important;
+    margin-top: 25px !important;
+  }
+
+  .payment {
+    page-break-inside: avoid !important;
+    margin-top: 18px !important;
+  }
+
+  .items {
+    page-break-inside: auto !important;
+  }
+
+  .items tbody tr {
+    page-break-inside: avoid !important;
+  }
+
+  /* Pastikan spacing tetap compact di PDF */
+  .items td, .items th {
+    padding: 5px 6px !important;
+  }
+
+  .sub-total-row td {
+    padding: 4px 6px !important;
   }
 }
 </style>
+

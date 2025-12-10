@@ -49,10 +49,11 @@ const fetchTransactionDetail = async () => {
       address: trx.customer.address
     } : null
 
-    extra.value = trx.extra
-    pph.value = trx.pph
-    nego.value = trx.nego
-    dp.value = trx.dp
+    extra.value = (trx.extra === 0 || trx.extra === null) ? null : trx.extra
+    pph.value = (trx.pph === 0 || trx.pph === null) ? null : trx.pph
+    nego.value = (trx.nego === 0 || trx.nego === null) ? null : trx.nego
+    dp.value = (trx.dp === 0 || trx.dp === null) ? null : trx.dp
+
     selectedStatus.value = trx.status
 
     // ISI CART DARI TRANSACTION DETAILS
@@ -121,7 +122,6 @@ const chooseCustomer = c => {
   showCustomerModal.value = false
 }
 
-// CART MANAGEMENT UNTUK UPDATE (LOCAL ONLY)
 const addToCart = (p) => {
   const existing = cart.value.find(c => c.product_id === p.id)
   
@@ -129,7 +129,7 @@ const addToCart = (p) => {
     existing.qty += 1
   } else {
     cart.value.push({
-      id: Date.now(), // temporary ID
+      id: Date.now(),
       product_id: p.id,
       qty: 1,
       name: p.name,

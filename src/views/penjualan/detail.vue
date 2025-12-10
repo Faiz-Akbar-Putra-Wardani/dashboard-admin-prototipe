@@ -289,39 +289,57 @@ const calculationSteps = computed(() => {
           <!-- Kanan: Daftar Paket + Detail Perhitungan -->
           <div class="lg:col-span-2 space-y-6">
             
-            <!-- Daftar Paket -->
-            <div class="bg-white rounded-2xl shadow-lg p-6">
-              <h2 class="text-lg font-semibold mb-6 flex items-center gap-2">
+           <!-- Daftar Paket -->
+            <div class="bg-white rounded-2xl shadow-lg p-4 md:p-6">
+              <h2 class="text-lg font-semibold mb-4 md:mb-6 flex items-center gap-2">
                 <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
                 Daftar Paket
               </h2>
 
-              <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                  <thead>
-                    <tr class="border-b-2 border-gray-200">
-                      <th class="py-3 text-left text-gray-700 font-semibold">No.</th>
-                      <th class="py-3 text-left text-gray-700 font-semibold">NAMA PRODUK</th>
-                      <th class="py-3 text-center text-gray-700 font-semibold">QTY</th>
-                      <th class="py-3 text-right text-gray-700 font-semibold">HARGA</th>
-                      <th class="py-3 text-right text-gray-700 font-semibold">SUBTOTAL</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(item, i) in transaction.transaction_details" :key="item.id" class="border-b hover:bg-gray-50">
-                      <td class="py-4">{{ i + 1 }}</td>
-                      <td class="py-4 font-medium text-gray-800">{{ item.product?.title ?? '-' }}</td>
-                      <td class="py-4 text-center">{{ item.qty }}</td>
-                      <td class="py-4 text-right text-gray-600">Rp {{ formatRupiah(item.price / item.qty) }}</td>
-                      <td class="py-4 text-right font-semibold text-gray-900">Rp {{ formatRupiah(item.price) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div class="overflow-x-auto -mx-4 md:mx-0">
+                <div class="inline-block min-w-full align-middle px-4 md:px-0">
+                  <table class="min-w-full text-sm">
+                    <thead>
+                      <tr class="border-b-2 border-gray-200">
+                        <th class="py-3 px-2 text-left text-gray-700 font-semibold whitespace-nowrap">No.</th>
+                        <th class="py-3 px-3 text-left text-gray-700 font-semibold whitespace-nowrap min-w-[150px]">NAMA PRODUK</th>
+                        <th class="py-3 px-2 text-center text-gray-700 font-semibold whitespace-nowrap">QTY</th>
+                        <th class="py-3 px-3 text-right text-gray-700 font-semibold whitespace-nowrap">HARGA</th>
+                        <th class="py-3 px-3 text-right text-gray-700 font-semibold whitespace-nowrap">SUBTOTAL</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr 
+                        v-for="(item, i) in transaction.transaction_details" 
+                        :key="item.id" 
+                        class="border-b hover:bg-gray-50"
+                      >
+                        <td class="py-4 px-2">{{ i + 1 }}</td>
+                        <td class="py-4 px-3 font-medium text-gray-800">
+                          <div class="min-w-[150px]">{{ item.product?.title ?? '-' }}</div>
+                        </td>
+                        <td class="py-4 px-2 text-center whitespace-nowrap">{{ item.qty }}</td>
+                        <td class="py-4 px-3 text-right text-gray-600 whitespace-nowrap">
+                          Rp {{ formatRupiah(item.price / item.qty) }}
+                        </td>
+                        <td class="py-4 px-3 text-right font-semibold text-gray-900 whitespace-nowrap">
+                          Rp {{ formatRupiah(item.price) }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="md:hidden mt-3 text-xs text-gray-500 flex items-center justify-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+                <span>Geser ke kanan untuk melihat detail</span>
               </div>
             </div>
-
             <!-- Detail Perhitungan Step-by-Step -->
             <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl shadow-lg p-6 border-2 border-indigo-200">
               <h2 class="text-lg font-semibold mb-6 flex items-center gap-2 text-indigo-900">
@@ -405,5 +423,34 @@ const calculationSteps = computed(() => {
 <style scoped>
 @media print {
   button, nav, header { display: none !important; }
+}
+/* ✅ Custom scrollbar untuk tabel horizontal scroll */
+.overflow-x-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #6366f1 #e5e7eb;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: linear-gradient(to right, #6366f1, #8b5cf6);
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to right, #4f46e5, #7c3aed);
+}
+
+/* ✅ Smooth scroll behavior */
+.overflow-x-auto {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 </style>

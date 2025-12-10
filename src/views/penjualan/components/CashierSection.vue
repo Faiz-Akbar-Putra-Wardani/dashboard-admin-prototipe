@@ -123,34 +123,48 @@
         <span class="font-semibold">Rp {{ pphNominal.toLocaleString('id-ID') }}</span>
       </div>
 
-      <!-- Tambahan Biaya (Disabled jika PPH kosong) -->
-      <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
-          Tambahan Biaya
-          <span v-if="!isPphFilled" class="text-red-500 text-[10px]">
-            (Isi PPH terlebih dahulu)
-          </span>
-        </label>
-        <input 
-          v-model.number="localExtra" 
-          type="number" 
-          min="0"
-          :disabled="!isPphFilled"
-          placeholder="Masukkan tambahan biaya"
-          :class="[
-            'w-full px-4 py-2 border-2 rounded-xl text-sm transition-all',
-            isPphFilled 
-              ? 'border-blue-200 focus:outline-none focus:border-cyan-500 bg-white' 
-              : 'border-gray-200 bg-gray-100 cursor-not-allowed text-gray-400'
-          ]"
-        />
-        <p v-if="!isPphFilled" class="text-xs text-gray-500 mt-1 flex items-center gap-1">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Field ini akan aktif setelah PPH diisi
-        </p>
-      </div>
+     <!-- Tambahan Biaya (Disabled jika PPH kosong) -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+            Tambahan Biaya
+            <span v-if="!isPphFilled" class="text-red-500 text-[10px]">
+              (Isi PPH terlebih dahulu)
+            </span>
+          </label>
+          <div class="relative">
+            <span 
+              :class="[
+                'absolute left-3 top-1/2 -translate-y-1/2 text-sm z-10',
+                isPphFilled ? 'text-gray-500' : 'text-gray-300'
+              ]"
+            >
+              Rp
+            </span>
+            <input 
+              v-model="localExtra"
+              @input="handleExtraInput"
+              type="text"
+              :disabled="!isPphFilled"
+              placeholder="0"
+              :class="[
+                'w-full pl-10 pr-4 py-2 border-2 rounded-xl text-sm transition-all',
+                isPphFilled 
+                  ? 'border-blue-200 focus:outline-none focus:border-cyan-500 bg-white' 
+                  : 'border-gray-200 bg-gray-100 cursor-not-allowed text-gray-400'
+              ]"
+            />
+          </div>
+          <p v-if="!isPphFilled" class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Field ini akan aktif setelah PPH diisi
+          </p>
+          <p v-else class="mt-1 text-xs text-gray-500">
+            Contoh: 100.000 (seratus ribu rupiah)
+          </p>
+        </div>
+
 
       <div class="flex justify-between text-sm text-gray-700">
         <span class="font-medium">Total Tambahan Biaya</span>
@@ -162,33 +176,49 @@
         <span>Rp {{ totalBeforeNego.toLocaleString('id-ID') }}</span>
       </div>
 
-      <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-2">Harga Nego</label>
-        <input 
-          v-model.number="localNego" 
-          :max="totalBeforeNego"
-          min="0"
-          type="number"
-          placeholder="Masukkan harga nego (opsional)"
-          class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all" 
-        />
-      </div>
+     <!-- Harga Nego -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-2">Harga Nego</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 z-10">
+              Rp
+            </span>
+            <input 
+              v-model="localNego"
+              @input="handleNegoInput"
+              type="text"
+              placeholder="0"
+              class="w-full pl-10 pr-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all" 
+            />
+          </div>
+          <p class="mt-1 text-xs text-gray-500">
+            Contoh: 50.000 (lima puluh ribu rupiah)
+          </p>
+        </div>
 
       <div class="flex justify-between text-sm font-bold text-cyan-600 bg-cyan-50 px-3 py-2 rounded-xl">
         <span>Total Setelah Nego</span>
         <span>Rp {{ totalAfterNego.toLocaleString('id-ID') }}</span>
       </div>
 
+     <!-- DP (Down Payment) -->
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-2">DP (Down Payment)</label>
-        <input 
-          v-model.number="localDp" 
-          type="number" 
-          :max="totalBayar"
-          min="0"
-          placeholder="Masukkan DP (opsional)"
-          class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all" 
-        />
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 z-10">
+            Rp
+          </span>
+          <input 
+            v-model="localDp"
+            @input="handleDpInput"
+            type="text"
+            placeholder="0"
+            class="w-full pl-10 pr-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all" 
+          />
+        </div>
+        <p class="mt-1 text-xs text-gray-500">
+          Contoh: 200.000 (dua ratus ribu rupiah)
+        </p>
       </div>
 
       <div>
@@ -227,7 +257,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useCurrencyInput } from "@/composables/useCurrencyInput" 
 
 const props = defineProps({
   cart: { type: Array, required: true },
@@ -262,36 +293,85 @@ const emit = defineEmits([
   'select-customer',
 ])
 
-// Computed untuk cek apakah PPH sudah diisi
+const extraCurrency = useCurrencyInput();
+const negoCurrency = useCurrencyInput();
+const dpCurrency = useCurrencyInput();
+
 const isPphFilled = computed(() => {
   return props.pph !== null && props.pph !== 0 && props.pph !== '' && props.pph !== undefined
 })
 
-// EXTRA - Disabled jika PPH kosong, dan reset ketika PPH dikosongkan
+const handleExtraInput = (event) => {
+  if (!isPphFilled.value) {
+    extraCurrency.reset();
+    emit('update:extra', null);
+    return;
+  }
+  
+  extraCurrency.handleInput(event);
+  const rawVal = extraCurrency.rawValue.value;
+  emit('update:extra', rawVal === "" ? null : Number(rawVal));
+};
+
 const localExtra = computed({
   get: () => {
     if (!isPphFilled.value) {
       return '';
     }
-    if (props.extra === null || props.extra === 0 || props.extra === '') {
-      return '';
+    // Sinkronkan dengan props
+    if (props.extra && extraCurrency.rawValue.value !== props.extra.toString()) {
+      extraCurrency.setValue(props.extra);
     }
-    return props.extra;
+    return extraCurrency.displayValue.value;
   },
-  set: v => {
+  set: (v) => {
     if (!isPphFilled.value) {
-      emit('update:extra', null);
+      extraCurrency.reset();
       return;
     }
-    if (v === '' || v === 0 || v === '0') {
-      emit('update:extra', null);
-    } else {
-      emit('update:extra', Number(v));
-    }
-  },
-})
+    extraCurrency.displayValue.value = v;
+  }
+});
 
-// PPH - Hilangkan default 0
+const handleNegoInput = (event) => {
+  negoCurrency.handleInput(event);
+  const rawVal = negoCurrency.rawValue.value;
+  emit('update:nego', rawVal === "" ? null : Number(rawVal));
+};
+
+const localNego = computed({
+  get: () => {
+    // Sinkronkan dengan props
+    if (props.nego && negoCurrency.rawValue.value !== props.nego.toString()) {
+      negoCurrency.setValue(props.nego);
+    }
+    return negoCurrency.displayValue.value;
+  },
+  set: (v) => {
+    negoCurrency.displayValue.value = v;
+  }
+});
+
+const handleDpInput = (event) => {
+  dpCurrency.handleInput(event);
+  const rawVal = dpCurrency.rawValue.value;
+  emit('update:dp', rawVal === "" ? null : Number(rawVal));
+};
+
+const localDp = computed({
+  get: () => {
+    // Sinkronkan dengan props
+    if (props.dp && dpCurrency.rawValue.value !== props.dp.toString()) {
+      dpCurrency.setValue(props.dp);
+    }
+    return dpCurrency.displayValue.value;
+  },
+  set: (v) => {
+    dpCurrency.displayValue.value = v;
+  }
+});
+
+// PPH - Tetap menggunakan input number biasa
 const localPph = computed({
   get: () => {
     if (props.pph === null || props.pph === 0 || props.pph === '') {
@@ -303,43 +383,10 @@ const localPph = computed({
     if (v === '' || v === 0 || v === '0') {
       emit('update:pph', null);
       // Reset extra ketika PPH dikosongkan
+      extraCurrency.reset();
       emit('update:extra', null);
     } else {
       emit('update:pph', Number(v));
-    }
-  },
-})
-
-// NEGO - Hilangkan default 0
-const localNego = computed({
-  get: () => {
-    if (props.nego === null || props.nego === 0 || props.nego === '') {
-      return '';
-    }
-    return props.nego;
-  },
-  set: v => {
-    if (v === '' || v === 0 || v === '0') {
-      emit('update:nego', null);
-    } else {
-      emit('update:nego', Number(v));
-    }
-  },
-})
-
-// DP - Hilangkan default 0
-const localDp = computed({
-  get: () => {
-    if (props.dp === null || props.dp === 0 || props.dp === '') {
-      return '';
-    }
-    return props.dp;
-  },
-  set: v => {
-    if (v === '' || v === 0 || v === '0') {
-      emit('update:dp', null);
-    } else {
-      emit('update:dp', Number(v));
     }
   },
 })
@@ -351,6 +398,7 @@ const localStatus = computed({
 
 const clearCustomer = () => emit('select-customer', null);
 </script>
+
 
 <style scoped>
 /* Custom scrollbar */
