@@ -12,12 +12,16 @@ import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.css";
 import vSelect from "vue-select";
 import "vue-select/dist/vue-select.css";
+import { useCurrencyInput } from "@/composables/useCurrencyInput"; 
 
 const router = useRouter();
 const route = useRoute();
 const currentPageTitle = ref("Edit Perbaikan");
 const token = Cookies.get("token");
 const repairId = route.params.id;
+
+const repairCost = useCurrencyInput();
+const dp = useCurrencyInput();
 
 const form = reactive({
   invoice: "",
@@ -29,8 +33,6 @@ const form = reactive({
   component: "",
   image: null,
   pic: "",
-  dp: 0,
-  repair_cost: "",
   status: "masuk",
 });
 
@@ -65,9 +67,12 @@ const fetchRepairData = async () => {
     form.description = repair.description;
     form.component = repair.component || "";
     form.pic = repair.pic;
-    form.dp = repair.dp;
-    form.repair_cost = repair.repair_cost;
     form.status = repair.status;
+
+    if (repair.dp > 0) {
+      dp.setValue(repair.dp);
+    }
+    repairCost.setValue(repair.repair_cost);
 
     // Set existing image URL
     if (repair.image) {
@@ -153,30 +158,35 @@ const handleFileChange = (e) => {
   previewUrl.value = URL.createObjectURL(file);
 };
 
-// Initialize Flatpickr untuk tanggal
+/// Initialize Flatpickr untuk tanggal
 const initDatePickers = () => {
   if (startDateRef.value) {
     startDatePicker = flatpickr(startDateRef.value, {
-      dateFormat: "Y-m-d",
+      dateFormat: "Y-m-d",       
+      altInput: true,            
+      altFormat: "d-m-Y",          
       allowInput: true,
       defaultDate: form.start_date,
       onChange: (_, dateStr) => {
-        form.start_date = dateStr;
+        form.start_date = dateStr;  
       },
     });
   }
 
   if (endDateRef.value) {
     endDatePicker = flatpickr(endDateRef.value, {
-      dateFormat: "Y-m-d",
+      dateFormat: "Y-m-d",         
+      altInput: true,              
+      altFormat: "d-m-Y",          
       allowInput: true,
       defaultDate: form.end_date,
       onChange: (_, dateStr) => {
-        form.end_date = dateStr;
+        form.end_date = dateStr;   
       },
     });
   }
 };
+
 
 // Submit Form Update
 const updateRepair = async () => {
@@ -217,8 +227,9 @@ const updateRepair = async () => {
     formData.append("description", form.description);
     formData.append("component", form.component || "");
     formData.append("pic", form.pic);
-    formData.append("dp", parseFloat(form.dp) || 0);
-    formData.append("repair_cost", parseFloat(form.repair_cost));
+    
+    formData.append("dp", parseFloat(dp.rawValue.value) || 0);
+    formData.append("repair_cost", parseFloat(repairCost.rawValue.value));
     formData.append("status", form.status);
     
     if (form.image) {
@@ -313,6 +324,7 @@ onMounted(async () => {
   initDatePickers();
 });
 </script>
+
 
 <template>
   <admin-layout>
@@ -533,64 +545,77 @@ onMounted(async () => {
             </p>
           </div>
 
-          <!-- Biaya Perbaikan -->
-          <div class="group relative">
-            <input
-              id="repair_cost"
-              v-model="form.repair_cost"
-              type="number"
-              min="0"
-              :data-filled="form.repair_cost"
-              class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
-              placeholder="Masukkan biaya perbaikan"
-            />
-            <label
-              for="repair_cost"
-              class="absolute left-4 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
-                peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
-                peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
-                peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
-            >
-              Biaya Perbaikan <span class="text-red-500">*</span>
-            </label>
-            <p
-              v-if="errors.repair_cost"
-              class="mt-1 text-xs text-red-600 dark:text-red-400"
-            >
-              {{ errors.repair_cost }}
-            </p>
-          </div>
+        <!-- Biaya Perbaikan -->
+<div class="group relative">
+  <div class="relative">
+    <span class="absolute left-4 top-2.5 text-sm text-gray-500 dark:text-gray-400 z-30">
+      Rp
+    </span>
+    <input
+      id="repair_cost"
+      v-model="repairCost.displayValue.value"
+      @input="repairCost.handleInput"
+      type="text"
+      :data-filled="repairCost.displayValue.value"
+      class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 pl-12 pr-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
+      placeholder="0"
+    />
+    <label
+      for="repair_cost"
+      class="absolute left-12 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
+        peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
+        peer-focus:-top-3 peer-focus:left-4 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
+        peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:left-4 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
+    >
+      Biaya Perbaikan <span class="text-red-500">*</span>
+    </label>
+  </div>
+  <p
+    v-if="errors.repair_cost"
+    class="mt-1 text-xs text-red-600 dark:text-red-400"
+  >
+    {{ errors.repair_cost }}
+  </p>
+  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+    Contoh: 900.000 (sembilan ratus ribu rupiah)
+  </p>
+</div>
 
-          <!-- DP -->
-          <div class="group relative">
-            <input
-              id="dp"
-              v-model="form.dp"
-              type="number"
-              min="0"
-              :data-filled="form.dp"
-              class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
-              placeholder="Masukkan DP"
-            />
-            <label
-              for="dp"
-              class="absolute left-4 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
-                peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
-                peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
-                peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
-            >
-              DP <span class="text-gray-400">(opsional)</span>
-            </label>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Down Payment / Uang Muka
-            </p>
-            <p
-              v-if="errors.dp"
-              class="mt-1 text-xs text-red-600 dark:text-red-400"
-            >
-              {{ errors.dp }}
-            </p>
-          </div>
+<!-- DP -->
+<div class="group relative">
+  <div class="relative">
+    <span class="absolute left-4 top-2.5 text-sm text-gray-500 dark:text-gray-400 z-30">
+      Rp
+    </span>
+    <input
+      id="dp"
+      v-model="dp.displayValue.value"
+      @input="dp.handleInput"
+      type="text"
+      :data-filled="dp.displayValue.value"
+      placeholder="0"
+      class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 pl-12 pr-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
+    />
+    <label
+      for="dp"
+      class="absolute left-12 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
+        peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
+        peer-focus:-top-3 peer-focus:left-4 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
+        peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:left-4 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
+    >
+      DP <span class="text-gray-400">(opsional)</span>
+    </label>
+  </div>
+  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+    Down Payment / Uang Muka
+  </p>
+  <p
+    v-if="errors.dp"
+    class="mt-1 text-xs text-red-600 dark:text-red-400"
+  >
+    {{ errors.dp }}
+  </p>
+</div>
 
           <!-- Status -->
           <div class="group relative">

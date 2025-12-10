@@ -4,6 +4,7 @@ import { moneyFormat } from "@/utils/moneyFormat"
 import flatpickr from "flatpickr"
 import "flatpickr/dist/flatpickr.css"
 import dayjs from "dayjs"
+import { useCurrencyInput } from "@/composables/useCurrencyInput"
 
 const props = defineProps({
   cart: Array,
@@ -81,12 +82,30 @@ const emit = defineEmits([
     "update:status"
 ])
 
-
+const dpCurrency = useCurrencyInput();
 
 const localDp = computed({
-  get: () => props.dp === null ? "" : props.dp,
-  set: v => emit("update:dp", v === "" ? null : Number(v))
-})
+  get: () => {
+    // Sinkronkan displayValue dengan props.dp
+    if (props.dp === null || props.dp === 0) {
+      return dpCurrency.displayValue.value;
+    }
+    // Jika props.dp berubah dari parent, update display
+    if (dpCurrency.rawValue.value !== props.dp.toString()) {
+      dpCurrency.setValue(props.dp);
+    }
+    return dpCurrency.displayValue.value;
+  },
+  set: (v) => {
+    dpCurrency.displayValue.value = v;
+  }
+});
+
+const handleDpInput = (event) => {
+  dpCurrency.handleInput(event);
+  const rawVal = dpCurrency.rawValue.value;
+  emit("update:dp", rawVal === "" ? null : Number(rawVal));
+};
 
 const localStatus = computed({
   get: () => props.status ?? "berlangsung",
@@ -215,16 +234,25 @@ const updateRentPrice = (item, value) => {
       </div>
     </div>
 
-    <!-- DP -->
-    <div>
-      <label class="block text-xs font-semibold mb-2">DP</label>
-      <input
-        v-model="localDp"
-        placeholder="0"
-        type="number"
-        class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-      />
-    </div>
+   <!-- DP -->
+<div>
+  <label class="block text-xs font-semibold mb-2">DP (Down Payment)</label>
+  <div class="relative">
+    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 z-10">
+      Rp
+    </span>
+    <input
+      v-model="localDp"
+      @input="handleDpInput"
+      placeholder="0"
+      type="text"
+      class="w-full pl-10 pr-4 py-2 border-2 border-blue-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+    />
+  </div>
+  <p class="mt-1 text-xs text-gray-500">
+    Contoh: 500.000 (lima ratus ribu rupiah)
+  </p>
+</div>
 
     <!-- STATUS -->
 <div>

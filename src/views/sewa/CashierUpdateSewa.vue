@@ -42,7 +42,7 @@ const fetchRentalDetail = async () => {
 
     // ISI DATA YANG ADA
     invoice.value = rental.invoice
-    dp.value = rental.dp
+    dp.value = rental.dp === 0 ? null : rental.dp
     status.value = rental.status
 
     selectedCustomer.value = rental.customer ? {

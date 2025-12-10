@@ -8,6 +8,7 @@ import { handleErrors } from "@/utils/handleErrors";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 
+
 const router = useRouter();
 const currentPageTitle = ref("Tambah Produk");
 const token = Cookies.get("token");
