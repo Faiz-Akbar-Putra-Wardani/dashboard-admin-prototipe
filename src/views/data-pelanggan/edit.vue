@@ -14,7 +14,7 @@ const currentPageTitle = ref('Edit Data Pelanggan')
 
 const token = Cookies.get('token')
 
-const id = route.params.id
+const uuid = route.params.uuid
 
 const form = reactive({
   name_perusahaan: '',
@@ -29,7 +29,7 @@ const isLoading = ref(true)
 const getCustomer = async () => {
   try {
     Api.defaults.headers.common['Authorization'] = token
-    const response = await Api.get(`/api/customers/${id}`)
+    const response = await Api.get(`/api/customers/${uuid}`)
     const data = response.data.data
     form.name_perusahaan = data.name_perusahaan
     form.no_telp = data.no_telp
@@ -66,7 +66,7 @@ const updateCustomer = async () => {
 
   try {
     Api.defaults.headers.common['Authorization'] = token
-    const response = await Api.put(`/api/customers/${id}`, form)
+    const response = await Api.put(`/api/customers/${uuid}`, form)
 
     await Swal.fire({
       icon: 'success',

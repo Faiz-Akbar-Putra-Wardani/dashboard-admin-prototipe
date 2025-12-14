@@ -160,7 +160,7 @@ onMounted(() => {
                   <td class="px-6 py-4 text-left">
                     <div class="flex justify-end gap-2">
                       <router-link
-                        :to="`/banks/edit/${bank.id}`"
+                        :to="`/banks/edit/${bank.uuid}`"
                         class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-xl transition-all"
                         title="Edit"
                       >
@@ -172,7 +172,7 @@ onMounted(() => {
                       </router-link>
 
                       <delete-modal
-                        :id="bank.id"
+                        :uuid="bank.uuid"
                         endpoint="/api/banks"
                         :fetchData="fetchData"
                         class="p-2 rounded-xl transition-all"

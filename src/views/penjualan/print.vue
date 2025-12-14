@@ -285,7 +285,8 @@ const fetchInvoice = async () => {
     const token = Cookies.get("token");
     Api.defaults.headers.common["Authorization"] = token;
 
-    const res = await Api.get(`/api/transactions/by-invoice/${invoiceCode.value}`);
+   // ✅ PERBAIKAN: Gunakan endpoint yang benar
+    const res = await Api.get(`/api/transactions/invoice/${invoiceCode.value}`);
     const data = res.data.data;
 
     invoiceDate.value = data.created_at;

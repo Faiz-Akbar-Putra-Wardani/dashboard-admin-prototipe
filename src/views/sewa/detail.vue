@@ -9,7 +9,7 @@ import AdminLayout from "@/components/layout/AdminLayout.vue";
 
 const route = useRoute();
 const router = useRouter();
-const id = route.params.id;
+const uuid = route.params.uuid;
 
 const rental = ref(null);
 const loading = ref(true);
@@ -90,7 +90,7 @@ const fetchDetail = async () => {
     const token = Cookies.get("token");
     Api.defaults.headers.common["Authorization"] = token;
 
-    const res = await Api.get(`/api/rentals/${id}`);
+    const res = await Api.get(`/api/rentals/${uuid}`);
     rental.value = res.data.data;
 
     newStatus.value = rental.value.status;
@@ -121,8 +121,7 @@ const updateStatus = async () => {
   try {
     statusUpdating.value = true;
 
-    await Api.put("/api/rentals/status", {
-      invoice: rental.value.invoice,
+    await Api.patch(`/api/rentals/${rental.value.uuid}/status`, {
       status: newStatus.value,
     });
 
@@ -155,27 +154,32 @@ const openPrintPage = () => {
 
 onMounted(() => fetchDetail());
 </script>
-
 <template>
   <admin-layout>
     <div class="max-w-7xl mx-auto p-6">
 
       <!-- Loading -->
       <div v-if="loading" class="text-center py-20 text-gray-500">
+        <svg class="animate-spin h-10 w-10 mx-auto text-indigo-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
         Memuat detail rental...
       </div>
 
-      <div v-else>
+      <!-- ✅ PERBAIKAN: Tambah v-if untuk memastikan rental sudah ada -->
+      <div v-else-if="rental">
         <!-- Header -->
         <div class="flex justify-between items-center mb-6">
           <h1 class="text-2xl font-bold text-gray-900">
             Detail Rental / 
-            <span class="text-indigo-600">#{{ rental.invoice }}</span>
+            <!-- ✅ Gunakan optional chaining -->
+            <span class="text-indigo-600">#{{ rental?.invoice }}</span>
           </h1>
 
           <button
             @click="openPrintPage"
-            class="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 flex items-center gap-2"
+            class="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 flex items-center gap-2 transition-all"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -188,7 +192,7 @@ onMounted(() => fetchDetail());
         <!-- Tombol kembali -->
         <button 
           @click="router.back()" 
-          class="mb-8 px-6 py-2 bg-gray-200 hover:bg-gray-300 rounded-xl flex items-center gap-2"
+          class="mb-8 px-6 py-2 bg-gray-200 hover:bg-gray-300 rounded-xl flex items-center gap-2 transition-all"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -207,13 +211,13 @@ onMounted(() => fetchDetail());
 
               <div class="flex justify-between">
                 <span class="text-gray-600">Invoice</span>
-                <span class="font-medium">#{{ rental.invoice }}</span>
+                <span class="font-medium">#{{ rental?.invoice }}</span>
               </div>
 
               <div class="flex justify-between">
                 <span class="text-gray-600">Customer</span>
                 <span class="font-medium">
-                  {{ rental.customer?.name_perusahaan ?? "-" }}
+                  {{ rental?.customer?.name_perusahaan ?? "-" }}
                 </span>
               </div>
 
@@ -221,32 +225,36 @@ onMounted(() => fetchDetail());
               <div class="flex justify-between">
                 <span class="text-gray-600">Tanggal Sewa</span>
 
-                <!-- Jika semua tanggal sama -->
-                <span v-if="!hasMultipleDates(rental.details)">
-                {{ formatDate(rental.details[0]?.start_date) }} - 
-                {{ formatDate(rental.details[0]?.end_date) }}
-              </span>
+                <!-- ✅ Tambah check untuk rental.details -->
+                <span v-if="rental?.details && !hasMultipleDates(rental.details)" class="font-medium">
+                  {{ formatDate(rental.details[0]?.start_date) }} - 
+                  {{ formatDate(rental.details[0]?.end_date) }}
+                </span>
 
-                <!-- Jika tanggal berbeda -->
                 <span
-                  v-else
+                  v-else-if="rental?.details"
                   class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full cursor-pointer"
                   :title="getTooltipDates(rental.details)"
                 >
                   Multiple Dates
                 </span>
+                <span v-else>-</span>
               </div>
-
 
               <div class="flex justify-between">
                 <span class="text-gray-600">DP</span>
-                <span>Rp {{ formatRupiah(rental.dp) }}</span>
+                <span class="font-medium">Rp {{ formatRupiah(rental?.dp ?? 0) }}</span>
               </div>
 
               <div class="flex justify-between items-center">
                 <span class="text-gray-600">Status</span>
-                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-                  {{ newStatus.toUpperCase() }}
+                <span 
+                  :class="[
+                    'px-3 py-1 text-xs font-medium rounded-full',
+                    newStatus === 'berlangsung' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                  ]"
+                >
+                  {{ newStatus?.toUpperCase() }}
                 </span>
               </div>
 
@@ -254,7 +262,7 @@ onMounted(() => fetchDetail());
                 <div class="flex justify-between text-base font-semibold">
                   <span>Total</span>
                   <span class="text-indigo-600">
-                    Rp {{ formatRupiah(rental.total_rent_price) }}
+                    Rp {{ formatRupiah(rental?.total_rent_price ?? 0) }}
                   </span>
                 </div>
               </div>
@@ -268,19 +276,23 @@ onMounted(() => fetchDetail());
 
                 <select 
                   v-model="newStatus"
-                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
-                 <option value="berlangsung">Berlangsung</option>
-                 <option value="selesai">Selesai</option>
+                  <option value="berlangsung">Berlangsung</option>
+                  <option value="selesai">Selesai</option>
                 </select>
               </div>
 
               <button
                 @click="updateStatus"
                 :disabled="statusUpdating"
-                class="w-full mt-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-70 flex items-center justify-center gap-2"
+                class="w-full mt-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
               >
-                {{ statusUpdating ? "Memperbarui..." : "Perbarui" }}
+                <svg v-if="statusUpdating" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {{ statusUpdating ? "Memperbarui..." : "Perbarui Status" }}
               </button>
             </div>
           </div>
@@ -290,57 +302,56 @@ onMounted(() => fetchDetail());
             <h2 class="text-lg font-semibold mb-6">Produk Disewa</h2>
 
             <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b-2 border-gray-200">
-                <th class="py-3 text-left">No</th>
-                <th class="py-3 text-left">Produk</th>
-                <th class="py-3 text-center">Qty</th>
+              <!-- ✅ Tambah v-if untuk cek rental.details -->
+              <table v-if="rental?.details && rental.details.length > 0" class="w-full text-sm">
+                <thead>
+                  <tr class="border-b-2 border-gray-200">
+                    <th class="py-3 text-left">No</th>
+                    <th class="py-3 text-left">Produk</th>
+                    <th class="py-3 text-center">Qty</th>
+                    <th class="py-3 text-right">Harga / Bulan</th>
+                    <th class="py-3 text-center">Durasi</th>
+                    <th class="py-3 text-right">Subtotal</th>
+                  </tr>
+                </thead>
 
-                <!-- Harga Sewa Per Bulan -->
-                <th class="py-3 text-right">Harga / Bulan</th>
-                <th class="py-3 text-center">Durasi</th>
+                <tbody>
+                  <tr 
+                    v-for="(item, index) in rental.details" 
+                    :key="item.id"
+                    class="border-b hover:bg-gray-50 transition-colors"
+                  >
+                    <td class="py-4">{{ index + 1 }}</td>
+                    <td class="py-4 font-medium">{{ item.product?.title ?? "-" }}</td>
+                    <td class="py-4 text-center">{{ item.qty ?? 0 }}</td>
 
-                <!-- Subtotal: qty x harga sewa -->
-                <th class="py-3 text-right">Subtotal</th>
-              </tr>
-            </thead>
+                    <td class="py-4 text-right">
+                      Rp {{ formatRupiah(item.rent_price ?? 0) }}
+                    </td>
 
-            <tbody>
-              <tr 
-                v-for="(item, index) in rental.details" 
-                :key="item.id"
-                class="border-b"
-              >
-                <td class="py-4">{{ index + 1 }}</td>
-                <td class="py-4 font-medium">{{ item.product?.title }}</td>
-                <td class="py-4 text-center">{{ item.qty }}</td>
+                    <td class="py-4 text-center">
+                      <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+                        {{ getMonths(item.start_date, item.end_date) }} bulan
+                      </span>
+                    </td>
 
-                <!-- Harga per bulan -->
-                <td class="py-4 text-right">
-                  Rp {{ formatRupiah(item.rent_price) }}
-                </td>
+                    <td class="py-4 text-right font-semibold">
+                      Rp {{ formatRupiah((item.qty ?? 0) * (item.rent_price ?? 0) * getMonths(item.start_date, item.end_date)) }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
 
-                <td class="py-4 text-center">
-                <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
-                  {{ getMonths(item.start_date, item.end_date) }} bulan
-                </span>
-              </td>
-
-                <!-- Subtotal -->
-                <td class="py-4 text-right font-semibold">
-                Rp {{ formatRupiah(item.qty * item.rent_price * getMonths(item.start_date, item.end_date)) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-
+              <!-- ✅ Tampilkan pesan jika tidak ada data -->
+              <div v-else class="text-center py-10 text-gray-500">
+                Tidak ada detail produk
+              </div>
             </div>
 
-            <div class="mt-8 text-right">
+            <div class="mt-8 text-right border-t pt-6">
               <div class="text-lg font-bold text-gray-800">Total</div>
               <div class="text-2xl font-bold text-indigo-600">
-                Rp {{ formatRupiah(rental.total_rent_price) }}
+                Rp {{ formatRupiah(rental?.total_rent_price ?? 0) }}
               </div>
             </div>
           </div>
@@ -348,9 +359,24 @@ onMounted(() => fetchDetail());
         </div>
       </div>
 
+      <!-- ✅ TAMBAHAN: Tampilkan pesan jika rental tidak ditemukan -->
+      <div v-else class="text-center py-20">
+        <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p class="text-gray-600">Data rental tidak ditemukan</p>
+        <button 
+          @click="router.back()" 
+          class="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
+        >
+          Kembali
+        </button>
+      </div>
+
     </div>
   </admin-layout>
 </template>
+
 
 <style scoped>
 @media print {

@@ -19,7 +19,7 @@ const routes = [
       if (user.getToken) {
         const role = user.userRole;
         if (role === 'super_admin') {
-          next('/Ecommerce')
+          next('/dashboard')
         } else if (role === 'admin') {
           next('/data-pelanggan')
         } else {
@@ -33,7 +33,7 @@ const routes = [
   },
 
   {
-    path: '/Ecommerce',
+    path: '/dashboard',
     beforeEnter: (to, from, next) => {
       const user = useUser()
       if (!user.getToken) {
@@ -42,9 +42,9 @@ const routes = [
         next()
       }
     },
-    name: 'Ecommerce',
+    name: 'Dashboard',
     component: () => import(/* webpackChunkName: "ecommerce" */ '../views/Ecommerce.vue'),
-    meta: { title: 'eCommerce Dashboard', requiresAuth: true, roles: ['super_admin'] },
+    meta: { title: 'Dashboard', requiresAuth: true, roles: ['super_admin'] },
   },
 
 
@@ -67,7 +67,7 @@ const routes = [
     meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
   },
   {
-    path: '/data-pelanggan/edit/:id',
+    path: '/data-pelanggan/edit/:uuid',
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },
@@ -95,7 +95,7 @@ const routes = [
     meta: { requiresAuth: true, roles: ['super_admin'] },
   },
   {
-    path: '/data-admin/edit/:id',
+    path: '/data-admin/edit/:uuid',
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },
@@ -123,7 +123,7 @@ const routes = [
     meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
   },
   {
-    path: '/categories/edit/:id',
+    path: '/categories/edit/:uuid',
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },
@@ -150,7 +150,7 @@ const routes = [
     meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
   },
   {
-    path: '/products/edit/:id',
+    path: '/products/edit/:uuid',
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },
@@ -177,7 +177,7 @@ const routes = [
     meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
   },
   {
-    path: '/detail-products/edit/:id',
+    path: '/detail-products/edit/:uuid',
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },
@@ -204,7 +204,7 @@ const routes = [
     meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
   },
   {
-    path: '/halaman-data-penjualan/edit/:id',
+    path: '/halaman-data-penjualan/edit/:uuid',
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },
@@ -213,7 +213,7 @@ const routes = [
     meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
   },
   {
-    path: '/halaman-data-penjualan/detail/:id',
+    path: '/halaman-data-penjualan/detail/:uuid',
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },
@@ -251,7 +251,7 @@ const routes = [
   },
 
   {
-    path: '/halaman-data-sewa/edit/:id',
+    path: '/halaman-data-sewa/edit/:uuid',
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },
@@ -261,7 +261,7 @@ const routes = [
   },
 
   {
-    path: '/halaman-data-sewa/detail/:id',
+    path: '/halaman-data-sewa/detail/:uuid',
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },
@@ -298,7 +298,7 @@ const routes = [
     meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
   },
   {
-    path: '/projects/edit/:id',
+    path: '/projects/edit/:uuid',
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },
@@ -326,7 +326,7 @@ const routes = [
     meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
   },
   {
-    path: '/clients/edit/:id',
+    path: '/clients/edit/:uuid',
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },
@@ -354,7 +354,7 @@ const routes = [
     meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
   },
   {
-    path: '/repairs/edit/:id',
+    path: '/repairs/edit/:uuid',
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },
@@ -421,7 +421,7 @@ const routes = [
     meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
   },
   {
-    path: '/banks/edit/:id',
+    path: '/banks/edit/:uuid',
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },

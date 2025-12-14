@@ -11,7 +11,7 @@ import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 
 const route = useRoute();
 const router = useRouter();
-const clientId = route.params.id;
+const clientId = route.params.uuid;
 const currentPageTitle = ref("Edit Klien");
 const token = Cookies.get("token");
 

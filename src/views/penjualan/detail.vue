@@ -10,7 +10,7 @@ import { moneyFormat } from "@/utils/moneyFormat";
 
 const route = useRoute();
 const router = useRouter();
-const id = route.params.id;
+const uuid = route.params.uuid;
 
 const transaction = ref(null);
 const loading = ref(true);
@@ -22,7 +22,7 @@ const fetchDetail = async () => {
     const token = Cookies.get("token");
     Api.defaults.headers.common["Authorization"] = token;
 
-    const res = await Api.get(`/api/transactions/${id}`);
+    const res = await Api.get(`/api/transactions/${uuid}`);
     transaction.value = res.data.data;
     newStatus.value = transaction.value.status;
   } catch (err) {
@@ -51,8 +51,7 @@ const updateStatus = async () => {
   try {
     statusUpdating.value = true;
 
-    await Api.put("/api/transactions/status", {
-      invoice: transaction.value.invoice,
+   await Api.patch(`/api/transactions/${uuid}/status`, {
       status: newStatus.value,
     });
 

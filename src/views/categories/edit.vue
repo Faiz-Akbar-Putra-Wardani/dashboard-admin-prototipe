@@ -11,7 +11,7 @@ import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 
 const route = useRoute();
 const router = useRouter();
-const categoryId = route.params.id;
+const categoryId = route.params.uuid;
 const currentPageTitle = ref("Edit Kategori");
 const token = Cookies.get("token");
 

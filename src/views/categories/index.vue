@@ -195,7 +195,7 @@ onMounted(() => {
                 <td class="px-6 py-4 text-right">
                   <div class="flex justify-end gap-2">
                     <router-link
-                      :to="`/categories/edit/${cat.id}`"
+                      :to="`/categories/edit/${cat.uuid}`"
                       class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
                       title="Edit"
                     >
@@ -214,7 +214,7 @@ onMounted(() => {
                       </svg>
                     </router-link>
                     <DeleteModal
-                      :id="cat.id"
+                      :uuid="cat.uuid"
                       endpoint="/api/categories"
                       :fetchData="fetchData"
                       class="p-2 rounded-xl transition-all"

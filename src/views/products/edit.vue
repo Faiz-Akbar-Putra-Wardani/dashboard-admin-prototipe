@@ -8,13 +8,18 @@ import { handleErrors } from "@/utils/handleErrors";
 import { getImageUrl } from "@/utils/getImageUrl";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
+import { useCurrencyInput } from "@/composables/useCurrencyInput";
 
 const router = useRouter();
 const route = useRoute();
 const token = Cookies.get("token");
 
 const currentPageTitle = ref("Edit Produk");
-const productId = route.params.id;
+const productId = route.params.uuid;
+
+// Initialize currency inputs
+const sellPrice = useCurrencyInput();
+const rentPrice = useCurrencyInput();
 
 const form = reactive({
   title: "",
@@ -57,12 +62,19 @@ const fetchProduct = async () => {
 
     form.title = data.title || "";
     form.category_id = data.category?.id ? Number(data.category.id) : "";
-    form.sell_price = data.sell_price || "";
-    form.rent_price = data.rent_price ?? "";
     form.stock = data.stock || "";
     form.description = data.description || "";
     previewUrl.value = data.image ? getImageUrl(data.image) : null;
     fileName.value = data.image || "";
+
+    // Set nilai currency setelah data dimuat
+    if (data.sell_price) {
+      sellPrice.setValue(parseFloat(data.sell_price));
+    }
+    
+    if (data.rent_price && data.rent_price !== null && data.rent_price !== "") {
+      rentPrice.setValue(parseFloat(data.rent_price));
+    }
   } catch (error) {
     console.error("Gagal memuat data produk:", error);
     Swal.fire({
@@ -118,14 +130,15 @@ const updateProduct = async () => {
     const formData = new FormData();
     formData.append("title", form.title);
     formData.append("category_id", form.category_id);
-    formData.append("sell_price", form.sell_price);
+    formData.append("sell_price", parseFloat(sellPrice.rawValue.value) || 0);
     formData.append("stock", form.stock);
     formData.append("description", form.description);
 
-    if (form.rent_price === "" || form.rent_price === null) {
-      formData.append("rent_price", "");
+    // Handle rent_price (optional)
+    if (rentPrice.rawValue.value && parseFloat(rentPrice.rawValue.value) > 0) {
+      formData.append("rent_price", parseFloat(rentPrice.rawValue.value));
     } else {
-      formData.append("rent_price", form.rent_price);
+      formData.append("rent_price", "");
     }
 
     if (form.image instanceof File) {
@@ -146,17 +159,34 @@ const updateProduct = async () => {
     router.push("/products");
   } catch (error) {
     if (error.response?.data) {
-      handleErrors(error.response.data, errors);
-      const errorMessages =
-        error.response.data.errors
-          ?.map((err) => `<li>${err.msg}</li>`)
-          .join("") || "<li>Terjadi kesalahan validasi.</li>";
+      const responseData = error.response.data;
+      
+      handleErrors(responseData, errors);
+
+      let errorMessages = "<li>Terjadi kesalahan validasi.</li>";
+
+      if (Array.isArray(responseData.errors)) {
+        errorMessages = responseData.errors
+          .map((err) => `<li>${err.msg || err.message || err}</li>`)
+          .join("");
+      } 
+      else if (typeof responseData.errors === "string") {
+        errorMessages = `<li>${responseData.errors}</li>`;
+      }
+      else if (typeof responseData.errors === "object" && responseData.errors !== null) {
+        errorMessages = Object.values(responseData.errors)
+          .map((err) => `<li>${err}</li>`)
+          .join("");
+      }
+      else if (responseData.meta?.message) {
+        errorMessages = `<li>${responseData.meta.message}</li>`;
+      }
 
       await Swal.fire({
         icon: "error",
         title: "Validasi Gagal!",
         html: `
-          <ul style="text-align: center; margin: 0; padding-left: 1.2rem; color: #e53e3e;">
+          <ul style="text-align: left; margin: 0; padding-left: 1.5rem; color: #e53e3e;">
             ${errorMessages}
           </ul>
         `,
@@ -182,6 +212,7 @@ onMounted(async () => {
   await fetchProduct();
 });
 </script>
+
 
 <template>
   <admin-layout>
@@ -260,66 +291,76 @@ onMounted(async () => {
             {{ errors.category_id }}
           </p>
         </div>
-
         <!-- Harga Jual -->
         <div class="group relative">
-          <input
-            id="sell_price"
-            v-model="form.sell_price"
-            type="number"
-            min="0"
-            :data-filled="form.sell_price"
-            class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
-            placeholder="Masukkan harga jual"
-          />
-          <label
-            for="sell_price"
-            class="absolute left-4 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
-              peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
-              peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
-              peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
-          >
-            Harga Jual <span class="text-red-500">*</span>
-          </label>
+          <div class="relative">
+            <span class="absolute left-4 top-2.5 text-sm text-gray-500 dark:text-gray-400 z-30">
+              Rp
+            </span>
+            <input
+              id="sell_price"
+              v-model="sellPrice.displayValue.value"
+              @input="sellPrice.handleInput"
+              type="text"
+              :data-filled="sellPrice.displayValue.value"
+              class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 pl-12 pr-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
+              placeholder="0"
+            />
+            <label
+              for="sell_price"
+              class="absolute left-12 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
+                peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
+                peer-focus:-top-3 peer-focus:left-4 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
+                peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:left-4 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
+            >
+              Harga Jual <span class="text-red-500">*</span>
+            </label>
+          </div>
           <p
             v-if="errors.sell_price"
             class="mt-1 text-xs text-red-600 dark:text-red-400"
           >
             {{ errors.sell_price }}
           </p>
-        </div>
-
-        <!-- Harga Sewa (Opsional) -->
-        <div class="group relative">
-          <input
-            id="rent_price"
-            v-model="form.rent_price"
-            type="number"
-            min="0"
-            :data-filled="form.rent_price"
-            class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
-            placeholder="Masukkan harga sewa (opsional)"
-          />
-          <label
-            for="rent_price"
-            class="absolute left-4 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
-              peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
-              peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
-              peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
-          >
-            Harga Sewa <span class="text-gray-400">(opsional)</span>
-          </label>
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Kosongkan jika produk tidak disewakan
-          </p>
-          <p
-            v-if="errors.rent_price"
-            class="mt-1 text-xs text-red-600 dark:text-red-400"
-          >
-            {{ errors.rent_price }}
+            Contoh: 500.000 (lima ratus ribu rupiah)
           </p>
         </div>
-
+      <!-- Harga Sewa (Opsional) -->
+          <div class="group relative">
+            <div class="relative">
+              <span class="absolute left-4 top-2.5 text-sm text-gray-500 dark:text-gray-400 z-30">
+                Rp
+              </span>
+              <input
+                id="rent_price"
+                v-model="rentPrice.displayValue.value"
+                @input="rentPrice.handleInput"
+                type="text"
+                :data-filled="rentPrice.displayValue.value"
+                class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 pl-12 pr-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
+                placeholder="0"
+              />
+              <label
+                for="rent_price"
+                class="absolute left-12 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
+                  peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
+                  peer-focus:-top-3 peer-focus:left-4 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
+                  peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:left-4 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
+              >
+                Harga Sewa <span class="text-gray-400">(opsional)</span>
+              </label>
+            </div>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Kosongkan jika produk tidak disewakan
+            </p>
+            <p
+              v-if="errors.rent_price"
+              class="mt-1 text-xs text-red-600 dark:text-red-400"
+            >
+              {{ errors.rent_price }}
+            </p>
+          </div>
         <!-- Stok -->
         <div class="group relative">
           <input

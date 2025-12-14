@@ -60,8 +60,7 @@ const updateStatus = async () => {
   try {
     statusUpdating.value = true
 
-    await Api.put(`/api/repairs/${id}`, {
-      ...repair.value,
+     await Api.patch(`/api/repairs/${id}/status`, {
       status: newStatus.value,
     })
 

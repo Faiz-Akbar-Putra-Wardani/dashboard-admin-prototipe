@@ -1,437 +1,63 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useSaleStore } from '@/stores/useSaleStore'
+import { useCalculation } from '@/composables/useCalculation'
+import { useCheckout } from '@/composables/useCheckout'
+import { useFilter } from '@/composables/useFilter'
+
 import FilterSection from './components/FilterSection.vue'
 import ProductGrid from './components/ProductGrid.vue'
 import CashierSection from './components/CashierSection.vue'
 import CustomerModal from './components/CustomerModal.vue'
-import Swal from "sweetalert2";
 
-import Api from "@/services/api";
-import Cookies from "js-cookie";
+const store = useSaleStore()
+
+const cartRef = computed(() => store.cart || [])
+const productsRef = computed(() => store.products || [])
+
+
+const calculation = useCalculation(cartRef)
+const { searchQuery, selectedBrand, filteredItems: filteredProducts } = useFilter(productsRef)
+const { checkout: performCheckout } = useCheckout()
 
 const activeTab = ref('products')
 const showCustomerModal = ref(false)
 
-const token = Cookies.get("token");
-const products = ref([]);
+const cartCount = computed(() => (store.cart || []).length)
 
-const fetchProducts = async () => {
-  if (token) {
-    Api.defaults.headers.common["Authorization"] = token;
-
-    await Api.get(`/api/products-all`)
-      .then((res) => {
-       
-        products.value = res.data.data.map(p => ({
-          id: p.id,
-          name: p.title,               
-          price: p.sell_price,         
-          brand: p.category?.name ?? 'Umum',
-          icon: p.image,               
-        }));
-      })
-      .catch((err) => console.error(err));
-  }
-};
-
-const categories = ref([])
-const fetchCategories = async () => {
-  Api.defaults.headers.common["Authorization"] = token;
-  const res = await Api.get("/api/categories-all")
-  categories.value = ["Semua", ...res.data.data.map(c => c.name)]
-};
-
-const customers = ref([]);
-const fetchCustomers = async () => {
-  if (token) {
-    Api.defaults.headers.common["Authorization"] = token;
-    await Api.get("/api/customers-all")
-      .then((res) => {
-        customers.value = res.data.data.map(c => ({
-          id: c.value,
-          name: c.label,
-          address: c.address
-        }));
-      })
-      .catch((err) => console.error(err));
-  }
-};
-
-
-const selectedCustomer = ref(null)
-const selectCustomer = c => selectedCustomer.value = c
-const chooseCustomer = c => {
-  selectedCustomer.value = c
+const chooseCustomer = (customer) => {
+  store.setCustomer(customer)
   showCustomerModal.value = false
 }
 
+const handleCheckout = async () => {
+  const success = await performCheckout({
+    subtotal: calculation.subtotal.value,
+    subtotalPlusExtra: calculation.subtotalPlusExtra.value,
+    extraSafe: calculation.extraSafe.value,
+    pphSafe: calculation.pphSafe.value,
+    pphNominal: calculation.pphNominal.value,
+    negoSafe: calculation.negoSafe.value,
+    dpSafe: calculation.dpSafe.value,
+    totalBayar: calculation.totalBayar.value,
+  })
 
-const invoice = ref("");
-const fetchInvoice = async () => {
-  if (token) {
-    Api.defaults.headers.common["Authorization"] = token;
-    try {
-    const res = await Api.get("/api/transactions/invoice");
-    invoice.value = res.data.data.invoice;
-  } catch (error) {
-    console.error("Gagal ambil invoice:", error.response?.data || error);
+  if (success) {
+    calculation.reset()
+    store.resetTransaction()
+    await store.fetchCart()
+    await store.fetchInvoice()
+    window.location.href = '/halaman-data-penjualan'
   }
-  }
-
-  
-};
-const cart = ref([]);
-
-const fetchCarts = async () => {
-  if (!token) return;
-
-  Api.defaults.headers.common["Authorization"] = token;
-
-  try {
-    const res = await Api.get("/api/carts");
-
-    cart.value = res.data.data.map(c => ({
-      id: c.id,
-      qty: c.qty,
-      name: c.product.title,
-      price: c.product.sell_price,
-      icon: c.product.image,
-    }));
-
-  } catch (err) {
-    console.error("Gagal fetch carts:", err.response?.data || err);
-  }
-};
-
-const addToCart = async (p) => {
-  if (!token) return;
-
-  Api.defaults.headers.common["Authorization"] = token;
-
-  try {
-    await Api.post("/api/carts", {
-      product_id: p.id,
-      qty: 1,
-    });
-
-    await fetchCarts(); 
-
-  } catch (err) {
-    console.error("Error add to cart:", err.response?.data || err);
-  }
-};
-
-const removeFromCart = async (id) => {
-  if (!token) return;
-
-  try {
-    await Api.delete(`/api/carts/${id}`, {
-      headers: { Authorization: token }
-    });
-
-    await fetchCarts();
-  } catch (err) {
-    console.error("Gagal hapus cart:", err.response?.data || err);
-  }
-};
-
-const changeQty = async ({ id, delta }) => {
-  if (!token) return;
-
-  const item = cart.value.find(i => i.id === id);
-  if (!item) return;
-
-  const newQty = item.qty + delta;
-
-  // ✅ JANGAN PERNAH KIRIM qty < 1
-  if (newQty < 1) {
-    return await removeFromCart(id);
-  }
-
-  try {
-    await Api.put(
-      `/api/carts/${id}`,
-      { qty: newQty },
-      { headers: { Authorization: token } }
-    );
-
-    await fetchCarts();
-
-  } catch (err) {
-    console.error("Gagal update qty:", err.response?.data || err);
-
-    Swal.fire({
-      icon: "error",
-      title: "Gagal update jumlah",
-      text: err.response?.data?.meta?.message || "Quantity tidak valid",
-    });
-  }
-};
-
-
-const selectedStatus = ref(null);
-
-const updateStatus = async (newStatus) => {
-  selectedStatus.value = newStatus; 
-
-  if (!invoice.value) return;
-
-  try {
-    await Api.put("/api/transactions/status", {
-      invoice: invoice.value,
-      status: newStatus,
-    }, {
-      headers: { Authorization: token }
-    });
-  } catch (error) {
-    console.error("Gagal update status:", error.response?.data || error);
-  }
-};
-
-
-const nego  = ref(null)
-const dp    = ref(null)
-const extra = ref(null)
-const pph   = ref(null)
-
-const extraSafe = computed(() => Number(extra.value) || 0)
-const pphSafe   = computed(() => Number(pph.value) || 0)
-const negoSafe  = computed(() => Number(nego.value) || 0)
-const dpSafe    = computed(() => Number(dp.value) || 0)
-
-
-const subtotal = computed(() =>
-  cart.value.reduce((sum, c) => sum + c.price * c.qty, 0)
-)
-
-const subtotalPlusExtra = computed(() =>
-  subtotal.value + extraSafe.value
-)
-
-const pphNominal = computed(() =>
-  subtotalPlusExtra.value * (pphSafe.value / 100)
-)
-
-const totalBeforeNego = computed(() =>
-  subtotalPlusExtra.value - pphNominal.value
-)
-
-const totalAfterNego = computed(() =>
-  Math.max(0, totalBeforeNego.value - negoSafe.value)
-)
-
-const totalBayar = computed(() =>
-  Math.max(0, totalAfterNego.value)
-)
-
-watch([nego, totalBeforeNego], () => {
-  if (nego.value == null) return
-
-  if (nego.value > totalBeforeNego.value) {
-    nego.value = totalBeforeNego.value
-
-    Swal.fire({
-      icon: "warning",
-      title: "Nego tidak valid",
-      text: "Harga nego tidak boleh melebihi total sebelum nego",
-      timer: 1500,
-      showConfirmButton: false,
-    })
-  }
-
-  if (nego.value < 0) {
-    nego.value = 0
-  }
-})
-
-
-watch([dp, totalBayar], () => {
-  if (dp.value == null) return
-
-  // DP tidak boleh lebih dari total
-  if (dp.value > totalBayar.value) {
-    dp.value = totalBayar.value
-
-    Swal.fire({
-      icon: "warning",
-      title: "DP tidak valid",
-      text: "DP tidak boleh melebihi total bayar",
-      timer: 1500,
-      showConfirmButton: false,
-    })
-  }
-
-  if (dp.value < 0) {
-    dp.value = 0
-  }
-});
-
-watch([pph, subtotalPlusExtra], () => {
-  if (pph.value == null) return
-
-  // maksimal 100%
-  if (pph.value > 100) {
-    pph.value = 100
-
-    Swal.fire({
-      icon: "warning",
-      title: "PPH tidak valid",
-      text: "PPH tidak boleh melebihi 100%",
-      timer: 1500,
-      showConfirmButton: false,
-    })
-  }
-
-  if (pph.value < 0) {
-    pph.value = 0
-  }
-
-  // VALIDASI NOMINAL
-  const pphNominal = subtotalPlusExtra.value * (pph.value / 100)
-
-  if (pphNominal > subtotalPlusExtra.value) {
-    pph.value = 100
-  }
-});
-
-
-
-const checkout = async () => {
-  if (!cart.value.length) {
-    Swal.fire({
-      icon: "warning",
-      title: "Keranjang masih kosong",
-      text: "Tambahkan produk sebelum checkout!",
-    });
-    return;
-  }
-
-    if (!selectedCustomer.value) {
-    Swal.fire({
-      icon: "warning",
-      title: "Customer belum dipilih",
-      text: "Silakan pilih customer sebelum checkout!",
-    });
-    return;
-  }
-
-  if (negoSafe.value > totalBeforeNego.value) {
-  return Swal.fire(
-    "Nego tidak valid",
-    "Harga nego tidak boleh melebihi total sebelum nego",
-    "warning"
-  )
 }
 
-
-  if (dpSafe.value > totalBayar.value) {
-  return Swal.fire(
-    "DP tidak valid",
-    "DP tidak boleh melebihi total bayar",
-    "warning"
-  )
-}
-
-
-  const result = await Swal.fire({
-    title: "Konfirmasi Checkout",
-    html: `
-       <div class="text-center">
-      <p><strong>Subtotal:</strong> Rp ${subtotal.value.toLocaleString('id-ID')}</p>
-
-      <p><strong>Tambahan Biaya:</strong> Rp ${extraSafe.value.toLocaleString('id-ID')}</p>
-      <p><strong>Total Tambahan Biaya:</strong> Rp ${subtotalPlusExtra.value.toLocaleString('id-ID')}</p>
-
-      <p><strong>PPH (%):</strong> ${pphSafe.value}%</p>
-      <p><strong>PPH Nominal:</strong> Rp ${pphNominal.value.toLocaleString('id-ID')}</p>
-
-      <p><strong>Nego:</strong> Rp ${negoSafe.value.toLocaleString('id-ID')}</p>
-      <p><strong>DP:</strong> Rp ${dpSafe.value.toLocaleString('id-ID')}</p>
-
-      <hr class="my-2" />
-      <p class="text-lg font-bold" style="color:#06b6d4">
-        Total Dibayar: Rp ${totalBayar.value.toLocaleString('id-ID')}
-      </p>
-    </div>
-    `,
-    icon: "question",
-    showCancelButton: true,
-    confirmButtonText: "Ya, Checkout",
-    cancelButtonText: "Batal",
-    confirmButtonColor: "#06b6d4", 
-    cancelButtonColor: "#EF4444",  
-  });
-
-  if (!result.isConfirmed) return;
-
-  Api.defaults.headers.common["Authorization"] = token;
-
+onMounted(async () => {
   try {
-    
-    Swal.fire({
-      title: "Memproses transaksi...",
-      text: "Mohon tunggu sebentar",
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
-    });
-
-    const res = await Api.post("/api/transactions", {
-      customer_id: selectedCustomer.value?.id || null,
-      subtotal: subtotal.value,
-      subtotalPlusExtra: subtotalPlusExtra.value, 
-      extra: extraSafe.value,
-      pph: pphSafe.value,
-      pph_nominal: pphNominal.value,
-      nego: negoSafe.value,
-      dp: dpSafe.value,
-      grand_total: totalBayar.value,
-
-      status: selectedStatus.value || "proses",
-
-    });
-
-    await Swal.fire({
-      icon: "success",
-      title: "Transaksi Berhasil!",
-      text: `Invoice: ${res.data.data.invoice}`,
-      timer: 2000,
-      showConfirmButton: false,
-    });
-
-    await fetchCarts();
-    await fetchInvoice();
-
-    window.location.href = "/halaman-data-penjualan";
-
+    await store.init()
   } catch (error) {
-    console.error("Checkout gagal:", error.response?.data || error);
-
-    Swal.fire({
-      icon: "error",
-      title: "Gagal melakukan checkout",
-      text: error.response?.data?.meta?.message || "Terjadi kesalahan saat memproses transaksi.",
-    });
+    console.error('Error saat init:', error)
   }
-};
-
-onMounted(() => {
-  fetchProducts();
-  fetchCategories();
-  fetchCustomers();
-  fetchInvoice();
-  fetchCarts();
-
-  
 });
-
-const searchQuery = ref('')
-const selectedBrand = ref('Semua')
-const filteredProducts = computed(() => products.value.filter(p => {
-  const matchSearch = p.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  const matchBrand = selectedBrand.value === 'Semua' || p.brand === selectedBrand.value
-  return matchSearch && matchBrand
-}))
-
 </script>
 
 <template>
@@ -463,8 +89,9 @@ const filteredProducts = computed(() => products.value.filter(p => {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
           <span>Keranjang</span>
-          <span v-if="cart.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold animate-pulse">
-            {{ cart.length }}
+         
+          <span v-if="cartCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold animate-pulse">
+            {{ cartCount }}
           </span>
         </button>
       </div>
@@ -472,103 +99,104 @@ const filteredProducts = computed(() => products.value.filter(p => {
 
     <!-- CONTENT -->
     <div class="max-w-7xl mx-auto p-4 md:p-6">
-      <!-- MOBILE – stacked -->
-      <div class="md:hidden">
-        <div v-show="activeTab === 'products'" class="animate-fade-in">
-          <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-5 mb-4 border border-blue-200">
-            <FilterSection 
-              v-model:search="searchQuery" 
-              v-model:brand="selectedBrand"
-              v-model:brands="categories"
-            />
-          </div>
-          <ProductGrid :products="filteredProducts" @add-to-cart="addToCart" />
-        </div>
-        <div v-show="activeTab === 'cart'" class="animate-fade-in">
-          <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-5 border border-blue-200">
-            <CashierSection
-          :cart="cart"
-          :selected-customer="selectedCustomer"
-          :invoice="invoice"
-
-          :subtotal="subtotal"
-          :subtotal-plus-extra="subtotalPlusExtra"
-          :pph-nominal="pphNominal"
-          :total-before-nego="totalBeforeNego"
-          :total-after-nego="totalAfterNego"
-          :total-bayar="totalBayar"
-
-          v-model:extra="extra"
-          v-model:pph="pph"
-          v-model:nego="nego"
-          v-model:dp="dp"
-          v-model:status="selectedStatus"
-
-          @checkout="checkout"
-          @remove-item="removeFromCart"
-          @change-qty="changeQty"
-          @open-customer-modal="showCustomerModal = true"
-        />
-
-          </div>
+      <div v-if="store.isLoading" class="flex items-center justify-center min-h-[400px]">
+        <div class="text-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
+          <p class="text-gray-600">Memuat data...</p>
         </div>
       </div>
 
-      <!-- DESKTOP – side-by-side -->
-      <div class="hidden md:grid md:grid-cols-3 gap-6">
-        <div class="md:col-span-2 space-y-5">
-          <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200 animate-slide-in">
+      <template v-else>
+     
+        <div class="md:hidden">
+          <div v-show="activeTab === 'products'" class="animate-fade-in">
+            <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-5 mb-4 border border-blue-200">
+              <FilterSection 
+                v-model:search="searchQuery" 
+                v-model:brand="selectedBrand"
+                :brands="store.categories"
+              />
+            </div>
+            <ProductGrid :products="filteredProducts" @add-to-cart="store.addToCart" />
+          </div>
+          <div v-show="activeTab === 'cart'" class="animate-fade-in">
+            <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-5 border border-blue-200">
+              <CashierSection
+                :cart="store.cart || []"
+                :selected-customer="store.selectedCustomer"
+                :invoice="store.invoice"
+                :subtotal="calculation.subtotal.value"
+                :subtotal-plus-extra="calculation.subtotalPlusExtra.value"
+                :pph-nominal="calculation.pphNominal.value"
+                :total-before-nego="calculation.totalBeforeNego.value"
+                :total-after-nego="calculation.totalAfterNego.value"
+                :total-bayar="calculation.totalBayar.value"
+                v-model:extra="calculation.extra.value"
+                v-model:pph="calculation.pph.value"
+                v-model:nego="calculation.nego.value"
+                v-model:dp="calculation.dp.value"
+                v-model:status="store.status"
+                @checkout="handleCheckout"
+                @remove-item="store.removeCart"
+                @change-qty="({ id, delta }) => store.updateCartQty(id, delta)"
+                @open-customer-modal="showCustomerModal = true"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- DESKTOP – side-by-side -->
+        <div class="hidden md:grid md:grid-cols-3 gap-6">
+          <div class="md:col-span-2 space-y-5">
+            <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200 animate-slide-in">
+              <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent mb-5 flex items-center gap-2">
+                Daftar Produk
+              </h2>
+              <FilterSection 
+                v-model:search="searchQuery" 
+                v-model:brand="selectedBrand"
+                :brands="store.categories"
+              />
+              <ProductGrid :products="filteredProducts" @add-to-cart="store.addToCart" />
+            </div>
+          </div>
+
+          <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200 sticky top-24 h-fit animate-slide-in">
             <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent mb-5 flex items-center gap-2">
-              Daftar Produk
+              <svg class="w-7 h-7 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              Keranjang
             </h2>
-            <FilterSection 
-              v-model:search="searchQuery" 
-              v-model:brand="selectedBrand"
-              v-model:brands="categories"
+            <CashierSection
+              :cart="store.cart || []"
+              :selected-customer="store.selectedCustomer"
+              :invoice="store.invoice"
+              :subtotal="calculation.subtotal.value"
+              :subtotal-plus-extra="calculation.subtotalPlusExtra.value"
+              :pph-nominal="calculation.pphNominal.value"
+              :total-before-nego="calculation.totalBeforeNego.value"
+              :total-after-nego="calculation.totalAfterNego.value"
+              :total-bayar="calculation.totalBayar.value"
+              v-model:extra="calculation.extra.value"
+              v-model:pph="calculation.pph.value"
+              v-model:nego="calculation.nego.value"
+              v-model:dp="calculation.dp.value"
+              v-model:status="store.status"
+              @checkout="handleCheckout"
+              @remove-item="store.removeCart"
+              @change-qty="({ id, delta }) => store.updateCartQty(id, delta)"
+              @open-customer-modal="showCustomerModal = true"
             />
-            <ProductGrid :products="filteredProducts" @add-to-cart="addToCart" />
           </div>
         </div>
-
-        <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200 sticky top-24 h-fit animate-slide-in">
-          <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent mb-5 flex items-center gap-2">
-            <svg class="w-7 h-7 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            Keranjang
-          </h2>
-          <CashierSection
-            :cart="cart"
-            :selected-customer="selectedCustomer"
-            :invoice="invoice"
-
-            :subtotal="subtotal"
-            :subtotal-plus-extra="subtotalPlusExtra"
-            :pph-nominal="pphNominal"
-            :total-before-nego="totalBeforeNego"
-            :total-after-nego="totalAfterNego"
-            :total-bayar="totalBayar"
-
-            v-model:extra="extra"
-            v-model:pph="pph"
-            v-model:nego="nego"
-            v-model:dp="dp"
-            v-model:status="selectedStatus"
-
-            @checkout="checkout"
-            @remove-item="removeFromCart"
-            @change-qty="changeQty"
-            @open-customer-modal="showCustomerModal = true"
-          />
-
-        </div>
-      </div>
+      </template>
     </div>
 
     <!-- MODAL PELANGGAN -->
     <CustomerModal
       v-if="showCustomerModal"
-      :customers="customers"
+      :customers="store.customers || []"
       @select="chooseCustomer"
       @close="showCustomerModal = false"
     />

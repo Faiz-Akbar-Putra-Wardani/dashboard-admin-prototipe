@@ -13,7 +13,7 @@ const route = useRoute()
 const currentPageTitle = ref('Edit Bank')
 
 const token = Cookies.get('token')
-const bankId = route.params.id
+const bankId = route.params.uuid
 
 const form = reactive({
   account_holder: '',
@@ -44,7 +44,7 @@ const fetchBankData = async () => {
       text: 'Data bank tidak ditemukan.',
       confirmButtonColor: '#ef4444',
     })
-    router.push('/data-bank')
+    router.push('/banks')
   } finally {
     isLoading.value = false
   }
@@ -79,7 +79,7 @@ const updateBank = async () => {
       timer: 2000,
       showConfirmButton: false,
     })
-    router.push('/data-bank')
+    router.push('/banks')
   } catch (error) {
     if (error.response?.data) {
       handleErrors(error.response.data, errors)

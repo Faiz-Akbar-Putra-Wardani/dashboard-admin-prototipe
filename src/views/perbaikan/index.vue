@@ -263,7 +263,7 @@ onMounted(() => {
                       <div class="flex justify-end gap-2">
                         <!-- TOMBOL DETAIL (BARU) -->
                         <router-link
-                          :to="`/repairs/detail/${r.id}`"
+                          :to="`/repairs/detail/${r.uuid}`"
                           class="p-2.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all"
                           title="Detail"
                         >
@@ -277,7 +277,7 @@ onMounted(() => {
 
                         <!-- TOMBOL EDIT -->
                         <router-link
-                          :to="`/repairs/edit/${r.id}`"
+                          :to="`/repairs/edit/${r.uuid}`"
                           class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
                           title="Edit"
                         >
@@ -290,7 +290,7 @@ onMounted(() => {
 
                         <!-- TOMBOL DELETE -->
                         <delete-modal
-                          :id="r.id"
+                          :uuid="r.uuid"
                           endpoint="/api/repairs"
                           :fetchData="fetchData"
                            class="p-2 rounded-xl transition-all"

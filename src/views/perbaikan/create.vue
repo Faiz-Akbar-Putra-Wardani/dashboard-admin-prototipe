@@ -37,16 +37,15 @@ const form = reactive({
 
 const customers = ref([]);
 const selectedCustomer = ref(null);
-const errors = reactive({});
-const isSubmitting = ref(false);
-const isLoadingInvoice = ref(true);
+const errors = reactive({});  
+const isSubmitting = ref(false);  
+const isLoadingInvoice = ref(true);  
 const startDateRef = ref(null);
 const endDateRef = ref(null);
 const previewUrl = ref(null);
 const fileInputRef = ref(null);
 const fileName = ref("");
 
-// Fetch Invoice Baru
 const fetchNewInvoice = async () => {
   try {
     isLoadingInvoice.value = true;
@@ -71,10 +70,27 @@ const fetchCustomers = async () => {
   try {
     Api.defaults.headers.common["Authorization"] = token;
     const response = await Api.get("/api/customers-all");
-    customers.value = response.data.data || [];
-    console.log("Customers loaded:", customers.value);
+    
+    console.log("=== FETCH CUSTOMERS ===");
+    console.log("API Response:", response.data.data);
+    
+    // ✅ Map customers dengan format standar
+    customers.value = (response.data.data || []).map(c => {
+      console.log("Customer:", c);
+      return {
+        value: c.uuid || c.id,  
+        uuid: c.uuid || c.id,   
+        label: c.label || c.name,
+        name: c.label || c.name,
+        no_telp: c.no_telp,
+        address: c.address
+      };
+    });
+    
+    console.log("Customers mapped:", customers.value);
+    
   } catch (error) {
-    console.error("Gagal mengambil customer:", error);
+    console.error("❌ Gagal mengambil customer:", error);
     Swal.fire({
       icon: "error",
       title: "Gagal Memuat Customer",
@@ -83,17 +99,31 @@ const fetchCustomers = async () => {
   }
 };
 
-// Handle customer selection
 const handleCustomerChange = (customer) => {
+  console.log("=== CUSTOMER CHANGE ===");
+  console.log("Selected customer:", customer);
+  
   if (customer) {
-    form.customer_id = customer.value;
-    console.log("Customer selected:", customer.value);
+    const customerUuid = customer.uuid || customer.value || customer.id;
+    
+    if (typeof customerUuid !== 'string') {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Customer ID tidak valid (harus UUID string)",
+      });
+      form.customer_id = "";
+      selectedCustomer.value = null;
+      return;
+    }
+    
+    form.customer_id = customerUuid;
+
   } else {
     form.customer_id = "";
   }
 };
 
-// Handle file change untuk upload image
 const handleFileChange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -115,7 +145,6 @@ const handleFileChange = (e) => {
   previewUrl.value = URL.createObjectURL(file);
 };
 
-// Initialize Flatpickr untuk tanggal
 const initDatePickers = () => {
   if (startDateRef.value) {
     flatpickr(startDateRef.value, {
@@ -142,13 +171,20 @@ const initDatePickers = () => {
 
 // Submit Form
 const storeRepair = async () => {
-  console.log("Form data:", form);
-
   if (!form.customer_id || form.customer_id === "") {
     Swal.fire({
       icon: "warning",
       title: "Customer Belum Dipilih",
       text: "Silakan pilih customer terlebih dahulu.",
+    });
+    return;
+  }
+
+  if (typeof form.customer_id !== 'string') {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Customer ID tidak valid (bukan UUID string)",
     });
     return;
   }
@@ -172,7 +208,7 @@ const storeRepair = async () => {
   try {
     const formData = new FormData();
     
-    formData.append("customer_id", parseInt(form.customer_id));
+    formData.append("customer_id", String(form.customer_id));
     formData.append("item_repair", form.item_repair);
     formData.append("start_date", form.start_date);
     formData.append("end_date", form.end_date);
@@ -180,7 +216,6 @@ const storeRepair = async () => {
     formData.append("component", form.component || "");
     formData.append("pic", form.pic);
     
-    // Gunakan rawValue dari composable
     formData.append("dp", parseFloat(dp.rawValue.value) || 0);
     formData.append("repair_cost", parseFloat(repairCost.rawValue.value));
     formData.append("status", form.status);
@@ -189,7 +224,9 @@ const storeRepair = async () => {
       formData.append("image", form.image);
     }
 
-    console.log("FormData to send:", [...formData]);
+    for (let pair of formData.entries()) {
+      console.log(pair[0], ":", pair[1], typeof pair[1]);
+    }
 
     Api.defaults.headers.common["Authorization"] = token;
     const response = await Api.post("/api/repairs", formData);
@@ -203,8 +240,8 @@ const storeRepair = async () => {
     });
 
     router.push("/repairs");
+    
   } catch (error) {
-    console.error("Error submit:", error.response);
     
     if (error.response?.data) {
       const responseData = error.response.data;
@@ -239,15 +276,6 @@ const storeRepair = async () => {
           confirmButtonColor: "#ef4444",
         });
       }
-      else if (typeof responseData.errors === 'string') {
-        await Swal.fire({
-          icon: "error",
-          title: "Kesalahan Server!",
-          text: responseData.errors,
-          confirmButtonText: "Tutup",
-          confirmButtonColor: "#ef4444",
-        });
-      }
       else {
         await Swal.fire({
           icon: "error",
@@ -277,6 +305,7 @@ onMounted(() => {
   initDatePickers();
 });
 </script>
+
 
 <template>
   <admin-layout>

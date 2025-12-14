@@ -4,7 +4,7 @@ import { toast } from "vue3-toastify";
 import "vue3-toastify/dist/index.css";
 
 import AdminLayout from "@/components/layout/AdminLayout.vue";
-import DeleteModal from "@/components/DeleteButton.vue";
+import DeleteModal from "../../components/DeleteButton.vue";
 
 import Api from "@/services/api";
 import Cookies from "js-cookie";
@@ -208,7 +208,7 @@ onMounted(() => {
                 <td class="px-6 py-4 text-right">
                   <div class="flex justify-end gap-2">
                     <router-link
-                      :to="`/admins/edit/${admin.id}`"
+                      :to="`/data-admin/edit/${admin.uuid}`"
                       class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
                       title="Edit"
                     >
@@ -226,12 +226,11 @@ onMounted(() => {
                         />
                       </svg>
                     </router-link>
-                    <DeleteModal
-                      :id="admin.id"
-                      endpoint="/api/admins"
-                      :fetchData="fetchData"
-                      class="p-2 rounded-xl transition-all"
-                    >
+                   <DeleteModal
+                    :uuid="admin.uuid"
+                    endpoint="/api/admins"
+                    :fetchData="fetchData"
+                  >
                       <template #trigger>
                         <svg
                           class="w-5 h-5"

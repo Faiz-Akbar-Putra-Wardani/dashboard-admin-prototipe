@@ -1,0 +1,234 @@
+// composables/useTransactionEdit.js
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import Swal from 'sweetalert2'
+import Api from '@/services/api'
+
+/**
+ * Composable untuk handle edit transaksi
+ * @param {string} uuid - Transaction UUID
+ */
+export function useTransactionEdit(uuid) {
+  const router = useRouter()
+  const isLoading = ref(false)
+  
+  // Transaction data refs
+  const invoice = ref('')
+  const selectedCustomer = ref(null)
+  const cart = ref([])
+  const status = ref(null)
+  
+  // Financial data refs
+  const extra = ref(null)
+  const pph = ref(null)
+  const nego = ref(null)
+  const dp = ref(null)
+
+  /**
+   * Fetch transaction detail dari API
+   */
+  const fetchTransactionDetail = async () => {
+    if (!uuid) return
+
+    isLoading.value = true
+
+    try {
+      console.log('=== FETCH TRANSACTION DETAIL ===')
+      console.log('UUID:', uuid)
+
+      const res = await Api.get(`/api/transactions/${uuid}`)
+      const trx = res.data.data
+
+      console.log('Transaction data:', trx)
+
+      // Populate data
+      invoice.value = trx.invoice
+      status.value = trx.status
+
+      // Customer data
+      selectedCustomer.value = trx.customer ? {
+        id: trx.customer.uuid,
+        uuid: trx.customer.uuid,
+        name: trx.customer.name_perusahaan,
+        address: trx.customer.address,
+      } : null
+
+      // Financial data (convert 0 to null for placeholder)
+      extra.value = (trx.extra === 0 || trx.extra === null) ? null : trx.extra
+      pph.value = (trx.pph === 0 || trx.pph === null) ? null : trx.pph
+      nego.value = (trx.nego === 0 || trx.nego === null) ? null : trx.nego
+      dp.value = (trx.dp === 0 || trx.dp === null) ? null : trx.dp
+
+      // Cart items
+      cart.value = trx.transaction_details.map(d => ({
+        id: d.id,
+        qty: d.qty,
+        name: d.product.title,
+        price: d.price,
+        icon: d.product.image,
+        product_id: d.product.uuid,
+        product_uuid: d.product.uuid,
+      }))
+
+      console.log('✅ Transaction loaded:', {
+        invoice: invoice.value,
+        customer: selectedCustomer.value?.name,
+        items: cart.value.length,
+        status: status.value,
+      })
+
+    } catch (err) {
+      console.error('❌ Failed to fetch transaction:', err.response?.data || err)
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal memuat data',
+        text: 'Transaksi tidak ditemukan',
+      }).then(() => {
+        router.push('/halaman-data-penjualan')
+      })
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * Update transaction
+   */
+  const updateTransaction = async (payload) => {
+    try {
+      console.log('=== UPDATE TRANSACTION ===')
+      console.log('UUID:', uuid)
+      console.log('Payload:', payload)
+
+      Swal.fire({
+        title: 'Memproses update...',
+        text: 'Mohon tunggu sebentar',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      })
+
+      const res = await Api.put(`/api/transactions/${uuid}`, payload)
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Update Berhasil!',
+        text: `Invoice: ${invoice.value}`,
+        timer: 2000,
+        showConfirmButton: false,
+      })
+
+      return res.data.data
+
+    } catch (error) {
+      console.error('❌ Update failed:', error.response?.data || error)
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal update transaksi',
+        text: error.response?.data?.meta?.message || 'Terjadi kesalahan',
+      })
+      
+      throw error
+    }
+  }
+
+  /**
+   * Add product to local cart (no API call)
+   */
+  const addToLocalCart = (product) => {
+    console.log('Adding product to cart:', product)
+
+    const existing = cart.value.find(
+      c => c.product_uuid === product.id || c.product_id === product.id
+    )
+
+    if (existing) {
+      existing.qty += 1
+      console.log('Updated existing item:', existing)
+    } else {
+      const newItem = {
+        id: Date.now(), // Temporary ID
+        product_id: product.id,
+        product_uuid: product.id,
+        qty: 1,
+        name: product.name,
+        price: product.price,
+        icon: product.icon,
+      }
+      cart.value.push(newItem)
+      console.log('Added new item:', newItem)
+    }
+  }
+
+  /**
+   * Remove from local cart
+   */
+  const removeFromLocalCart = (id) => {
+    console.log('Removing cart item:', id)
+    cart.value = cart.value.filter(c => c.id !== id)
+  }
+
+  /**
+   * Update qty in local cart
+   */
+  const updateLocalCartQty = (id, delta) => {
+    const item = cart.value.find(c => c.id === id)
+    if (!item) return
+
+    const newQty = item.qty + delta
+
+    if (newQty < 1) {
+      removeFromLocalCart(id)
+    } else {
+      item.qty = newQty
+    }
+  }
+
+  /**
+   * Set customer
+   */
+  const setCustomer = (customer) => {
+    selectedCustomer.value = customer
+  }
+
+  /**
+   * Clear customer
+   */
+  const clearCustomer = () => {
+    selectedCustomer.value = null
+  }
+
+  /**
+   * Reset all financial inputs
+   */
+  const resetFinancials = () => {
+    extra.value = null
+    pph.value = null
+    nego.value = null
+    dp.value = null
+  }
+
+  return {
+    // State
+    isLoading,
+    invoice,
+    selectedCustomer,
+    cart,
+    status,
+    extra,
+    pph,
+    nego,
+    dp,
+
+    // Methods
+    fetchTransactionDetail,
+    updateTransaction,
+    addToLocalCart,
+    removeFromLocalCart,
+    updateLocalCartQty,
+    setCustomer,
+    clearCustomer,
+    resetFinancials,
+  }
+}

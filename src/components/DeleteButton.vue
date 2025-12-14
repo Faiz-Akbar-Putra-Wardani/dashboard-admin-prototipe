@@ -5,7 +5,7 @@ import Api from "@/services/api";
 import Cookies from "js-cookie";
 
 const props = defineProps({
-  id: [Number, String],
+  uuid: [Number, String],
   endpoint: String,
   fetchData: Function,
   title: {
@@ -37,7 +37,7 @@ const deleteData = async () => {
 
   if (result.isConfirmed) {
     try {
-      await Api.delete(`${props.endpoint}/${props.id}`);
+      await Api.delete(`${props.endpoint}/${props.uuid}`);
       props.fetchData();
       Swal.fire({
         icon: "success",

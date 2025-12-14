@@ -14,7 +14,7 @@
     @mouseleave="isHovered = false"
   >
     <div :class="['py-6 flex items-center justify-center w-full']">
-      <router-link to="/Ecommerce" class="flex justify-center w-full">
+      <router-link to="/dashboard" class="flex justify-center w-full">
         <picture v-if="isExpanded || isHovered || isMobileOpen">
           <source srcset="/images/logo/logo_ses2_100x100.webp" type="image/webp">
           <img
@@ -228,7 +228,7 @@ const menuGroups = [
   {
     title: "Menu",
     items: [
-      { icon: HomeIcon, name: "Dashboard", path: "/Ecommerce", roles: ['super_admin'] }, 
+      { icon: HomeIcon, name: "Dashboard", path: "/dashboard", roles: ['super_admin'] }, 
       { icon: UsersIcon, name: "Data Pelanggan", path: "/data-pelanggan", roles: ['super_admin', 'admin'] },
       { icon: UsersIcon, name: "Data Admin", path: "/data-admin", roles: ['super_admin'] }, 
     ],

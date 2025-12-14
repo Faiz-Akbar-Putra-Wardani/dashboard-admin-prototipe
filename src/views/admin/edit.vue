@@ -8,8 +8,13 @@ import { handleErrors } from "@/utils/handleErrors";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 
+
 const router = useRouter();
 const route = useRoute();
+
+// UUID dari route
+const uuid = route.params.uuid;
+
 const currentPageTitle = ref("Edit Admin");
 const token = Cookies.get("token");
 
@@ -24,24 +29,28 @@ const errors = reactive({});
 const isSubmitting = ref(false);
 const isLoading = ref(true);
 
-// Fetch data admin berdasarkan ID
+// Fetch admin by UUID
 const fetchAdmin = async () => {
   try {
     Api.defaults.headers.common["Authorization"] = token;
-    const response = await Api.get(`/api/admins/${route.params.id}`);
-    
+
+    const response = await Api.get(`/api/admins/${uuid}`);
+
     const admin = response.data.data;
+
     form.name = admin.name;
     form.email = admin.email;
     form.role = admin.role;
-    // Password tidak diisi karena optional saat update
+
   } catch (error) {
     console.error("Gagal mengambil data admin:", error);
+
     Swal.fire({
       icon: "error",
       title: "Kesalahan!",
       text: "Gagal mengambil data admin.",
     });
+
     router.push("/data-admin");
   } finally {
     isLoading.value = false;
@@ -63,24 +72,24 @@ const updateAdmin = async () => {
   if (!confirm.isConfirmed) return;
 
   isSubmitting.value = true;
+
+  // Reset error
   Object.keys(errors).forEach((key) => (errors[key] = ""));
 
   try {
     Api.defaults.headers.common["Authorization"] = token;
-    
-    // Buat object untuk update, hanya kirim field yang diisi
+
     const updateData = {
       name: form.name,
       email: form.email,
       role: form.role,
     };
 
-    // Tambahkan password hanya jika diisi
-    if (form.password && form.password.trim() !== "") {
+    if (form.password?.trim()) {
       updateData.password = form.password;
     }
 
-    const response = await Api.put(`/api/admins/${route.params.id}`, updateData);
+    const response = await Api.put(`/api/admins/${uuid}`, updateData);
 
     await Swal.fire({
       icon: "success",
@@ -94,6 +103,7 @@ const updateAdmin = async () => {
   } catch (error) {
     if (error.response?.data) {
       handleErrors(error.response.data, errors);
+
       const errorMessages =
         error.response.data.errors
           ?.map((err) => `<li>${err.msg}</li>`)
@@ -102,11 +112,7 @@ const updateAdmin = async () => {
       await Swal.fire({
         icon: "error",
         title: "Validasi Gagal!",
-        html: `
-          <ul style="text-align: center; margin: 0; padding-left: 1.2rem; color: #e53e3e;">
-            ${errorMessages}
-          </ul>
-        `,
+        html: `<ul style="text-align: center; padding-left: 1.2rem; color: #e53e3e;">${errorMessages}</ul>`,
         confirmButtonText: "Tutup",
         confirmButtonColor: "#ef4444",
       });
@@ -128,6 +134,7 @@ onMounted(() => {
   fetchAdmin();
 });
 </script>
+
 
 <template>
   <admin-layout>

@@ -18,7 +18,7 @@ const currentPageTitle = ref("Edit Proyek");
 
 const token = Cookies.get("token");
 
-const projectId = route.params.id;
+const projectId = route.params.uuid;
 
 const form = reactive({
   project_name: "",

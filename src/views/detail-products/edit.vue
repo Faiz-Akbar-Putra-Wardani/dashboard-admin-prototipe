@@ -13,6 +13,7 @@ import FormSelect from "@/components/FormSelect.vue";
 const router = useRouter();
 const route = useRoute(); 
 const token = Cookies.get("token");
+ const uuid = route.params.uuid;
 const currentPageTitle = ref("Ubah Detail Produk");
 const activeTab = ref("general");
 const isSubmitting = ref(false);
@@ -54,9 +55,9 @@ const fetchProducts = async () => {
 };
 const fetchDetailProduct = async () => {
   try {
-    const id = route.params.id;
+   
     Api.defaults.headers.common["Authorization"] = token;
-    const res = await Api.get(`/api/detail-products/${id}`);
+    const res = await Api.get(`/api/detail-products/${uuid}`);
     const data = res.data.data;
     Object.keys(form).forEach((key) => {
       if (data[key] !== undefined) form[key] = data[key];
@@ -89,9 +90,8 @@ const updateDetailProduct = async () => {
   Object.keys(errors).forEach((k) => (errors[k] = ""));
 
   try {
-    const id = route.params.id;
     Api.defaults.headers.common["Authorization"] = token;
-    const response = await Api.put(`/api/detail-products/${id}`, form);
+    const response = await Api.put(`/api/detail-products/${uuid}`, form);
 
     await Swal.fire({
       icon: "success",

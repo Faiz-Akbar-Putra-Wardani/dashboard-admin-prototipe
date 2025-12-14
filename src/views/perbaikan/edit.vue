@@ -18,7 +18,7 @@ const router = useRouter();
 const route = useRoute();
 const currentPageTitle = ref("Edit Perbaikan");
 const token = Cookies.get("token");
-const repairId = route.params.id;
+const repairId = route.params.uuid;
 
 const repairCost = useCurrencyInput();
 const dp = useCurrencyInput();
@@ -50,17 +50,57 @@ const fileName = ref("");
 let startDatePicker = null;
 let endDatePicker = null;
 
-// Fetch Data Repair by ID
+// ✅ Fetch Customers DULU
+const fetchCustomers = async () => {
+  try {
+    Api.defaults.headers.common["Authorization"] = token;
+    const response = await Api.get("/api/customers-all");
+    
+    console.log("=== FETCH CUSTOMERS ===");
+    console.log("API Response:", response.data.data);
+    
+    // ✅ Map customers dengan format standar
+    customers.value = (response.data.data || []).map(c => {
+      return {
+        value: c.uuid || c.id,  // ✅ UUID sebagai value
+        uuid: c.uuid || c.id,   // ✅ UUID eksplisit
+        label: c.label || c.name,
+        name: c.label || c.name,
+        no_telp: c.no_telp,
+        address: c.address
+      };
+    });
+    
+    console.log("Customers mapped:", customers.value);
+    
+  } catch (error) {
+    console.error("❌ Gagal mengambil customer:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Gagal Memuat Customer",
+      text: "Tidak dapat mengambil data customer.",
+    });
+  }
+};
+
+// ✅ Fetch Data Repair SETELAH customers loaded
 const fetchRepairData = async () => {
   try {
     isLoading.value = true;
     Api.defaults.headers.common["Authorization"] = token;
+    
+    console.log("=== FETCH REPAIR DATA ===");
+    console.log("Repair UUID:", repairId);
+    
     const response = await Api.get(`/api/repairs/${repairId}`);
     const repair = response.data.data;
 
+    console.log("Repair data:", repair);
+    console.log("Repair customer UUID:", repair.customer?.uuid);
+
     // Set form data
     form.invoice = repair.invoice;
-    form.customer_id = repair.customer_id;
+    form.customer_id = repair.customer?.uuid || "";
     form.item_repair = repair.item_repair;
     form.start_date = repair.start_date.split('T')[0];
     form.end_date = repair.end_date.split('T')[0];
@@ -79,10 +119,20 @@ const fetchRepairData = async () => {
       existingImageUrl.value = getImageUrl(repair.image);
     }
 
-    // Set selected customer untuk vue-select
-    const customer = customers.value.find(c => c.value === repair.customer_id);
-    if (customer) {
-      selectedCustomer.value = customer;
+    // ✅ PERBAIKAN: Set selected customer untuk vue-select
+    if (repair.customer?.uuid && customers.value.length > 0) {
+      const customer = customers.value.find(c => 
+        c.uuid === repair.customer.uuid || 
+        c.value === repair.customer.uuid
+      );
+      
+      if (customer) {
+        selectedCustomer.value = customer;
+        console.log("✅ Customer matched:", customer);
+      } else {
+        console.warn("⚠️ Customer not found in dropdown:", repair.customer.uuid);
+        console.log("Available customers:", customers.value.map(c => c.uuid));
+      }
     }
 
     // Update flatpickr dengan tanggal existing
@@ -93,9 +143,11 @@ const fetchRepairData = async () => {
       endDatePicker.setDate(form.end_date);
     }
 
-    console.log("Repair data loaded:", repair);
+    console.log("✅ Repair data loaded");
+    console.log("Selected customer:", selectedCustomer.value);
+    
   } catch (error) {
-    console.error("Gagal mengambil data perbaikan:", error);
+    console.error("❌ Gagal mengambil data perbaikan:", error);
     Swal.fire({
       icon: "error",
       title: "Gagal Memuat Data",
@@ -108,31 +160,31 @@ const fetchRepairData = async () => {
   }
 };
 
-// Fetch Customers
-const fetchCustomers = async () => {
-  try {
-    Api.defaults.headers.common["Authorization"] = token;
-    const response = await Api.get("/api/customers-all");
-    customers.value = response.data.data || [];
-    
-    console.log("Customers loaded:", customers.value);
-  } catch (error) {
-    console.error("Gagal mengambil customer:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Gagal Memuat Customer",
-      text: "Tidak dapat mengambil data customer.",
-    });
-  }
-};
-
-// Handle customer selection
+// ✅ Handle customer selection
 const handleCustomerChange = (customer) => {
+  console.log("=== CUSTOMER CHANGE ===");
+  console.log("Selected customer:", customer);
+  
   if (customer) {
-    form.customer_id = customer.value;
-    console.log("Customer selected:", customer.value);
+    const customerUuid = customer.uuid || customer.value || customer.id;
+    
+    console.log("Customer UUID:", customerUuid, typeof customerUuid);
+    
+    if (typeof customerUuid !== 'string') {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Customer ID tidak valid (harus UUID string)",
+      });
+      form.customer_id = "";
+      selectedCustomer.value = null;
+      return;
+    }
+    
+    form.customer_id = customerUuid;
   } else {
     form.customer_id = "";
+  
   }
 };
 
@@ -158,7 +210,7 @@ const handleFileChange = (e) => {
   previewUrl.value = URL.createObjectURL(file);
 };
 
-/// Initialize Flatpickr untuk tanggal
+// Initialize Flatpickr untuk tanggal
 const initDatePickers = () => {
   if (startDateRef.value) {
     startDatePicker = flatpickr(startDateRef.value, {
@@ -187,16 +239,24 @@ const initDatePickers = () => {
   }
 };
 
-
 // Submit Form Update
 const updateRepair = async () => {
-  console.log("Form data:", form);
 
   if (!form.customer_id || form.customer_id === "") {
     Swal.fire({
       icon: "warning",
       title: "Customer Belum Dipilih",
       text: "Silakan pilih customer terlebih dahulu.",
+    });
+    return;
+  }
+
+  if (typeof form.customer_id !== 'string') {
+    
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Customer ID tidak valid (bukan UUID string)",
     });
     return;
   }
@@ -220,7 +280,7 @@ const updateRepair = async () => {
   try {
     const formData = new FormData();
     
-    formData.append("customer_id", parseInt(form.customer_id));
+    formData.append("customer_id", String(form.customer_id));
     formData.append("item_repair", form.item_repair);
     formData.append("start_date", form.start_date);
     formData.append("end_date", form.end_date);
@@ -236,7 +296,10 @@ const updateRepair = async () => {
       formData.append("image", form.image);
     }
 
-    console.log("FormData to send:", [...formData]);
+    console.log("=== FORMDATA TO SEND ===");
+    for (let pair of formData.entries()) {
+      console.log(pair[0], ":", pair[1], typeof pair[1]);
+    }
 
     Api.defaults.headers.common["Authorization"] = token;
     const response = await Api.put(`/api/repairs/${repairId}`, formData);
@@ -250,8 +313,9 @@ const updateRepair = async () => {
     });
 
     router.push("/repairs");
+    
   } catch (error) {
-    console.error("Error submit:", error.response);
+
     
     if (error.response?.data) {
       const responseData = error.response.data;
@@ -286,15 +350,6 @@ const updateRepair = async () => {
           confirmButtonColor: "#ef4444",
         });
       }
-      else if (typeof responseData.errors === 'string') {
-        await Swal.fire({
-          icon: "error",
-          title: "Kesalahan Server!",
-          text: responseData.errors,
-          confirmButtonText: "Tutup",
-          confirmButtonColor: "#ef4444",
-        });
-      }
       else {
         await Swal.fire({
           icon: "error",
@@ -318,9 +373,10 @@ const updateRepair = async () => {
 
 const goBack = () => router.push("/repairs");
 
+
 onMounted(async () => {
-  await fetchCustomers();
-  await fetchRepairData();
+  await fetchCustomers();  
+  await fetchRepairData(); 
   initDatePickers();
 });
 </script>

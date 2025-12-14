@@ -285,7 +285,7 @@ onMounted(() => {
                       <div class="flex justify-end gap-2">
                         <!-- TOMBOL DETAIL -->
                         <router-link
-                          :to="`/halaman-data-sewa/detail/${r.id}`"
+                          :to="`/halaman-data-sewa/detail/${r.uuid}`"
                           class="p-2.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all"
                           title="Detail"
                         >
@@ -299,7 +299,7 @@ onMounted(() => {
 
                         <!-- TOMBOL EDIT -->
                         <router-link
-                          :to="`/halaman-data-sewa/edit/${r.id}`"
+                          :to="`/halaman-data-sewa/edit/${r.uuid}`"
                           class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
                           title="Edit"
                         >
@@ -312,7 +312,7 @@ onMounted(() => {
 
                         <!-- TOMBOL DELETE -->
                         <delete-modal
-                          :id="r.id"
+                          :uuid="r.uuid"
                           endpoint="/api/rentals"
                           :fetchData="fetchData"
                           class="p-2 rounded-xl transition-all"

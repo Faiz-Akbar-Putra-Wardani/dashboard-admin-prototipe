@@ -257,7 +257,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useCurrencyInput } from "@/composables/useCurrencyInput" 
 
 const props = defineProps({
@@ -290,12 +290,39 @@ const emit = defineEmits([
   'update:nego',
   'update:dp',
   'update:status',
-  'select-customer',
 ])
 
 const extraCurrency = useCurrencyInput();
 const negoCurrency = useCurrencyInput();
 const dpCurrency = useCurrencyInput();
+
+// ✅ WATCH props untuk sync saat data loaded dari API
+watch(() => props.extra, (newVal) => {
+  console.log("Props extra changed:", newVal);
+  if (newVal !== null && newVal !== undefined && newVal !== 0) {
+    extraCurrency.setValue(newVal);
+  } else {
+    extraCurrency.reset();
+  }
+}, { immediate: true })
+
+watch(() => props.nego, (newVal) => {
+  console.log("Props nego changed:", newVal);
+  if (newVal !== null && newVal !== undefined && newVal !== 0) {
+    negoCurrency.setValue(newVal);
+  } else {
+    negoCurrency.reset();
+  }
+}, { immediate: true })
+
+watch(() => props.dp, (newVal) => {
+  console.log("Props dp changed:", newVal);
+  if (newVal !== null && newVal !== undefined && newVal !== 0) {
+    dpCurrency.setValue(newVal);
+  } else {
+    dpCurrency.reset();
+  }
+}, { immediate: true })
 
 const isPphFilled = computed(() => {
   return props.pph !== null && props.pph !== 0 && props.pph !== '' && props.pph !== undefined
@@ -318,10 +345,6 @@ const localExtra = computed({
     if (!isPphFilled.value) {
       return '';
     }
-    // Sinkronkan dengan props
-    if (props.extra && extraCurrency.rawValue.value !== props.extra.toString()) {
-      extraCurrency.setValue(props.extra);
-    }
     return extraCurrency.displayValue.value;
   },
   set: (v) => {
@@ -340,13 +363,7 @@ const handleNegoInput = (event) => {
 };
 
 const localNego = computed({
-  get: () => {
-    // Sinkronkan dengan props
-    if (props.nego && negoCurrency.rawValue.value !== props.nego.toString()) {
-      negoCurrency.setValue(props.nego);
-    }
-    return negoCurrency.displayValue.value;
-  },
+  get: () => negoCurrency.displayValue.value,
   set: (v) => {
     negoCurrency.displayValue.value = v;
   }
@@ -359,13 +376,7 @@ const handleDpInput = (event) => {
 };
 
 const localDp = computed({
-  get: () => {
-    // Sinkronkan dengan props
-    if (props.dp && dpCurrency.rawValue.value !== props.dp.toString()) {
-      dpCurrency.setValue(props.dp);
-    }
-    return dpCurrency.displayValue.value;
-  },
+  get: () => dpCurrency.displayValue.value,
   set: (v) => {
     dpCurrency.displayValue.value = v;
   }
@@ -374,12 +385,14 @@ const localDp = computed({
 // PPH - Tetap menggunakan input number biasa
 const localPph = computed({
   get: () => {
+    console.log("localPph get:", props.pph);
     if (props.pph === null || props.pph === 0 || props.pph === '') {
       return '';
     }
     return props.pph;
   },
   set: v => {
+    console.log("localPph set:", v);
     if (v === '' || v === 0 || v === '0') {
       emit('update:pph', null);
       // Reset extra ketika PPH dikosongkan
@@ -392,12 +405,37 @@ const localPph = computed({
 })
 
 const localStatus = computed({
-  get: () => props.status || 'proses',
-  set: v => emit('update:status', v),
+  get: () => {
+    console.log("localStatus get:", props.status);
+    return props.status || 'proses';
+  },
+  set: v => {
+    console.log("localStatus set:", v);
+    emit('update:status', v);
+  }
 })
 
-const clearCustomer = () => emit('select-customer', null);
+// ✅ PERBAIKAN: Emit ke parent untuk clear customer
+const clearCustomer = () => {
+  console.log("Clearing customer");
+  emit('update:selectedCustomer', null);
+};
+
+// ✅ Debug mount
+onMounted(() => {
+  console.log("=== CASHIER SECTION MOUNTED ===");
+  console.log("Cart:", props.cart);
+  console.log("Customer:", props.selectedCustomer);
+  console.log("Invoice:", props.invoice);
+  console.log("Extra:", props.extra);
+  console.log("PPH:", props.pph);
+  console.log("Nego:", props.nego);
+  console.log("DP:", props.dp);
+  console.log("Status:", props.status);
+  console.log("==============================");
+});
 </script>
+
 
 
 <style scoped>

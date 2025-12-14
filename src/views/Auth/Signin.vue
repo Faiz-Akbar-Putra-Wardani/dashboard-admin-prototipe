@@ -76,13 +76,13 @@ const loginHandler = async () => {
     // 🔹 Redirect berdasarkan role
     const userRole = userStore.userRole
     
-    console.log('Redirecting with role:', userRole) // DEBUG
+    console.log('Redirecting with role:', userRole) 
     
     if (userRole === 'super_admin') {
-      console.log('Redirecting to /Ecommerce') // DEBUG
-      await router.push('/Ecommerce')
+      console.log('Redirecting to /dashboard') 
+      await router.push('/dashboard')
     } else if (userRole === 'admin') {
-      console.log('Redirecting to /data-pelanggan') // DEBUG
+      console.log('Redirecting to /data-pelanggan') 
       await router.push('/data-pelanggan')
     } else {
       // Fallback jika role tidak dikenali
