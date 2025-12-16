@@ -9,7 +9,7 @@ import DeleteModal from "@/components/DeleteButton.vue";
 import Api from "@/services/api";
 import Cookies from "js-cookie";
 
-const transactions = ref([]);
+const categories = ref([]);
 const keywords = ref("");
 
 const isLoading = ref(false);
@@ -34,20 +34,20 @@ const fetchData = async (pageNumber = 1, search = "") => {
   try {
     isLoading.value = true;
 
-    const res = await Api.get(`/api/transactions?page=${pageNumber}&search=${search}`);
+    const res = await Api.get(`/api/project-categories?page=${pageNumber}&limit=${pagination.value.perPage}&search=${search}`);
 
-    transactions.value = res.data.data;
+    categories.value = res.data.data;
 
     pagination.value = {
-      currentPage: res.data.meta.pagination.currentPage,
-      perPage: res.data.meta.pagination.perPage,
-      total: res.data.meta.pagination.total,
-      totalPages: res.data.meta.pagination.totalPages,
+      currentPage: res.data.pagination.currentPage,
+      perPage: res.data.pagination.perPage,
+      total: res.data.pagination.total,
+      totalPages: res.data.pagination.totalPages,
     };
 
   } catch (error) {
-    console.error("Gagal ambil transaksi:", error);
-    toast.error("Gagal mengambil data transaksi.");
+    console.error("Gagal ambil kategori proyek:", error);
+    toast.error("Gagal mengambil data kategori proyek.");
   } finally {
     isLoading.value = false;
   }
@@ -60,20 +60,6 @@ const searchHandler = () => {
 const goToPage = (page) => {
   if (page < 1 || page > pagination.value.totalPages) return;
   fetchData(page, keywords.value);
-};
-
-const getProductName = (trx) => {
-  const details = trx.transaction_details || [];
-
-  if (!details.length) return "-";
-
-  const firstProduct = details[0]?.product?.title || "-";
-
-  if (details.length > 1) {
-    return `${firstProduct} + ${details.length - 1} lainnya`;
-  }
-
-  return firstProduct;
 };
 
 onMounted(() => {
@@ -90,12 +76,23 @@ onMounted(() => {
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-              Data Penjualan
+              Kategori Proyek
             </h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Daftar semua transaksi penjualan
+              Daftar semua kategori proyek
             </p>
           </div>
+
+          <!-- TOMBOL TAMBAH -->
+          <router-link
+            to="/projects-categories/create"
+            class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold rounded-2xl hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all shadow-lg hover:shadow-xl"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Tambah Kategori
+          </router-link>
         </div>
 
         <!-- SEARCH -->
@@ -106,7 +103,7 @@ onMounted(() => {
                 v-model="keywords"
                 @keydown.enter="searchHandler"
                 type="text"
-                placeholder="Cari invoice atau customer..."
+                placeholder="Cari nama kategori..."
                 class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
               />
               <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,7 +129,7 @@ onMounted(() => {
 
         <!-- EMPTY STATE -->
         <div
-          v-else-if="transactions.length === 0"
+          v-else-if="categories.length === 0"
           class="text-center py-16"
         >
           <div
@@ -148,12 +145,12 @@ onMounted(() => {
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
               />
             </svg>
           </div>
           <p class="text-gray-500 dark:text-gray-400">
-            Belum ada transaksi penjualan
+            Belum ada kategori proyek
           </p>
         </div>
 
@@ -170,69 +167,52 @@ onMounted(() => {
                 >
                   <tr>
                     <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">No</th>
-                    <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Invoice</th>
-                    <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Pelanggan</th>
-                    <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Tanggal</th>
-                    <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Produk</th>
-                    <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Total Bayar</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Nama Kategori</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Slug</th>
+                    <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Jumlah Proyek</th>
+                    <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Tanggal Dibuat</th>
                     <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
                   </tr>
                 </thead>
 
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                   <tr
-                    v-for="(t, i) in transactions"
-                    :key="t.id"
+                    v-for="(cat, i) in categories"
+                    :key="cat.uuid"
                     class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 transition-colors"
                   >
                     <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
                       {{ (pagination.currentPage - 1) * pagination.perPage + i + 1 }}
                     </td>
 
-                    <td class="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white text-center">
-                      {{ t.invoice }}
+                    <td class="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">
+                      {{ cat.name }}
                     </td>
 
-                   <td>
-                    <span v-if="t.customer && t.customer.name_perusahaan">
-                      {{ t.customer.name_perusahaan }}
-                    </span>
-                    <span v-else class="text-gray-400 italic">
-                      Tanpa Customer
-                    </span>
-                  </td>
+                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        {{ cat.slug }}
+                      </span>
+                    </td>
+
+                    <td class="px-6 py-4 text-sm text-center">
+                      <span class="inline-flex items-center justify-center min-w-[2rem] px-3 py-1.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-full font-semibold">
+                        {{ cat._count.projects }}
+                      </span>
+                    </td>
 
                     <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">
-                      {{ new Date(t.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) }}
-                    </td>
-
-                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 text-center">
-                      {{ getProductName(t) }}
-                    </td>
-
-                    <td class="px-6 py-4 text-sm font-bold text-green-600 text-center">
-                      Rp {{ new Intl.NumberFormat("id-ID").format(t.grand_total) }}
+                      {{ new Date(cat.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) }}
                     </td>
 
                     <td class="px-6 py-4 text-right">
                       <div class="flex justify-end gap-2">
-                        <!-- TOMBOL DETAIL -->
-                        <router-link
-                          :to="`/halaman-data-penjualan/detail/${t.uuid}`"
-                          class="p-2.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all"
-                          title="Detail"
-                        >
-                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        </router-link>
-
                         <!-- TOMBOL EDIT -->
                         <router-link
-                          :to="`/halaman-data-penjualan/edit/${t.uuid}`"
+                          :to="`/halaman-kategori-proyek/edit/${cat.uuid}`"
                           class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
                           title="Edit"
                         >
@@ -243,27 +223,28 @@ onMounted(() => {
                           </svg>
                         </router-link>
 
-                      <delete-modal
-                        :uuid="t.uuid"
-                        endpoint="/api/transactions"
-                        :fetchData="fetchData"
-                      >
-                        <template #trigger>
-                          <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </template>
-                      </delete-modal>
+                        <!-- TOMBOL DELETE -->
+                        <delete-modal
+                          :uuid="cat.uuid"
+                          endpoint="/api/project-categories"
+                          :fetchData="fetchData"
+                        >
+                          <template #trigger>
+                            <svg
+                              class="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </template>
+                        </delete-modal>
                       </div>
                     </td>
                   </tr>
@@ -291,7 +272,7 @@ onMounted(() => {
             <span class="font-semibold text-gray-700 dark:text-gray-300">
               {{ pagination.total }}
             </span>
-            data
+            kategori
           </p>
 
           <div class="flex gap-2">

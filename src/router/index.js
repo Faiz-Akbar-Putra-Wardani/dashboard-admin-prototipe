@@ -279,6 +279,34 @@ const routes = [
     meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
   },
 
+   {
+    path: '/projects-categories',
+    beforeEnter: (to, from, next) => {
+      useUser().getToken ? next() : next('/')
+    },
+    name: 'data kategori proyek ',
+    component: () => import(/* webpackChunkName: "home" */ '../views/kategori-projek/index.vue'),
+    meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
+  },
+  {
+    path: '/projects-categories/create',
+    beforeEnter: (to, from, next) => {
+      useUser().getToken ? next() : next('/')
+    },
+    name: 'tambah data kategori proyek',
+    component: () => import(/* webpackChunkName: "home" */ '../views/kategori-projek/create.vue'),
+    meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
+  },
+  {
+    path: '/projects-categories/edit/:uuid',
+    beforeEnter: (to, from, next) => {
+      useUser().getToken ? next() : next('/')
+    },
+    name: 'edit data proyek',
+    component: () => import(/* webpackChunkName: "home" */ '../views/kategori-projek/edit.vue'),
+    meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
+  },
+
   {
     path: '/projects',
     beforeEnter: (to, from, next) => {

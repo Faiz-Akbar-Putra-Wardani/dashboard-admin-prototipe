@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import Cookies from "js-cookie";
 import Swal from "sweetalert2";
@@ -7,6 +7,8 @@ import Api from "@/services/api";
 import { handleErrors } from "@/utils/handleErrors";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
+import vSelect from "vue-select";
+import "vue-select/dist/vue-select.css";
 
 const router = useRouter();
 const currentPageTitle = ref("Tambah Proyek");
@@ -16,14 +18,69 @@ const token = Cookies.get("token");
 const form = reactive({
   project_name: "",
   location: "",
+  project_category_id: "", 
   image: null,
 });
 
+const projectCategories = ref([]); 
+const selectedCategory = ref(null); 
 const errors = reactive({});
 const isSubmitting = ref(false);
 const previewUrl = ref(null);
 const fileInputRef = ref(null);
 const fileName = ref("");
+const fetchProjectCategories = async () => {
+  try {
+    Api.defaults.headers.common["Authorization"] = token;
+    const response = await Api.get("/api/project-categories-all");
+    
+    console.log("=== FETCH PROJECT CATEGORIES ===");
+    console.log("API Response:", response.data.data);
+    
+    // Map categories dengan format untuk vue-select
+    projectCategories.value = (response.data.data || []).map(cat => ({
+      value: cat.id,
+      id: cat.id,
+      uuid: cat.uuid,
+      label: cat.name,
+      name: cat.name,
+      slug: cat.slug
+    }));
+    
+    console.log("Categories mapped:", projectCategories.value);
+    
+  } catch (error) {
+    console.error("❌ Gagal mengambil kategori proyek:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Gagal Memuat Kategori",
+      text: "Tidak dapat mengambil data kategori proyek.",
+    });
+  }
+};
+
+const handleCategoryChange = (category) => {
+
+  if (category) {
+    const categoryId = category.id || category.value;
+    
+    if (typeof categoryId !== 'number') {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Category ID tidak valid (harus berupa angka)",
+      });
+      form.project_category_id = "";
+      selectedCategory.value = null;
+      return;
+    }
+    
+    form.project_category_id = categoryId;
+    console.log("Category ID set to:", form.project_category_id);
+  } else {
+    form.project_category_id = "";
+  }
+};
 
 // Handle file upload
 const handleFileChange = (e) => {
@@ -48,6 +105,24 @@ const handleFileChange = (e) => {
 
 // SUBMIT PROYEK
 const storeProject = async () => {
+  if (!form.project_category_id || form.project_category_id === "") {
+    Swal.fire({
+      icon: "warning",
+      title: "Kategori Belum Dipilih",
+      text: "Silakan pilih kategori proyek terlebih dahulu.",
+    });
+    return;
+  }
+
+  if (typeof form.project_category_id !== 'number') {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Category ID tidak valid (bukan angka)",
+    });
+    return;
+  }
+
   const confirm = await Swal.fire({
     title: "Simpan Data?",
     text: "Apakah kamu yakin ingin menambahkan proyek baru?",
@@ -64,13 +139,20 @@ const storeProject = async () => {
   isSubmitting.value = true;
   errors.project_name = "";
   errors.location = "";
+  errors.project_category_id = "";
   errors.image = "";
 
   try {
     const formData = new FormData();
     formData.append("project_name", form.project_name);
     formData.append("location", form.location);
+    formData.append("project_category_id", form.project_category_id); 
     formData.append("image", form.image);
+
+    // Debug formData
+    for (let pair of formData.entries()) {
+      console.log(pair[0], ":", pair[1], typeof pair[1]);
+    }
 
     Api.defaults.headers.common["Authorization"] = token;
     const response = await Api.post("/api/projects", formData);
@@ -78,9 +160,7 @@ const storeProject = async () => {
     await Swal.fire({
       icon: "success",
       title: "Berhasil!",
-      text:
-        response.data.meta?.message ||
-        "Data proyek berhasil disimpan.",
+      text: response.data.meta?.message || "Data proyek berhasil disimpan.",
       timer: 2000,
       showConfirmButton: false,
     });
@@ -112,10 +192,13 @@ const storeProject = async () => {
   }
 };
 
-// CANCEL
 const goBack = () => {
   router.push("/projects");
 };
+
+onMounted(() => {
+  fetchProjectCategories();
+});
 </script>
 
 <template>
@@ -162,6 +245,37 @@ const goBack = () => {
           </p>
         </div>
 
+        <div class="group relative">
+          <label
+            for="project_category_id"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
+            Kategori Proyek <span class="text-red-500">*</span>
+          </label>
+          <v-select
+            v-model="selectedCategory"
+            :options="projectCategories"
+            :reduce="(category) => category"
+            label="label"
+            placeholder="Pilih kategori proyek"
+            @update:modelValue="handleCategoryChange"
+            class="vue-select-custom"
+          >
+            <template #no-options>
+              Tidak ada kategori ditemukan
+            </template>
+          </v-select>
+          <p
+            v-if="errors.project_category_id"
+            class="mt-1 text-xs text-red-600 dark:text-red-400"
+          >
+            {{ errors.project_category_id }}
+          </p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Pilih kategori untuk proyek ini (Perbaikan, Instalasi, dll)
+          </p>
+        </div>
+
         <!-- Lokasi -->
         <div class="group relative">
           <input
@@ -196,12 +310,12 @@ const goBack = () => {
             <button
               type="button"
               @click="$refs.fileInputRef.click()"
-              class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+              class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 focus:ring focus:ring-blue-300 transition-all"
             >
               Pilih Gambar
             </button>
 
-            <span v-if="fileName" class="text-sm text-gray-600 truncate max-w-[150px]">
+            <span v-if="fileName" class="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[200px]">
               {{ fileName }}
             </span>
           </div>
@@ -218,10 +332,12 @@ const goBack = () => {
             {{ errors.image }}
           </p>
 
+          <!-- Preview Gambar -->
           <div v-if="previewUrl" class="mt-3">
             <img
               :src="previewUrl"
-              class="w-24 h-24 rounded-lg object-cover border"
+              alt="Preview"
+              class="w-32 h-32 rounded-lg object-cover border border-gray-300 dark:border-gray-700"
             />
           </div>
         </div>
@@ -231,7 +347,7 @@ const goBack = () => {
           <button
             type="button"
             @click="goBack"
-            class="rounded-lg border px-5 py-2.5 text-sm font-medium"
+            class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-all"
           >
             Batal
           </button>
@@ -239,9 +355,19 @@ const goBack = () => {
           <button
             type="submit"
             :disabled="isSubmitting"
-            class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 transform hover:-translate-y-0.5 transition-all duration-200"
           >
-            {{ isSubmitting ? "Menyimpan..." : "Simpan Proyek" }}
+            <svg
+              v-if="isSubmitting"
+              class="animate-spin h-4 w-4"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>{{ isSubmitting ? "Menyimpan..." : "Simpan Proyek" }}</span>
           </button>
         </div>
 
@@ -249,3 +375,43 @@ const goBack = () => {
     </div>
   </admin-layout>
 </template>
+
+<style scoped>
+/* Custom styling untuk vue-select */
+.vue-select-custom :deep(.vs__dropdown-toggle) {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background-color: #f9fafb;
+}
+
+.vue-select-custom :deep(.vs__dropdown-toggle:focus-within) {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.vue-select-custom :deep(.vs__search::placeholder) {
+  color: #9ca3af;
+}
+
+.vue-select-custom :deep(.vs__dropdown-menu) {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+}
+
+.vue-select-custom :deep(.vs__dropdown-option--highlight) {
+  background-color: #6366f1;
+  color: white;
+}
+
+/* Dark mode support */
+:deep(.dark) .vue-select-custom .vs__dropdown-toggle {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+:deep(.dark) .vue-select-custom .vs__search,
+:deep(.dark) .vue-select-custom .vs__selected {
+  color: #fff;
+}
+</style>

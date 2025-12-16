@@ -271,7 +271,16 @@ const menuGroups = [
   {
     title: "Manajemen Konten",
     items: [
-      { icon: BriefcaseIcon, name: "Proyek", path: "/projects", roles: ['super_admin', 'admin'] },
+      {
+        icon: BriefcaseIcon,
+        name: "Konten Proyek",
+        roles: ['super_admin', 'admin'],
+        subItems: [
+          { name: "Kategori Proyek", path: "/projects-categories", pro: false, icon: BriefcaseIcon},
+          { name: "Proyek",path: "/projects", pro: false, icon: BriefcaseIcon },
+        ],
+      },
+      
       { icon: BuildingStorefrontIcon, name: "Klien", path: "/clients", roles: ['super_admin', 'admin'] },
       { icon: BuildingStorefrontIcon, name: "Bank", path: "/banks", roles: ['super_admin', 'admin'] },
     ],
