@@ -36,6 +36,7 @@
       <div class="title-section">
         <p class="invoice-title"><u>Invoice</u></p>
         <p>Tanggal Cetak Tagihan: {{ formatDate(printDate) }}</p>
+        <p>No Invoice: {{ invoiceCode }}</p>
       </div>
 
       <!-- Kepada Yth -->

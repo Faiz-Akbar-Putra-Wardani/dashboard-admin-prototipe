@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useSaleStore } from '@/stores/useSaleStore'
 import { useFilter } from '@/composables/useFilter'
 import { useRentalCalculation } from '@/composables/useRentalCalculation'
@@ -13,6 +13,7 @@ import CashierSection from './components/CashierSection.vue'
 import CustomerModal from './components/CustomerModal.vue'
 
 const route = useRoute()
+const router = useRouter()
 const rentalUuid = route.params.uuid
 
 const saleStore = useSaleStore() // Products, Categories, Customers
@@ -48,6 +49,10 @@ const showCustomerModal = ref(false)
 
 const cartCount = computed(() => (rentalEdit.cart.value || []).length)
 
+const goToRentalPage = () => {
+  router.push('/halaman-data-sewa')
+}
+
 const chooseCustomer = (customer) => {
   rentalEdit.setCustomer(customer)
   showCustomerModal.value = false
@@ -72,13 +77,28 @@ onMounted(async () => {
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100">
+    <!-- Back Button - Fixed Top -->
+    <div class="bg-white/90 backdrop-blur-md shadow-md border-b border-cyan-100 sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 py-3">
+        <button
+          @click="goToRentalPage"
+          class="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm bg-white hover:bg-blue-50 text-gray-700 border-2 border-blue-200 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span>Kembali ke Data Sewa</span>
+        </button>
+      </div>
+    </div>
+
     <!-- HEADER TABS -->
-    <div class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-30 border-b-2 border-cyan-100">
+    <div class="bg-white/80 backdrop-blur-md shadow-lg sticky top-[57px] z-30 border-b-2 border-cyan-100">
       <div class="max-w-7xl mx-auto flex gap-3 p-4 overflow-x-auto">
         <button
           @click="activeTab = 'products'"
           :class="[
-            'flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300',
+            'flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 transform',
             activeTab === 'products'
               ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg scale-105'
               : 'bg-white text-gray-700 hover:bg-blue-50 border-2 border-blue-200'
@@ -90,7 +110,7 @@ onMounted(async () => {
         <button
           @click="activeTab = 'cart'"
           :class="[
-            'flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 relative',
+            'flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 transform relative',
             activeTab === 'cart'
               ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg scale-105'
               : 'bg-white text-gray-700 hover:bg-blue-50 border-2 border-blue-200'
@@ -158,7 +178,7 @@ onMounted(async () => {
         <!-- DESKTOP -->
         <div class="hidden md:grid md:grid-cols-3 gap-6">
           <div class="md:col-span-2 space-y-5">
-            <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200">
+            <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200 animate-slide-in">
               <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent mb-5 flex items-center gap-2">
                 Daftar Produk
               </h2>
@@ -174,7 +194,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200 sticky top-24 h-fit">
+          <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200 sticky top-32 h-fit animate-slide-in">
             <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent mb-5 flex items-center gap-2">
               <svg class="w-7 h-7 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

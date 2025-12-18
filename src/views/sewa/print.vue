@@ -73,7 +73,7 @@ const getMonths = (start, end) => {
   return months < 1 ? 1 : months;
 };
 
-// FETCH BANK DATA ===========================================================
+// FETCH BANK DATA 
 const fetchBankAccounts = async () => {
   try {
     const token = Cookies.get("token");

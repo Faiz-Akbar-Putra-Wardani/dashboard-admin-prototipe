@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useSaleStore } from '@/stores/useSaleStore'
 import { useCalculation } from '@/composables/useCalculation'
 import { useFilter } from '@/composables/useFilter'
@@ -12,16 +12,11 @@ import ProductGrid from './components/ProductGrid.vue'
 import CashierSection from './components/CashierSection.vue'
 import CustomerModal from './components/CustomerModal.vue'
 
-// ========================================
-// ROUTE & STORE
-// ========================================
 const route = useRoute()
+const router = useRouter()
 const store = useSaleStore()
 const transactionUuid = route.params.uuid
 
-// ========================================
-// COMPOSABLES
-// ========================================
 // Edit transaction composable
 const transactionEdit = useTransactionEdit(transactionUuid)
 
@@ -54,18 +49,20 @@ const { searchQuery, selectedBrand, filteredItems: filteredProducts } = useFilte
 // Update handler
 const { processUpdate } = useTransactionUpdate()
 
-// ========================================
-// UI STATE
-// ========================================
+
 const activeTab = ref('products')
 const showCustomerModal = ref(false)
 
 // Cart count
 const cartCount = computed(() => (transactionEdit.cart.value || []).length)
 
-// ========================================
+
 // HANDLERS
-// ========================================
+
+const goToSalesPage = () => {
+  router.push('/halaman-data-penjualan')
+}
+
 const chooseCustomer = (customer) => {
   transactionEdit.setCustomer(customer)
   showCustomerModal.value = false
@@ -84,29 +81,38 @@ const handleUpdate = async () => {
   })
 
   if (success) {
-    console.log('✅ Transaction updated successfully')
+    console.log(' Transaction updated successfully')
   }
 }
 
-// ========================================
-// LIFECYCLE
-// ========================================
 onMounted(async () => {
   // Load products, categories, customers
   await store.init()
-  
-  // Load transaction detail
   await transactionEdit.fetchTransactionDetail()
   
-  // Sync financial data to calculation
   syncFinancialData()
-})
+});
 </script>
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100">
+    <!-- Back Button - Fixed Top -->
+    <div class="bg-white/90 backdrop-blur-md shadow-md border-b border-cyan-100 sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 py-3">
+        <button
+          @click="goToSalesPage"
+          class="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm bg-white hover:bg-blue-50 text-gray-700 border-2 border-blue-200 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span>Kembali ke Data Penjualan</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Header Tabs -->
-    <div class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-30 border-b-2 border-cyan-100">
+    <div class="bg-white/80 backdrop-blur-md shadow-lg sticky top-[57px] z-30 border-b-2 border-cyan-100">
       <div class="max-w-7xl mx-auto flex gap-3 p-4 overflow-x-auto">
         <button
           @click="activeTab = 'products'"
@@ -212,7 +218,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200 sticky top-24 h-fit animate-slide-in">
+          <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-blue-200 sticky top-32 h-fit animate-slide-in">
             <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent mb-5 flex items-center gap-2">
               <svg class="w-7 h-7 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
