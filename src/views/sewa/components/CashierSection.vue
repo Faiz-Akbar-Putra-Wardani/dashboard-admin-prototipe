@@ -261,7 +261,8 @@ const updateRentPrice = (item, value) => {
     v-model="localStatus"
     class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
   >
-    <option value="berlangsung">Berlangsung</option>
+    <option value="proses">Proses</option>
+     <option value="disewa">Disewa</option>
     <option value="selesai">Selesai</option>
   </select>
 </div>

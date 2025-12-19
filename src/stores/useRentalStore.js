@@ -9,7 +9,7 @@ export const useRentalStore = defineStore('rental', {
     cart: [],
     invoice: '',
     selectedCustomer: null,
-    status: 'berlangsung',
+    status: 'proses',
     dp: null,
     isLoading: false,
   }),
