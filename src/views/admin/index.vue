@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { toast } from "vue3-toastify";
 import "vue3-toastify/dist/index.css";
 
@@ -19,6 +19,26 @@ const pagination = ref({
   perPage: 5,
   total: 0,
 });
+
+// ✅ TAMBAHAN: Hitung jumlah super_admin
+const superAdminCount = computed(() => {
+  return admins.value.filter(admin => admin.role === 'super_admin').length;
+});
+
+// ✅ TAMBAHAN: Cek apakah admin bisa dihapus
+const canDelete = (admin) => {
+  // Jika bukan super_admin, bisa dihapus
+  if (admin.role !== 'super_admin') return true;
+  
+  // Jika super_admin dan jumlah > 1, bisa dihapus
+  return superAdminCount.value > 1;
+};
+
+// ✅ TAMBAHAN: Pesan tooltip untuk admin yang tidak bisa dihapus
+const getDeleteTooltip = (admin) => {
+  if (canDelete(admin)) return "Hapus admin";
+  return "Tidak dapat menghapus super admin terakhir";
+};
 
 // Ambil data admin dari API
 const fetchData = async (pageNumber = 1, search = "") => {
@@ -226,12 +246,39 @@ onMounted(() => {
                         />
                       </svg>
                     </router-link>
-                   <DeleteModal
-                    :uuid="admin.uuid"
-                    endpoint="/api/admins"
-                    :fetchData="fetchData"
-                  >
-                      <template #trigger>
+                    
+                    <!-- ✅ PERBAIKAN: Conditional delete button -->
+                    <div class="relative group">
+                      <DeleteModal
+                        v-if="canDelete(admin)"
+                        :uuid="admin.uuid"
+                        endpoint="/api/admins"
+                        :fetchData="fetchData"
+                      >
+                        <template #trigger>
+                          <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 7l-.867 12.142A2.2 2.2 0 0116.138 21H7.862a2.2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </template>
+                      </DeleteModal>
+                      
+                      <!-- ✅ Disabled button untuk super_admin terakhir -->
+                      <button
+                        v-else
+                        disabled
+                        :title="getDeleteTooltip(admin)"
+                        class="p-2.5 text-gray-400 cursor-not-allowed rounded-xl opacity-50"
+                      >
                         <svg
                           class="w-5 h-5"
                           fill="none"
@@ -242,11 +289,20 @@ onMounted(() => {
                             stroke-linecap="round"
                             stroke-linejoin="round"
                             stroke-width="2"
-                            d="M19 7l-.867 12.142A2.2 2.2 0 0116.138 21H7.862a2.2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                           />
                         </svg>
-                      </template>
-                    </DeleteModal>
+                      </button>
+                      
+                      <!-- ✅ Tooltip -->
+                      <div 
+                        v-if="!canDelete(admin)"
+                        class="absolute bottom-full right-0 mb-2 hidden group-hover:block w-48 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg z-10"
+                      >
+                        {{ getDeleteTooltip(admin) }}
+                        <div class="absolute top-full right-4 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    </div>
                   </div>
                 </td>
               </tr>

@@ -25,13 +25,6 @@
         <option value="sewa">Sewa</option>
         <option value="perbaikan">Perbaikan</option>
       </select>
-
-      <button
-        @click="goToTransactionList"
-        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
-      >
-        Lihat Semua
-      </button>
     </div>
     </div>
 
@@ -79,7 +72,7 @@
             v-for="transaction in transactions"
             :key="transaction.id"
             class="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/[0.02] cursor-pointer transition-colors"
-            @click="viewDetail(transaction)"
+            
           >
             <!-- Invoice -->
             <td class="py-3 px-2">
@@ -187,7 +180,7 @@ const fetchTransactions = async () => {
     const token = Cookies.get('token')
     
     if (!token) {
-      console.error('❌ Token not found')
+      console.error(' Token not found')
       return
     }
     
@@ -204,7 +197,7 @@ const fetchTransactions = async () => {
       transactions.value = response.data.data
     }
   } catch (error) {
-    console.error('❌ Error:', error)
+    console.error('Error:', error)
   } finally {
     isLoading.value = false
   }
@@ -233,32 +226,28 @@ const getSourceBadgeClass = (source) => {
   return classes[source] || 'bg-gray-50 text-gray-600'
 }
 
-// ✅ UPDATE: Status label untuk 3 fitur
 const getStatusLabel = (status) => {
   const labels = {
     // Penjualan: proses, dikirim, selesai
     proses: 'Proses',
     dikirim: 'Dikirim',
     
-    // Sewa: berlangsung, selesai
-    berlangsung: 'Berlangsung',
+    // Sewa: proses, disewa, selesai
+    disewa: 'Disewa',
     
-    // Perbaikan: masuk, proses, selesai
+    // Perbaikan: masuk, dikerjakan, selesai
     masuk: 'Masuk',
+    dikerjakan: 'Dikerjakan',
     
     // Universal
-    selesai: 'Selesai',
-    
-    // Legacy (fallback)
-    completed: 'Selesai',
-    ongoing: 'Berlangsung',
-    pending: 'Pending',
-    cancelled: 'Dibatalkan'
+    selesai: 'Selesai'
   }
   return labels[status] || status.charAt(0).toUpperCase() + status.slice(1)
 }
 
-// ✅ UPDATE: Status badge class untuk 3 fitur
+
+
+// 
 const getStatusBadgeClass = (status) => {
   const classes = {
     // Penjualan
@@ -266,35 +255,32 @@ const getStatusBadgeClass = (status) => {
     dikirim: 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
     
     // Sewa
-    berlangsung: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400',
+    disewa: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400',
     
     // Perbaikan
     masuk: 'bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400',
+    dikerjakan: 'bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400',
     
     // Universal
-    selesai: 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-500',
-    
-    // Legacy (fallback)
-    completed: 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-500',
-    ongoing: 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-500',
-    pending: 'bg-gray-50 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400',
-    cancelled: 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-500'
+    selesai: 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-500'
   }
   return classes[status] || 'bg-gray-50 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400'
 }
 
-const viewDetail = (transaction) => {
-  const routes = {
-    penjualan: `/transaksi-detail/${transaction.invoice}`,
-    sewa: `/sewa-detail/${transaction.invoice}`,
-    perbaikan: `/perbaikan-detail/${transaction.invoice}`
-  }
+
+
+// const viewDetail = (transaction) => {
+//   const routes = {
+//     penjualan: `/halaman-data-penjualan/detail/${t.uuid}`,
+//     sewa: `/sewa-detail/${transaction.invoice}`,
+//     perbaikan: `/perbaikan-detail/${transaction.invoice}`
+//   }
   
-  const route = routes[transaction.source]
-  if (route) {
-    window.location.href = route
-  }
-}
+//   const route = routes[transaction.source]
+//   if (route) {
+//     window.location.href = route
+//   }
+// }
 
 const goToTransactionList = () => {
   window.location.href = '/laporan-transaksi'

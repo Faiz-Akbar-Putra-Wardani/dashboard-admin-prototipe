@@ -57,15 +57,17 @@ const fetchProducts = async () => {
     console.log("=== FETCH PRODUCTS ===");
     console.log("API Response:", res.data.data);
     
-    products.value = (res.data.data || []).map(p => ({
-      value: p.id, 
-      id: p.id,
-      uuid: p.uuid,
-      label: p.title, 
-      title: p.title,
-      price: p.price,
-      category: p.category
-    }));
+    products.value = (res.data.data || [])
+      .filter(p => !p.hasDetailProduct) 
+      .map(p => ({
+        value: p.id, 
+        id: p.id,
+        uuid: p.uuid,
+        label: p.title, 
+        title: p.title,
+        price: p.price,
+        category: p.category
+      }));
     
     console.log("Products mapped:", products.value);
     

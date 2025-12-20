@@ -300,7 +300,6 @@ onMounted(() => fetchDetail());
             <h2 class="text-lg font-semibold mb-6">Produk Disewa</h2>
 
             <div class="overflow-x-auto">
-              <!-- ✅ Tambah v-if untuk cek rental.details -->
               <table v-if="rental?.details && rental.details.length > 0" class="w-full text-sm">
                 <thead>
                   <tr class="border-b-2 border-gray-200">
@@ -340,7 +339,6 @@ onMounted(() => fetchDetail());
                 </tbody>
               </table>
 
-              <!-- ✅ Tampilkan pesan jika tidak ada data -->
               <div v-else class="text-center py-10 text-gray-500">
                 Tidak ada detail produk
               </div>
@@ -356,8 +354,7 @@ onMounted(() => fetchDetail());
 
         </div>
       </div>
-
-      <!-- ✅ TAMBAHAN: Tampilkan pesan jika rental tidak ditemukan -->
+      
       <div v-else class="text-center py-20">
         <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
