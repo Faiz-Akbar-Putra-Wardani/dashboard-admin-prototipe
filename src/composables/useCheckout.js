@@ -24,9 +24,7 @@ export function useCheckout() {
       totalBayar 
     } = calculationData
 
-    // ========================================
     // VALIDASI KERANJANG
-    // ========================================
     if (!store.cart.length) {
       Swal.fire({
         icon: 'warning',
@@ -36,9 +34,7 @@ export function useCheckout() {
       return false
     }
 
-    // ========================================
     // VALIDASI CUSTOMER
-    // ========================================
     if (!store.selectedCustomer) {
       Swal.fire({
         icon: 'warning',
@@ -48,10 +44,8 @@ export function useCheckout() {
       return false
     }
 
-    // ========================================
     // VALIDASI NEGO
-    // ========================================
-    if (negoSafe > totalBayar) {
+    if (negoSafe >= totalBayar) {
       Swal.fire({
         icon: 'warning',
         title: 'Nego tidak valid',
@@ -60,10 +54,8 @@ export function useCheckout() {
       return false
     }
 
-    // ========================================
     // VALIDASI DP
-    // ========================================
-    if (dpSafe > totalBayar) {
+    if (dpSafe >= totalBayar) {
       Swal.fire({
         icon: 'warning',
         title: 'DP tidak valid',
@@ -71,10 +63,7 @@ export function useCheckout() {
       })
       return false
     }
-
-    // ========================================
     // KONFIRMASI CHECKOUT
-    // ========================================
     const result = await Swal.fire({
       title: 'Konfirmasi Checkout',
       html: `
@@ -103,9 +92,7 @@ export function useCheckout() {
 
     if (!result.isConfirmed) return false
 
-    // ========================================
     // PROCESS CHECKOUT
-    // ========================================
     try {
       Swal.fire({
         title: 'Memproses transaksi...',

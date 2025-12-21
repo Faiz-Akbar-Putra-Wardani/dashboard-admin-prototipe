@@ -17,7 +17,7 @@ export function useRentalEdit(uuid) {
   const invoice = ref('')
   const selectedCustomer = ref(null)
   const cart = ref([])
-  const status = ref('berlangsung')
+  const status = ref('proses')
   const dp = ref(null)
 
   /**
@@ -29,19 +29,12 @@ export function useRentalEdit(uuid) {
     isLoading.value = true
 
     try {
-      console.log('=== FETCH RENTAL DETAIL ===')
-      console.log('UUID:', uuid)
-
       const res = await Api.get(`/api/rentals/${uuid}`)
       const rental = res.data.data
 
-      console.log('Rental data:', rental)
-
-      // Populate invoice & status
       invoice.value = rental.invoice
       status.value = rental.status
 
-      // Populate customer (convert 0 to null for placeholder)
       dp.value = rental.dp === 0 ? null : rental.dp
 
       // Customer data
@@ -65,7 +58,7 @@ export function useRentalEdit(uuid) {
         months: 0,
       }))
 
-      console.log('✅ Rental loaded:', {
+      console.log(' Rental loaded:', {
         invoice: invoice.value,
         customer: selectedCustomer.value?.name,
         items: cart.value.length,
@@ -74,7 +67,7 @@ export function useRentalEdit(uuid) {
       })
 
     } catch (err) {
-      console.error('❌ Failed to fetch rental:', err.response?.data || err)
+      console.error(' Failed to fetch rental:', err.response?.data || err)
       
       Swal.fire({
         icon: 'error',
@@ -93,10 +86,6 @@ export function useRentalEdit(uuid) {
    */
   const updateRental = async (payload) => {
     try {
-      console.log('=== UPDATE RENTAL ===')
-      console.log('UUID:', uuid)
-      console.log('Payload:', payload)
-
       Swal.fire({
         title: 'Memproses update...',
         text: 'Mohon tunggu sebentar',
@@ -117,7 +106,7 @@ export function useRentalEdit(uuid) {
       return res.data.data
 
     } catch (error) {
-      console.error('❌ Update failed:', error.response?.data || error)
+      console.error(' Update failed:', error.response?.data || error)
       
       const message =
         error.response?.data?.message ||
@@ -149,7 +138,7 @@ export function useRentalEdit(uuid) {
     }
 
     const newItem = {
-      id: Date.now(), // Temporary ID
+      id: Date.now(), 
       product_id: product.id,
       name: product.name,
       qty: 1,

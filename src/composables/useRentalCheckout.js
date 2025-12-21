@@ -74,7 +74,7 @@ export function useRentalCheckout() {
     }
 
     // Validate DP
-    if (dpSafe > totalRentPrice) {
+    if (dpSafe >= totalRentPrice) {
       Swal.fire({
         icon: 'warning',
         title: 'DP tidak valid',

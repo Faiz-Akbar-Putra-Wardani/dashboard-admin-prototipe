@@ -64,40 +64,41 @@ export function useCalculation(cartRef) {
   // VALIDASI NEGO
   // ========================================
   watch([nego, totalBeforeNego], () => {
-    if (nego.value == null) return
+  if (nego.value == null) return
 
-    if (nego.value > totalBeforeNego.value) {
-      nego.value = totalBeforeNego.value
-      Swal.fire({
-        icon: 'warning',
-        title: 'Nego tidak valid',
-        text: 'Harga nego tidak boleh melebihi total sebelum nego',
-        timer: 1500,
-        showConfirmButton: false,
-      })
-    }
+  if (nego.value >= totalBeforeNego.value) { 
+    nego.value = Math.max(0, totalBeforeNego.value - 1)
+    Swal.fire({
+      icon: 'warning',
+      title: 'Nego tidak valid',
+      text: 'Nego harus lebih kecil dari total sebelum nego',
+      timer: 1500,
+      showConfirmButton: false,
+    })
+  }
 
-    if (nego.value < 0) nego.value = 0
-  })
+  if (nego.value < 0) nego.value = 0
+})
+
 
   // VALIDASI DP
  
-  watch([dp, totalBayar], () => {
-    if (dp.value == null) return
+watch([dp, totalBayar], () => {
+  if (dp.value == null) return;
 
-    if (dp.value > totalBayar.value) {
-      dp.value = totalBayar.value
-      Swal.fire({
-        icon: 'warning',
-        title: 'DP tidak valid',
-        text: 'DP tidak boleh melebihi total bayar',
-        timer: 1500,
-        showConfirmButton: false,
-      })
-    }
+  if (dp.value >= totalBayar.value) {
+    dp.value = Math.max(0, totalBayar.value - 1); 
+    Swal.fire({
+      icon: 'warning',
+      title: 'DP tidak valid',
+      text: 'DP harus lebih kecil dari total bayar',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  }
 
-    if (dp.value < 0) dp.value = 0
-  })
+  if (dp.value < 0) dp.value = 0;
+});
 
 
   // VALIDASI PPH

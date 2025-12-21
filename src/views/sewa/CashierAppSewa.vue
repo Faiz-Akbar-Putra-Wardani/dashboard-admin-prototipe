@@ -18,10 +18,9 @@ const rentalStore = useRentalStore() // Cart, Invoice, Customer rental
 
 // Filter products (reuse dari penjualan)
 const productsRef = computed(() => {
-  // Map products untuk rental (gunakan rent_price)
   return (saleStore.products || []).map(p => ({
     ...p,
-    price: p.rent_price || 0, // Override price dengan rent_price
+    price: p.rent_price || 0, 
   }))
 })
 
@@ -69,7 +68,6 @@ const handleCheckout = async () => {
 onMounted(async () => {
   // Load shared data (products, categories, customers)
   await saleStore.init()
-  
   // Load rental invoice
   await rentalStore.fetchInvoice()
 });

@@ -267,20 +267,21 @@ onMounted(() => {
                     </td>
 
                     <td class="px-6 py-4 text-center">
-                      <span
-                        :class="[
-                          'px-3 py-1 rounded-xl text-xs font-semibold',
-                          r.status === 'berlangsung'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : r.status === 'selesai'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-200 text-gray-700'
-                        ]"
-                      >
-                        {{ r.status }}
-                      </span>
-                    </td>
-
+                    <span
+                      :class="[
+                        'px-3 py-1 rounded-xl text-xs font-semibold',
+                        r.status === 'proses'
+                          ? 'bg-yellow-100 text-yellow-700'   
+                          : r.status === 'disewa'
+                          ? 'bg-blue-100 text-blue-700'      
+                          : r.status === 'selesai'
+                          ? 'bg-green-100 text-green-700'   
+                          : 'bg-gray-200 text-gray-700'      
+                      ]"
+                    >
+                      {{ r.status }}
+                    </span>
+                  </td>
                     <td class="px-6 py-4 text-right">
                       <div class="flex justify-end gap-2">
                         <!-- TOMBOL DETAIL -->

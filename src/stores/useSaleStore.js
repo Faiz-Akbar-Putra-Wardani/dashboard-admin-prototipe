@@ -29,9 +29,6 @@ export const useSaleStore = defineStore('sale', {
     hasCustomer: (state) => state.selectedCustomer !== null,
   },
 
-  // ========================================
-  // ACTIONS
-  // ========================================
   actions: {
     /**
      * Initialize - Load semua data yang dibutuhkan

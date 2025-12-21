@@ -101,19 +101,10 @@ const calculationSteps = computed(() => {
   const nego = transaction.value.nego || 0;
   const dp = transaction.value.dp || 0;
 
-  // Step 1: Subtotal + Extra
   const subtotalPlusExtra = subtotal + extra;
-
-  // Step 2: PPH dari subtotalPlusExtra
   const pphNominal = subtotalPlusExtra * (pph / 100);
-
-  // Step 3: Total Sebelum Nego
   const totalBeforeNego = subtotalPlusExtra - pphNominal;
-
-  // Step 4: Total Setelah Nego
   const totalAfterNego = totalBeforeNego - nego;
-
-  // Step 5: Grand Total
   const grandTotal = totalAfterNego;
 
   return [

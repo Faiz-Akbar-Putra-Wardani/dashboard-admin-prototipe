@@ -258,6 +258,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import Swal from 'sweetalert2'
 import { useCurrencyInput } from "@/composables/useCurrencyInput" 
 
 const props = defineProps({
@@ -296,7 +297,6 @@ const extraCurrency = useCurrencyInput();
 const negoCurrency = useCurrencyInput();
 const dpCurrency = useCurrencyInput();
 
-// ✅ WATCH props untuk sync saat data loaded dari API
 watch(() => props.extra, (newVal) => {
   console.log("Props extra changed:", newVal);
   if (newVal !== null && newVal !== undefined && newVal !== 0) {
@@ -359,7 +359,29 @@ const localExtra = computed({
 const handleNegoInput = (event) => {
   negoCurrency.handleInput(event);
   const rawVal = negoCurrency.rawValue.value;
-  emit('update:nego', rawVal === "" ? null : Number(rawVal));
+  let num = rawVal === "" ? null : Number(rawVal);
+
+  const max = props.totalBeforeNego; 
+
+  if (num != null && max != null && num >= max) {
+      const newMax = Math.max(0, max - 1);
+    num = newMax;
+    negoCurrency.setValue(newMax);
+    Swal.fire({
+      icon: 'warning',
+      title: 'Nego tidak valid',
+      text: 'Harga nego tidak boleh melebihi total sebelum nego',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  }
+
+  if (num != null && num < 0) {
+    num = 0;
+    negoCurrency.setValue(0);
+  }
+
+  emit('update:nego', num === null ? null : num);
 };
 
 const localNego = computed({
@@ -372,7 +394,29 @@ const localNego = computed({
 const handleDpInput = (event) => {
   dpCurrency.handleInput(event);
   const rawVal = dpCurrency.rawValue.value;
-  emit('update:dp', rawVal === "" ? null : Number(rawVal));
+  let num = rawVal === "" ? null : Number(rawVal);
+
+  const max = props.totalBayar;
+
+  if (num != null && max != null && num >= max) {
+    const newMax = max - 1; 
+    num = newMax;
+    dpCurrency.setValue(newMax);
+    Swal.fire({
+      icon: 'warning',
+      title: 'DP tidak valid',
+      text: 'DP harus lebih kecil dari total bayar',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  }
+
+  if (num != null && num < 0) {
+    num = 0;
+    dpCurrency.setValue(0);
+  }
+
+  emit('update:dp', num === null ? null : num);
 };
 
 const localDp = computed({
@@ -382,7 +426,6 @@ const localDp = computed({
   }
 });
 
-// PPH - Tetap menggunakan input number biasa
 const localPph = computed({
   get: () => {
     console.log("localPph get:", props.pph);
@@ -395,7 +438,6 @@ const localPph = computed({
     console.log("localPph set:", v);
     if (v === '' || v === 0 || v === '0') {
       emit('update:pph', null);
-      // Reset extra ketika PPH dikosongkan
       extraCurrency.reset();
       emit('update:extra', null);
     } else {
@@ -415,13 +457,11 @@ const localStatus = computed({
   }
 })
 
-// ✅ PERBAIKAN: Emit ke parent untuk clear customer
 const clearCustomer = () => {
   console.log("Clearing customer");
   emit('update:selectedCustomer', null);
 };
 
-// ✅ Debug mount
 onMounted(() => {
   console.log("=== CASHIER SECTION MOUNTED ===");
   console.log("Cart:", props.cart);

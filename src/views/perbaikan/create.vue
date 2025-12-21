@@ -71,10 +71,6 @@ const fetchCustomers = async () => {
     Api.defaults.headers.common["Authorization"] = token;
     const response = await Api.get("/api/customers-all");
     
-    console.log("=== FETCH CUSTOMERS ===");
-    console.log("API Response:", response.data.data);
-    
-    // ✅ Map customers dengan format standar
     customers.value = (response.data.data || []).map(c => {
       console.log("Customer:", c);
       return {
@@ -90,7 +86,7 @@ const fetchCustomers = async () => {
     console.log("Customers mapped:", customers.value);
     
   } catch (error) {
-    console.error("❌ Gagal mengambil customer:", error);
+    console.error(" Gagal mengambil customer:", error);
     Swal.fire({
       icon: "error",
       title: "Gagal Memuat Customer",
@@ -202,6 +198,39 @@ const storeRepair = async () => {
 
   if (!confirm.isConfirmed) return;
 
+   const repairCostNum = parseFloat(repairCost.rawValue.value) || 0;
+  const dpNum = parseFloat(dp.rawValue.value) || 0;
+
+  // VALIDASI REPAIR COST WAJIB
+  if (!repairCostNum || repairCostNum <= 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "Biaya perbaikan tidak valid",
+      text: "Biaya perbaikan harus lebih besar dari 0.",
+    });
+    return;
+  }
+
+  // VALIDASI DP
+  if (dpNum < 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "DP tidak valid",
+      text: "DP tidak boleh kurang dari 0.",
+    });
+    return;
+  }
+
+  if (dpNum >= repairCostNum) {
+    Swal.fire({
+      icon: "warning",
+      title: "DP tidak valid",
+      text: "DP harus lebih kecil dari total biaya perbaikan.",
+    });
+    return;
+  }
+
+
   isSubmitting.value = true;
   Object.keys(errors).forEach((key) => (errors[key] = ""));
 
@@ -216,8 +245,8 @@ const storeRepair = async () => {
     formData.append("component", form.component || "");
     formData.append("pic", form.pic);
     
-    formData.append("dp", parseFloat(dp.rawValue.value) || 0);
-    formData.append("repair_cost", parseFloat(repairCost.rawValue.value));
+     formData.append("dp", dpNum);
+    formData.append("repair_cost", repairCostNum);
     formData.append("status", form.status);
     
     if (form.image) {
@@ -297,6 +326,32 @@ const storeRepair = async () => {
   }
 };
 
+const handleDpInput = (event) => {
+  dp.handleInput(event);
+  const rawDp = dp.rawValue.value;
+  let dpNum = rawDp === "" ? null : Number(rawDp);
+
+  const costNum = parseFloat(repairCost.rawValue.value) || 0;
+
+  if (dpNum != null && costNum > 0 && dpNum >= costNum) {
+    const newMax = Math.max(0, costNum - 1);
+    dpNum = newMax;
+    dp.setValue(newMax);
+    Swal.fire({
+      icon: "warning",
+      title: "DP tidak valid",
+      text: "DP harus lebih kecil dari total biaya perbaikan.",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  }
+
+  if (dpNum != null && dpNum < 0) {
+    dpNum = 0;
+    dp.setValue(0);
+  }
+};
+
 const goBack = () => router.push("/repairs");
 
 onMounted(() => {
@@ -305,7 +360,6 @@ onMounted(() => {
   initDatePickers();
 });
 </script>
-
 
 <template>
   <admin-layout>
@@ -570,7 +624,7 @@ onMounted(() => {
     <input
       id="dp"
       v-model="dp.displayValue.value"
-      @input="dp.handleInput"
+       @input="handleDpInput"
       type="text"
       :data-filled="dp.displayValue.value"
       placeholder="0"

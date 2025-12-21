@@ -357,34 +357,34 @@ const formatDate = (date) => {
   });
 };
 
-// DOWNLOAD PDF ==============================================================
+// DOWNLOAD PDF 
 const downloadPdf = async () => {
   const element = printArea.value;
 
   await new Promise(resolve => setTimeout(resolve, 300));
 
   const opt = {
-    margin: [10, 10, 10, 10], // Sama dengan rental
+    margin: [10, 10, 10, 10],
     filename: `Invoice-${invoiceCode.value}.pdf`,
     image: { 
       type: "jpeg", 
-      quality: 0.95 // Turunkan dari 0.98
+      quality: 0.95 
     },
     html2canvas: { 
-      scale: 2.2, // Sama dengan rental
+      scale: 2.2, 
       useCORS: true,
       logging: false,
       letterRendering: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
       imageTimeout: 0,
-      windowHeight: 1400, // Sama dengan rental
+      windowHeight: 1400, 
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector('.invoice-print');
         if (clonedElement) {
           clonedElement.style.maxWidth = '100%';
           clonedElement.style.padding = '20px 35px';
-          clonedElement.style.fontSize = '10pt'; // Turunkan dari 12pt
+          clonedElement.style.fontSize = '10pt'; 
         }
         
         const header = clonedDoc.querySelector('.header');
@@ -392,7 +392,7 @@ const downloadPdf = async () => {
           header.style.display = 'flex';
           header.style.alignItems = 'flex-start';
           header.style.gap = '15px';
-          header.style.marginBottom = '12px'; // Compact
+          header.style.marginBottom = '12px'; 
         }
         
         const logo = clonedDoc.querySelector('.logo');

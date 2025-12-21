@@ -31,9 +31,8 @@ export function useTransactionUpdate() {
       totalBayar,
     } = calculationData
 
-    // ========================================
+ 
     // VALIDASI
-    // ========================================
     if (!cart.value.length) {
       Swal.fire({
         icon: 'warning',
@@ -52,7 +51,7 @@ export function useTransactionUpdate() {
       return false
     }
 
-    if (negoSafe > totalBayar) {
+    if (negoSafe >= totalBayar) {
       Swal.fire({
         icon: 'warning',
         title: 'Nego tidak valid',
@@ -61,7 +60,7 @@ export function useTransactionUpdate() {
       return false
     }
 
-    if (dpSafe > totalBayar) {
+    if (dpSafe >= totalBayar) {
       Swal.fire({
         icon: 'warning',
         title: 'DP tidak valid',
@@ -70,9 +69,7 @@ export function useTransactionUpdate() {
       return false
     }
 
-    // ========================================
     // KONFIRMASI
-    // ========================================
     const result = await Swal.fire({
       title: 'Konfirmasi Update',
       html: `
@@ -102,9 +99,7 @@ export function useTransactionUpdate() {
 
     if (!result.isConfirmed) return false
 
-    // ========================================
     // UPDATE TRANSACTION
-    // ========================================
     try {
       const payload = {
         customer_id: selectedCustomer.value.id,

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue"
 import { moneyFormat } from "@/utils/moneyFormat"
+import Swal from 'sweetalert2'
 import flatpickr from "flatpickr"
 import "flatpickr/dist/flatpickr.css"
 import dayjs from "dayjs"
@@ -104,8 +105,31 @@ const localDp = computed({
 const handleDpInput = (event) => {
   dpCurrency.handleInput(event);
   const rawVal = dpCurrency.rawValue.value;
-  emit("update:dp", rawVal === "" ? null : Number(rawVal));
+  let num = rawVal === "" ? null : Number(rawVal);
+
+  const max = props.totalPreview; 
+
+  if (num != null && max != null && num >= max) {
+    const newMax = Math.max(0, max - 1); 
+    num = newMax;
+    dpCurrency.setValue(newMax);
+    Swal.fire({
+      icon: 'warning',
+      title: 'DP tidak valid',
+      text: 'DP harus lebih kecil dari total sewa',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  }
+
+  if (num != null && num < 0) {
+    num = 0;
+    dpCurrency.setValue(0);
+  }
+
+  emit("update:dp", num === null ? null : Number(num));
 };
+
 
 const localStatus = computed({
   get: () => props.status ?? "berlangsung",

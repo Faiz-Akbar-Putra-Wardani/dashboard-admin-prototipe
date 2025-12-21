@@ -63,25 +63,26 @@ export function useRentalCalculation(cartRef, dpRef) {
   /**
    * Validasi DP
    */
-  watch([dpRef, totalRentPrice], () => {
-    if (dpRef.value == null) return
+ watch([dpRef, totalRentPrice], () => {
+  if (dpRef.value == null) return
 
-    if (dpRef.value > totalRentPrice.value) {
-      dpRef.value = totalRentPrice.value
+  if (dpRef.value >= totalRentPrice.value) {
+    dpRef.value = Math.max(0, totalRentPrice.value - 1)
 
-      Swal.fire({
-        icon: 'warning',
-        title: 'DP tidak valid',
-        text: 'DP tidak boleh melebihi total sewa',
-        timer: 1500,
-        showConfirmButton: false,
-      })
-    }
+    Swal.fire({
+      icon: 'warning',
+      title: 'DP tidak valid',
+      text: 'DP harus lebih kecil dari total sewa',
+      timer: 1500,
+      showConfirmButton: false,
+    })
+  }
 
-    if (dpRef.value < 0) {
-      dpRef.value = 0
-    }
-  })
+  if (dpRef.value < 0) {
+    dpRef.value = 0
+  }
+})
+
 
   return {
     totalRentPrice,

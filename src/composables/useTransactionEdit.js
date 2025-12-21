@@ -33,15 +33,10 @@ export function useTransactionEdit(uuid) {
     isLoading.value = true
 
     try {
-      console.log('=== FETCH TRANSACTION DETAIL ===')
-      console.log('UUID:', uuid)
 
       const res = await Api.get(`/api/transactions/${uuid}`)
       const trx = res.data.data
-
-      console.log('Transaction data:', trx)
-
-      // Populate data
+      
       invoice.value = trx.invoice
       status.value = trx.status
 
@@ -70,7 +65,7 @@ export function useTransactionEdit(uuid) {
         product_uuid: d.product.uuid,
       }))
 
-      console.log('✅ Transaction loaded:', {
+      console.log(' Transaction loaded:', {
         invoice: invoice.value,
         customer: selectedCustomer.value?.name,
         items: cart.value.length,
@@ -78,7 +73,7 @@ export function useTransactionEdit(uuid) {
       })
 
     } catch (err) {
-      console.error('❌ Failed to fetch transaction:', err.response?.data || err)
+      console.error(' Failed to fetch transaction:', err.response?.data || err)
       
       Swal.fire({
         icon: 'error',
@@ -97,9 +92,6 @@ export function useTransactionEdit(uuid) {
    */
   const updateTransaction = async (payload) => {
     try {
-      console.log('=== UPDATE TRANSACTION ===')
-      console.log('UUID:', uuid)
-      console.log('Payload:', payload)
 
       Swal.fire({
         title: 'Memproses update...',
@@ -121,7 +113,7 @@ export function useTransactionEdit(uuid) {
       return res.data.data
 
     } catch (error) {
-      console.error('❌ Update failed:', error.response?.data || error)
+      console.error(' Update failed:', error.response?.data || error)
       
       Swal.fire({
         icon: 'error',

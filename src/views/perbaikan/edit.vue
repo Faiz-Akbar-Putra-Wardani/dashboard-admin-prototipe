@@ -50,20 +50,15 @@ const fileName = ref("");
 let startDatePicker = null;
 let endDatePicker = null;
 
-// ✅ Fetch Customers DULU
 const fetchCustomers = async () => {
   try {
     Api.defaults.headers.common["Authorization"] = token;
     const response = await Api.get("/api/customers-all");
     
-    console.log("=== FETCH CUSTOMERS ===");
-    console.log("API Response:", response.data.data);
-    
-    // ✅ Map customers dengan format standar
     customers.value = (response.data.data || []).map(c => {
       return {
-        value: c.uuid || c.id,  // ✅ UUID sebagai value
-        uuid: c.uuid || c.id,   // ✅ UUID eksplisit
+        value: c.uuid || c.id,  
+        uuid: c.uuid || c.id,   
         label: c.label || c.name,
         name: c.label || c.name,
         no_telp: c.no_telp,
@@ -74,7 +69,7 @@ const fetchCustomers = async () => {
     console.log("Customers mapped:", customers.value);
     
   } catch (error) {
-    console.error("❌ Gagal mengambil customer:", error);
+    console.error(" Gagal mengambil customer:", error);
     Swal.fire({
       icon: "error",
       title: "Gagal Memuat Customer",
@@ -82,22 +77,14 @@ const fetchCustomers = async () => {
     });
   }
 };
-
-// ✅ Fetch Data Repair SETELAH customers loaded
 const fetchRepairData = async () => {
   try {
     isLoading.value = true;
     Api.defaults.headers.common["Authorization"] = token;
     
-    console.log("=== FETCH REPAIR DATA ===");
-    console.log("Repair UUID:", repairId);
-    
     const response = await Api.get(`/api/repairs/${repairId}`);
     const repair = response.data.data;
-
-    console.log("Repair data:", repair);
-    console.log("Repair customer UUID:", repair.customer?.uuid);
-
+  
     // Set form data
     form.invoice = repair.invoice;
     form.customer_id = repair.customer?.uuid || "";
@@ -119,7 +106,6 @@ const fetchRepairData = async () => {
       existingImageUrl.value = getImageUrl(repair.image);
     }
 
-    // ✅ PERBAIKAN: Set selected customer untuk vue-select
     if (repair.customer?.uuid && customers.value.length > 0) {
       const customer = customers.value.find(c => 
         c.uuid === repair.customer.uuid || 
@@ -128,9 +114,9 @@ const fetchRepairData = async () => {
       
       if (customer) {
         selectedCustomer.value = customer;
-        console.log("✅ Customer matched:", customer);
+        console.log(" Customer matched:", customer);
       } else {
-        console.warn("⚠️ Customer not found in dropdown:", repair.customer.uuid);
+        console.warn(" Customer not found in dropdown:", repair.customer.uuid);
         console.log("Available customers:", customers.value.map(c => c.uuid));
       }
     }
@@ -143,11 +129,11 @@ const fetchRepairData = async () => {
       endDatePicker.setDate(form.end_date);
     }
 
-    console.log("✅ Repair data loaded");
+    console.log(" Repair data loaded");
     console.log("Selected customer:", selectedCustomer.value);
     
   } catch (error) {
-    console.error("❌ Gagal mengambil data perbaikan:", error);
+    console.error("Gagal mengambil data perbaikan:", error);
     Swal.fire({
       icon: "error",
       title: "Gagal Memuat Data",
@@ -159,11 +145,7 @@ const fetchRepairData = async () => {
     isLoading.value = false;
   }
 };
-
-// ✅ Handle customer selection
 const handleCustomerChange = (customer) => {
-  console.log("=== CUSTOMER CHANGE ===");
-  console.log("Selected customer:", customer);
   
   if (customer) {
     const customerUuid = customer.uuid || customer.value || customer.id;
@@ -274,6 +256,38 @@ const updateRepair = async () => {
 
   if (!confirm.isConfirmed) return;
 
+  const repairCostNum = parseFloat(repairCost.rawValue.value) || 0;
+  const dpNum = parseFloat(dp.rawValue.value) || 0;
+
+  // VALIDASI REPAIR COST
+  if (!repairCostNum || repairCostNum <= 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "Biaya perbaikan tidak valid",
+      text: "Biaya perbaikan harus lebih besar dari 0.",
+    });
+    return;
+  }
+
+  // VALIDASI DP
+  if (dpNum < 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "DP tidak valid",
+      text: "DP tidak boleh kurang dari 0.",
+    });
+    return;
+  }
+
+  if (dpNum >= repairCostNum) {
+    Swal.fire({
+      icon: "warning",
+      title: "DP tidak valid",
+      text: "DP harus lebih kecil dari total biaya perbaikan.",
+    });
+    return;
+  }
+
   isSubmitting.value = true;
   Object.keys(errors).forEach((key) => (errors[key] = ""));
 
@@ -288,15 +302,14 @@ const updateRepair = async () => {
     formData.append("component", form.component || "");
     formData.append("pic", form.pic);
     
-    formData.append("dp", parseFloat(dp.rawValue.value) || 0);
-    formData.append("repair_cost", parseFloat(repairCost.rawValue.value));
+    formData.append("dp", dpNum);
+    formData.append("repair_cost", repairCostNum);
     formData.append("status", form.status);
     
     if (form.image) {
       formData.append("image", form.image);
     }
 
-    console.log("=== FORMDATA TO SEND ===");
     for (let pair of formData.entries()) {
       console.log(pair[0], ":", pair[1], typeof pair[1]);
     }
@@ -370,6 +383,33 @@ const updateRepair = async () => {
     isSubmitting.value = false;
   }
 };
+
+const handleDpInput = (event) => {
+  dp.handleInput(event);
+  const rawDp = dp.rawValue.value;
+  let dpNum = rawDp === "" ? null : Number(rawDp);
+
+  const costNum = parseFloat(repairCost.rawValue.value) || 0;
+
+  if (dpNum != null && costNum > 0 && dpNum >= costNum) {
+    const newMax = Math.max(0, costNum - 1);
+    dpNum = newMax;
+    dp.setValue(newMax);
+    Swal.fire({
+      icon: "warning",
+      title: "DP tidak valid",
+      text: "DP harus lebih kecil dari total biaya perbaikan.",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  }
+
+  if (dpNum != null && dpNum < 0) {
+    dpNum = 0;
+    dp.setValue(0);
+  }
+};
+
 
 const goBack = () => router.push("/repairs");
 
@@ -646,7 +686,7 @@ onMounted(async () => {
     <input
       id="dp"
       v-model="dp.displayValue.value"
-      @input="dp.handleInput"
+    @input="handleDpInput"
       type="text"
       :data-filled="dp.displayValue.value"
       placeholder="0"
