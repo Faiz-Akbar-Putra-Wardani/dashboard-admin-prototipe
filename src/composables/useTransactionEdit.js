@@ -5,7 +5,7 @@ import Swal from 'sweetalert2'
 import Api from '@/services/api'
 
 /**
- * Composable untuk handle edit transaksi
+ * Composable untuk handle edit transaksi penjualan (PPN)
  * @param {string} uuid - Transaction UUID
  */
 export function useTransactionEdit(uuid) {
@@ -19,21 +19,16 @@ export function useTransactionEdit(uuid) {
   const status = ref(null)
   
   // Financial data refs
-  const extra = ref(null)
-  const pph = ref(null)
+  const ppn = ref(null)     
   const nego = ref(null)
   const dp = ref(null)
 
-  /**
-   * Fetch transaction detail dari API
-   */
   const fetchTransactionDetail = async () => {
     if (!uuid) return
 
     isLoading.value = true
 
     try {
-
       const res = await Api.get(`/api/transactions/${uuid}`)
       const trx = res.data.data
       
@@ -41,18 +36,18 @@ export function useTransactionEdit(uuid) {
       status.value = trx.status
 
       // Customer data
-      selectedCustomer.value = trx.customer ? {
-        id: trx.customer.uuid,
-        uuid: trx.customer.uuid,
-        name: trx.customer.name_perusahaan,
-        address: trx.customer.address,
-      } : null
+      selectedCustomer.value = trx.customer
+        ? {
+            id: trx.customer.uuid,     
+            uuid: trx.customer.uuid,
+            name: trx.customer.name_perusahaan,
+            address: trx.customer.address,
+          }
+        : null
 
-      // Financial data (convert 0 to null for placeholder)
-      extra.value = (trx.extra === 0 || trx.extra === null) ? null : trx.extra
-      pph.value = (trx.pph === 0 || trx.pph === null) ? null : trx.pph
+      ppn.value  = (trx.ppn === 0 || trx.ppn === null) ? null : trx.ppn
       nego.value = (trx.nego === 0 || trx.nego === null) ? null : trx.nego
-      dp.value = (trx.dp === 0 || trx.dp === null) ? null : trx.dp
+      dp.value   = (trx.dp === 0 || trx.dp === null) ? null : trx.dp
 
       // Cart items
       cart.value = trx.transaction_details.map(d => ({
@@ -65,15 +60,14 @@ export function useTransactionEdit(uuid) {
         product_uuid: d.product.uuid,
       }))
 
-      console.log(' Transaction loaded:', {
+      console.log('Transaction loaded:', {
         invoice: invoice.value,
         customer: selectedCustomer.value?.name,
         items: cart.value.length,
         status: status.value,
       })
-
     } catch (err) {
-      console.error(' Failed to fetch transaction:', err.response?.data || err)
+      console.error('Failed to fetch transaction:', err.response?.data || err)
       
       Swal.fire({
         icon: 'error',
@@ -87,12 +81,8 @@ export function useTransactionEdit(uuid) {
     }
   }
 
-  /**
-   * Update transaction
-   */
   const updateTransaction = async (payload) => {
     try {
-
       Swal.fire({
         title: 'Memproses update...',
         text: 'Mohon tunggu sebentar',
@@ -111,9 +101,8 @@ export function useTransactionEdit(uuid) {
       })
 
       return res.data.data
-
     } catch (error) {
-      console.error(' Update failed:', error.response?.data || error)
+      console.error('Update failed:', error.response?.data || error)
       
       Swal.fire({
         icon: 'error',
@@ -125,9 +114,6 @@ export function useTransactionEdit(uuid) {
     }
   }
 
-  /**
-   * Add product to local cart (no API call)
-   */
   const addToLocalCart = (product) => {
     console.log('Adding product to cart:', product)
 
@@ -140,7 +126,7 @@ export function useTransactionEdit(uuid) {
       console.log('Updated existing item:', existing)
     } else {
       const newItem = {
-        id: Date.now(), // Temporary ID
+        id: Date.now(), 
         product_id: product.id,
         product_uuid: product.id,
         qty: 1,
@@ -153,17 +139,11 @@ export function useTransactionEdit(uuid) {
     }
   }
 
-  /**
-   * Remove from local cart
-   */
   const removeFromLocalCart = (id) => {
     console.log('Removing cart item:', id)
     cart.value = cart.value.filter(c => c.id !== id)
   }
 
-  /**
-   * Update qty in local cart
-   */
   const updateLocalCartQty = (id, delta) => {
     const item = cart.value.find(c => c.id === id)
     if (!item) return
@@ -177,26 +157,16 @@ export function useTransactionEdit(uuid) {
     }
   }
 
-  /**
-   * Set customer
-   */
   const setCustomer = (customer) => {
     selectedCustomer.value = customer
   }
 
-  /**
-   * Clear customer
-   */
   const clearCustomer = () => {
     selectedCustomer.value = null
   }
 
-  /**
-   * Reset all financial inputs
-   */
   const resetFinancials = () => {
-    extra.value = null
-    pph.value = null
+    ppn.value = null
     nego.value = null
     dp.value = null
   }
@@ -208,8 +178,7 @@ export function useTransactionEdit(uuid) {
     selectedCustomer,
     cart,
     status,
-    extra,
-    pph,
+    ppn,
     nego,
     dp,
 

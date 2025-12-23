@@ -72,17 +72,17 @@ const fetchRecapData = async () => {
       params.all = 'true'
     }
 
-    console.log('📤 Params yang dikirim:', params)
+    console.log(' Params yang dikirim:', params)
 
     const res = await Api.get("/api/reports/customer-recap", { params })
     
-    console.log('📥 Response dari API:', res.data)
-    console.log('📊 Jumlah data diterima:', res.data?.data?.length)
+    console.log(' Response dari API:', res.data)
+    console.log('Jumlah data diterima:', res.data?.data?.length)
 
     recaps.value = res.data?.data || []
 
   } catch (err) {
-    console.error("❌ Gagal memuat rekap:", err)
+    console.error(" Gagal memuat rekap:", err)
     alert('Gagal memuat data: ' + (err.response?.data?.message || err.message))
   } finally {
     isLoading.value = false

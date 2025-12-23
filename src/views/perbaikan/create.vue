@@ -12,13 +12,29 @@ import "flatpickr/dist/flatpickr.css";
 import vSelect from "vue-select";
 import "vue-select/dist/vue-select.css";
 import { useCurrencyInput } from "@/composables/useCurrencyInput";
+import { useRepairCalculation } from "@/composables/useRepairCalculation";
 
 const router = useRouter();
 const currentPageTitle = ref("Tambah Perbaikan");
 const token = Cookies.get("token");
 
-const repairCost = useCurrencyInput();
-const dp = useCurrencyInput();
+// currency input untuk tampilan
+const repairCostCurrency = useCurrencyInput();
+const dpCurrency = useCurrencyInput();
+const extraCurrency = useCurrencyInput();
+
+
+// kalkulasi angka murni
+const {
+  repairCost,
+  extraRepair,
+  repairPph,
+  repairDp,
+  repairSubtotal,
+  repairSubtotalPlusExtra,
+  repairPphNominal,
+  repairTotal,
+} = useRepairCalculation();
 
 const form = reactive({
   invoice: "",
@@ -30,31 +46,26 @@ const form = reactive({
   component: "",
   image: null,
   pic: "",
-  dp: "",
-  repair_cost: "",
   status: "masuk",
 });
 
 const customers = ref([]);
 const selectedCustomer = ref(null);
-const errors = reactive({});  
-const isSubmitting = ref(false);  
-const isLoadingInvoice = ref(true);  
+const errors = reactive({});
+const isSubmitting = ref(false);
+const isLoadingInvoice = ref(true);
 const startDateRef = ref(null);
 const endDateRef = ref(null);
 const previewUrl = ref(null);
 const fileInputRef = ref(null);
 const fileName = ref("");
-
 const fetchNewInvoice = async () => {
   try {
     isLoadingInvoice.value = true;
     Api.defaults.headers.common["Authorization"] = token;
     const response = await Api.get("/api/repairs/invoice/new");
     form.invoice = response.data.data.invoice;
-    console.log("Invoice generated:", form.invoice);
   } catch (error) {
-    console.error("Gagal mengambil invoice:", error);
     Swal.fire({
       icon: "error",
       title: "Gagal Generate Invoice",
@@ -65,28 +76,20 @@ const fetchNewInvoice = async () => {
   }
 };
 
-// Fetch Customers
 const fetchCustomers = async () => {
   try {
     Api.defaults.headers.common["Authorization"] = token;
     const response = await Api.get("/api/customers-all");
-    
-    customers.value = (response.data.data || []).map(c => {
-      console.log("Customer:", c);
-      return {
-        value: c.uuid || c.id,  
-        uuid: c.uuid || c.id,   
-        label: c.label || c.name,
-        name: c.label || c.name,
-        no_telp: c.no_telp,
-        address: c.address
-      };
-    });
-    
-    console.log("Customers mapped:", customers.value);
-    
+
+    customers.value = (response.data.data || []).map((c) => ({
+      value: c.uuid || c.id,
+      uuid: c.uuid || c.id,
+      label: c.label || c.name,
+      name: c.label || c.name,
+      no_telp: c.no_telp,
+      address: c.address,
+    }));
   } catch (error) {
-    console.error(" Gagal mengambil customer:", error);
     Swal.fire({
       icon: "error",
       title: "Gagal Memuat Customer",
@@ -96,13 +99,10 @@ const fetchCustomers = async () => {
 };
 
 const handleCustomerChange = (customer) => {
-  console.log("=== CUSTOMER CHANGE ===");
-  console.log("Selected customer:", customer);
-  
   if (customer) {
     const customerUuid = customer.uuid || customer.value || customer.id;
-    
-    if (typeof customerUuid !== 'string') {
+
+    if (typeof customerUuid !== "string") {
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -112,9 +112,8 @@ const handleCustomerChange = (customer) => {
       selectedCustomer.value = null;
       return;
     }
-    
-    form.customer_id = customerUuid;
 
+    form.customer_id = customerUuid;
   } else {
     form.customer_id = "";
   }
@@ -164,8 +163,49 @@ const initDatePickers = () => {
     });
   }
 };
+const handleRepairCostInput = (event) => {
+  repairCostCurrency.handleInput(event);
+  const raw = repairCostCurrency.rawValue.value;
+  const num = raw === "" ? 0 : Number(raw) || 0;
+  repairCost.value = num;
+};
 
-// Submit Form
+const handleDpInput = (event) => {
+  dpCurrency.handleInput(event);
+  const rawDp = dpCurrency.rawValue.value;
+  let dpNum = rawDp === "" ? null : Number(rawDp);
+
+  const currentTotal = repairTotal.value || repairCost.value || 0;
+
+  if (dpNum != null && currentTotal > 0 && dpNum >= currentTotal) {
+    const newMax = Math.max(0, currentTotal - 1);
+    dpNum = newMax;
+    dpCurrency.setValue(newMax);
+    repairDp.value = newMax;
+    Swal.fire({
+      icon: "warning",
+      title: "DP tidak valid",
+      text: "DP harus lebih kecil dari total biaya perbaikan.",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  }
+
+  if (dpNum != null && dpNum < 0) {
+    dpNum = 0;
+    dpCurrency.setValue(0);
+  }
+
+  repairDp.value = dpNum || 0;
+};
+
+const handleExtraInput = (event) => {
+  extraCurrency.handleInput(event);
+  const raw = extraCurrency.rawValue.value;
+  const num = raw === "" ? 0 : Number(raw) || 0;
+  extraRepair.value = num;
+};
+
 const storeRepair = async () => {
   if (!form.customer_id || form.customer_id === "") {
     Swal.fire({
@@ -176,7 +216,7 @@ const storeRepair = async () => {
     return;
   }
 
-  if (typeof form.customer_id !== 'string') {
+  if (typeof form.customer_id !== "string") {
     Swal.fire({
       icon: "error",
       title: "Error",
@@ -198,8 +238,11 @@ const storeRepair = async () => {
 
   if (!confirm.isConfirmed) return;
 
-   const repairCostNum = parseFloat(repairCost.rawValue.value) || 0;
-  const dpNum = parseFloat(dp.rawValue.value) || 0;
+  const repairCostNum = Number(repairCost.value) || 0;
+  const dpNum = Number(repairDp.value) || 0;
+  const extraNum = Number(extraRepair.value) || 0;
+  const pphNum = Number(repairPph.value) || 0;
+  const totalAfterPph = Number(repairTotal.value) || 0;
 
   // VALIDASI REPAIR COST WAJIB
   if (!repairCostNum || repairCostNum <= 0) {
@@ -221,7 +264,7 @@ const storeRepair = async () => {
     return;
   }
 
-  if (dpNum >= repairCostNum) {
+  if (totalAfterPph > 0 && dpNum >= totalAfterPph) {
     Swal.fire({
       icon: "warning",
       title: "DP tidak valid",
@@ -230,13 +273,12 @@ const storeRepair = async () => {
     return;
   }
 
-
   isSubmitting.value = true;
   Object.keys(errors).forEach((key) => (errors[key] = ""));
 
   try {
     const formData = new FormData();
-    
+
     formData.append("customer_id", String(form.customer_id));
     formData.append("item_repair", form.item_repair);
     formData.append("start_date", form.start_date);
@@ -244,17 +286,15 @@ const storeRepair = async () => {
     formData.append("description", form.description);
     formData.append("component", form.component || "");
     formData.append("pic", form.pic);
-    
-     formData.append("dp", dpNum);
+
+    formData.append("dp", dpNum);
     formData.append("repair_cost", repairCostNum);
+    formData.append("extra", extraNum);
+    formData.append("pph", pphNum);
     formData.append("status", form.status);
-    
+
     if (form.image) {
       formData.append("image", form.image);
-    }
-
-    for (let pair of formData.entries()) {
-      console.log(pair[0], ":", pair[1], typeof pair[1]);
     }
 
     Api.defaults.headers.common["Authorization"] = token;
@@ -269,21 +309,19 @@ const storeRepair = async () => {
     });
 
     router.push("/repairs");
-    
   } catch (error) {
-    
     if (error.response?.data) {
       const responseData = error.response.data;
-      
+
       handleErrors(responseData, errors);
-      
+
       let errorMessage = "";
-      
+
       if (responseData.errors && Array.isArray(responseData.errors)) {
         errorMessage = responseData.errors
           .map((err) => `<li>${err.msg}</li>`)
           .join("");
-          
+
         await Swal.fire({
           icon: "error",
           title: "Validasi Gagal!",
@@ -295,8 +333,7 @@ const storeRepair = async () => {
           confirmButtonText: "Tutup",
           confirmButtonColor: "#ef4444",
         });
-      }
-      else if (responseData.meta?.message) {
+      } else if (responseData.meta?.message) {
         await Swal.fire({
           icon: "error",
           title: "Gagal!",
@@ -304,8 +341,7 @@ const storeRepair = async () => {
           confirmButtonText: "Tutup",
           confirmButtonColor: "#ef4444",
         });
-      }
-      else {
+      } else {
         await Swal.fire({
           icon: "error",
           title: "Kesalahan!",
@@ -326,32 +362,6 @@ const storeRepair = async () => {
   }
 };
 
-const handleDpInput = (event) => {
-  dp.handleInput(event);
-  const rawDp = dp.rawValue.value;
-  let dpNum = rawDp === "" ? null : Number(rawDp);
-
-  const costNum = parseFloat(repairCost.rawValue.value) || 0;
-
-  if (dpNum != null && costNum > 0 && dpNum >= costNum) {
-    const newMax = Math.max(0, costNum - 1);
-    dpNum = newMax;
-    dp.setValue(newMax);
-    Swal.fire({
-      icon: "warning",
-      title: "DP tidak valid",
-      text: "DP harus lebih kecil dari total biaya perbaikan.",
-      timer: 1500,
-      showConfirmButton: false,
-    });
-  }
-
-  if (dpNum != null && dpNum < 0) {
-    dpNum = 0;
-    dp.setValue(0);
-  }
-};
-
 const goBack = () => router.push("/repairs");
 
 onMounted(() => {
@@ -360,6 +370,7 @@ onMounted(() => {
   initDatePickers();
 });
 </script>
+
 
 <template>
   <admin-layout>
@@ -579,77 +590,168 @@ onMounted(() => {
           </p>
         </div>
 
-       <!-- Biaya Perbaikan -->
-<div class="group relative">
-  <div class="relative">
-    <span class="absolute left-4 top-2.5 text-sm text-gray-500 dark:text-gray-400 z-30">
-      Rp
-    </span>
-    <input
-      id="repair_cost"
-      v-model="repairCost.displayValue.value"
-      @input="repairCost.handleInput"
-      type="text"
-      :data-filled="repairCost.displayValue.value"
-      class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 pl-12 pr-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
-      placeholder="0"
-    />
-    <label
-      for="repair_cost"
-      class="absolute left-12 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
-        peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
-        peer-focus:-top-3 peer-focus:left-4 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
-        peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:left-4 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
-    >
-      Biaya Perbaikan <span class="text-red-500">*</span>
-    </label>
-  </div>
-  <p
-    v-if="errors.repair_cost"
-    class="mt-1 text-xs text-red-600 dark:text-red-400"
-  >
-    {{ errors.repair_cost }}
-  </p>
-  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-    Contoh: 900.000 (sembilan ratus ribu rupiah)
-  </p>
-</div>
+        <!-- Biaya Perbaikan -->
+        <div class="group relative">
+          <div class="relative">
+            <span
+              class="absolute left-4 top-2.5 text-sm text-gray-500 dark:text-gray-400 z-30"
+            >
+              Rp
+            </span>
+            <input
+              id="repair_cost"
+              v-model="repairCostCurrency.displayValue.value"
+              @input="handleRepairCostInput"
+              type="text"
+              :data-filled="repairCostCurrency.displayValue.value"
+              class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 pl-12 pr-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
+              placeholder="0"
+            />
+            <label
+              for="repair_cost"
+              class="absolute left-12 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
+                peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
+                peer-focus:-top-3 peer-focus:left-4 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
+                peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:left-4 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
+            >
+              Biaya Perbaikan <span class="text-red-500">*</span>
+            </label>
+          </div>
+          <p
+            v-if="errors.repair_cost"
+            class="mt-1 text-xs text-red-600 dark:text-red-400"
+          >
+            {{ errors.repair_cost }}
+          </p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Contoh: 900.000 (sembilan ratus ribu rupiah)
+          </p>
+        </div>
 
-      <!-- DP -->
-<div class="group relative">
-  <div class="relative">
-    <span class="absolute left-4 top-2.5 text-sm text-gray-500 dark:text-gray-400 z-30">
-      Rp
-    </span>
-    <input
-      id="dp"
-      v-model="dp.displayValue.value"
-       @input="handleDpInput"
-      type="text"
-      :data-filled="dp.displayValue.value"
-      placeholder="0"
-      class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 pl-12 pr-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
-    />
-    <label
-      for="dp"
-      class="absolute left-12 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
-        peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
-        peer-focus:-top-3 peer-focus:left-4 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
-        peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:left-4 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
-    >
-      DP <span class="text-gray-400">(opsional)</span>
-    </label>
-  </div>
-  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-    Down Payment / Uang Muka
-  </p>
-  <p
-    v-if="errors.dp"
-    class="mt-1 text-xs text-red-600 dark:text-red-400"
-  >
-    {{ errors.dp }}
-  </p>
-</div>
+        <!-- DP -->
+        <div class="group relative">
+          <div class="relative">
+            <span
+              class="absolute left-4 top-2.5 text-sm text-gray-500 dark:text-gray-400 z-30"
+            >
+              Rp
+            </span>
+            <input
+              id="dp"
+              v-model="dpCurrency.displayValue.value"
+              @input="handleDpInput"
+              type="text"
+              :data-filled="dpCurrency.displayValue.value"
+              placeholder="0"
+              class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 pl-12 pr-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
+            />
+            <label
+              for="dp"
+              class="absolute left-12 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
+                peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
+                peer-focus:-top-3 peer-focus:left-4 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
+                peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:left-4 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
+            >
+              DP <span class="text-gray-400">(opsional)</span>
+            </label>
+          </div>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Down Payment / Uang Muka
+          </p>
+          <p
+            v-if="errors.dp"
+            class="mt-1 text-xs text-red-600 dark:text-red-400"
+          >
+            {{ errors.dp }}
+          </p>
+        </div>
+
+        <!-- PPH (%) -->
+        <div class="group relative">
+          <label
+            for="repair_pph"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
+            PPH (%) jika ada
+          </label>
+          <input
+            id="repair_pph"
+            v-model.number="repairPph"
+            type="number"
+            min="0"
+            max="100"
+            step="0.01" 
+            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all"
+            placeholder="0"
+          />
+        </div>
+
+       <!-- Tambahan Biaya (Extra) -->
+      <div class="group relative">
+        <label
+          for="extra_repair"
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
+          Tambahan Biaya (jika ada PPH)
+        </label>
+        <div class="relative">
+          <span
+            class="absolute left-4 top-2.5 text-sm text-gray-500 dark:text-gray-400 z-30"
+          >
+            Rp
+          </span>
+          <input
+            id="extra_repair"
+            v-model="extraCurrency.displayValue.value"
+            @input="handleExtraInput"
+            type="text"
+            :disabled="!repairPph || Number(repairPph) <= 0"
+            :data-filled="extraCurrency.displayValue.value"
+            class="peer block w-full rounded-lg border px-12 pr-4 py-2.5 text-sm text-gray-900
+                  bg-gray-50 dark:bg-gray-800
+                  border-gray-300 dark:border-gray-700
+                  focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
+                  dark:focus:bg-gray-800
+                  transition-all
+                  disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed
+                  dark:disabled:bg-gray-900 dark:disabled:text-gray-600"
+            placeholder="0"
+          />
+        </div>
+        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Contoh: 50.000 (lima puluh ribu rupiah), aktif jika PPH &gt; 0.
+        </p>
+      </div>
+        <!-- Ringkasan Perhitungan -->
+        <div
+          class="mt-4 border-t pt-4 text-sm text-gray-700 dark:text-gray-200 space-y-1"
+        >
+          <p>
+            Subtotal perbaikan:
+            <span class="font-semibold">
+              {{ repairSubtotal.toLocaleString("id-ID") }}
+            </span>
+          </p>
+          <p>
+            Subtotal + tambahan biaya:
+            <span class="font-semibold">
+              {{ repairSubtotalPlusExtra.toLocaleString("id-ID") }}
+            </span>
+          </p>
+          <p>
+            PPH (Rp):
+            <span class="font-semibold">
+              {{ repairPphNominal.toLocaleString("id-ID") }}
+            </span>
+          </p>
+          <p>
+            Total setelah PPH:
+            <span class="font-semibold">
+              {{ repairTotal.toLocaleString("id-ID") }}
+            </span>
+          </p>
+        </div>
+
         <!-- Status -->
         <div class="group relative">
           <label
@@ -684,7 +786,6 @@ onMounted(() => {
             Upload Gambar <span class="text-red-500">*</span>
           </label>
 
-          <!-- Tombol upload custom -->
           <div class="flex items-center gap-3">
             <button
               type="button"
@@ -694,7 +795,6 @@ onMounted(() => {
               Pilih Gambar
             </button>
 
-            <!-- Nama file -->
             <span
               v-if="fileName"
               class="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[150px]"
@@ -703,7 +803,6 @@ onMounted(() => {
             </span>
           </div>
 
-          <!-- Input file disembunyikan -->
           <input
             id="image"
             type="file"
@@ -713,7 +812,6 @@ onMounted(() => {
             class="hidden"
           />
 
-          <!-- Pesan error -->
           <p
             v-if="errors.image"
             class="mt-1 text-xs text-red-600 dark:text-red-400"
@@ -721,7 +819,6 @@ onMounted(() => {
             {{ errors.image }}
           </p>
 
-          <!-- Preview Gambar -->
           <div v-if="previewUrl" class="mt-3">
             <img
               :src="previewUrl"
@@ -802,6 +899,7 @@ onMounted(() => {
     </div>
   </admin-layout>
 </template>
+
 
 <style scoped>
 /* Custom styling untuk vue-select */

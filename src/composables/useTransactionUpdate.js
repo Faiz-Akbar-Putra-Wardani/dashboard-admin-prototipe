@@ -3,13 +3,14 @@ import Swal from 'sweetalert2'
 import { useRouter } from 'vue-router'
 
 /**
- * Composable untuk handle update transaction flow
+ * Composable untuk handle update transaction flow (penjualan + PPN)
  */
 export function useTransactionUpdate() {
   const router = useRouter()
 
   /**
-   * Process transaction update with confirmation
+   * @param {ReturnType<useTransactionEdit>} transactionEdit
+   * @param {Object} calculationData - dari useCalculation (PPN)
    */
   const processUpdate = async (transactionEdit, calculationData) => {
     const {
@@ -22,16 +23,13 @@ export function useTransactionUpdate() {
 
     const {
       subtotal,
-      subtotalPlusExtra,
-      extraSafe,
-      pphSafe,
-      pphNominal,
+      ppnSafe,      
+      ppnNominal,   
       negoSafe,
       dpSafe,
       totalBayar,
     } = calculationData
 
- 
     // VALIDASI
     if (!cart.value.length) {
       Swal.fire({
@@ -77,10 +75,8 @@ export function useTransactionUpdate() {
           <p><strong>Invoice:</strong> ${invoice.value}</p>
           <p><strong>Customer:</strong> ${selectedCustomer.value?.name || '-'}</p>
           <p><strong>Subtotal:</strong> Rp ${subtotal.toLocaleString('id-ID')}</p>
-          <p><strong>Tambahan Biaya:</strong> Rp ${extraSafe.toLocaleString('id-ID')}</p>
-          <p><strong>Total + Biaya:</strong> Rp ${subtotalPlusExtra.toLocaleString('id-ID')}</p>
-          <p><strong>PPH (%):</strong> ${pphSafe}%</p>
-          <p><strong>PPH Nominal:</strong> Rp ${pphNominal.toLocaleString('id-ID')}</p>
+          <p><strong>PPN (%):</strong> ${ppnSafe}%</p>
+          <p><strong>PPN Nominal:</strong> Rp ${ppnNominal.toLocaleString('id-ID')}</p>
           <p><strong>Nego:</strong> Rp ${negoSafe.toLocaleString('id-ID')}</p>
           <p><strong>DP:</strong> Rp ${dpSafe.toLocaleString('id-ID')}</p>
           <hr class="my-2" />
@@ -104,10 +100,8 @@ export function useTransactionUpdate() {
       const payload = {
         customer_id: selectedCustomer.value.id,
         subtotal,
-        subtotalPlusExtra,
-        extra: extraSafe,
-        pph: pphSafe,
-        pph_nominal: pphNominal,
+        ppn: ppnSafe,
+        ppn_nominal: ppnNominal,
         nego: negoSafe,
         dp: dpSafe,
         grand_total: totalBayar,
@@ -116,18 +110,13 @@ export function useTransactionUpdate() {
 
       await updateTransaction(payload)
 
-      // Redirect to list page
       router.push('/halaman-data-penjualan')
-
       return true
-
     } catch (error) {
       console.error('Update error:', error)
       return false
     }
   }
 
-  return {
-    processUpdate,
-  }
+  return { processUpdate }
 }

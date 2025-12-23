@@ -1,29 +1,40 @@
-<script setup>
-import { ref, onMounted, computed } from "vue"
-import Api from "@/services/api"
-import Cookies from "js-cookie"
-import html2pdf from "html2pdf.js"
 
-// STATE
-const invoiceCode = ref("")
-const customer = ref("-")
-const startDate = ref("")
-const endDate = ref("")
-const component = ref("-")
-const item_repair = ref("-")
-const description = ref("-")
-const dp = ref(0)
-const status = ref("")
-const repairCost = ref(0)
-const printDate = ref(new Date())
+<script setup>
+import { ref, computed, onMounted } from "vue";
+import Api from "@/services/api";
+import Cookies from "js-cookie";
+import html2pdf from "html2pdf.js";
+
+// DATA ======================================================================
+const invoiceCode = ref("");
+const loading = ref(true);
+
+const invoiceDate = ref("");
+const printDate = ref(new Date());
+const customer = ref("-");
+const terbilang = ref("-");
+
+const subtotalPlusExtra = ref(0);
+const total = ref(0);            
+const dp = ref(0);
+const sisa = ref(0);              
+const pph = ref(0);               
+const pph_nominal = ref(0);       
+
+// satu baris item perbaikan
+const itemName = ref("-");
+const startDate = ref("");
+const endDate = ref("");
+const component = ref("-");
+const description = ref("-");
 
 // Bank accounts dari API
-const bankAccounts = ref([])
-
-const printArea = ref(null)
+const bankAccounts = ref([]);
+const printArea = ref(null);
 
 // COMPUTED ==================================================================
-// Untuk signature name - ambil account_holder pertama
+
+// signature name - ambil account_holder pertama
 const signatureName = computed(() => {
   if (bankAccounts.value.length > 0) {
     return bankAccounts.value[0]?.account_holder ?? "ISWOYO";
@@ -31,210 +42,219 @@ const signatureName = computed(() => {
   return "ISWOYO";
 });
 
-// Untuk mendapatkan unique account holders (hapus duplikat)
 const uniqueAccountHolders = computed(() => {
-  if (bankAccounts.value.length === 0) {
-    return [];
-  }
-  
-  const holders = bankAccounts.value.map(bank => bank.account_holder);
-  const unique = [...new Set(holders)];
-  
-  return unique;
+  if (bankAccounts.value.length === 0) return [];
+  const holders = bankAccounts.value.map((bank) => bank.account_holder);
+  return [...new Set(holders)];
 });
 
-// FORMAT
-const formatRupiah = (num) =>
-  new Intl.NumberFormat("id-ID").format(num ?? 0)
+// konversi angka ke terbilang
+const numberToWords = (num) => {
+  if (num === 0) return "nol";
 
-const formatDate = (date) =>
-  new Date(date).toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  })
+  const units = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan"];
+  const teens = ["sepuluh", "sebelas", "dua belas", "tiga belas", "empat belas", "lima belas",
+    "enam belas", "tujuh belas", "delapan belas", "sembilan belas"];
 
-const formatPrintDate = (date) =>
-  new Date(date).toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  })
+  const convertHundreds = (n) => {
+    if (n === 0) return "";
+    if (n < 10) return units[n];
+    if (n >= 10 && n < 20) return teens[n - 10];
+    if (n < 100) {
+      const tens = Math.floor(n / 10);
+      const remainder = n % 10;
+      return (tens === 1 ? "se" : units[tens]) + " puluh" + (remainder > 0 ? " " + units[remainder] : "");
+    }
+    if (n < 200) {
+      const remainder = n % 100;
+      return "seratus" + (remainder > 0 ? " " + convertHundreds(remainder) : "");
+    }
+    if (n < 1000) {
+      const hundreds = Math.floor(n / 100);
+      const remainder = n % 100;
+      return units[hundreds] + " ratus" + (remainder > 0 ? " " + convertHundreds(remainder) : "");
+    }
+    return "";
+  };
 
-// FETCH BANK DATA ===========================================================
+  const convertThousands = (n) => {
+    if (n < 1000) return convertHundreds(n);
+    if (n < 2000) {
+      const remainder = n % 1000;
+      return "seribu" + (remainder > 0 ? " " + convertHundreds(remainder) : "");
+    }
+    if (n < 1000000) {
+      const thousands = Math.floor(n / 1000);
+      const remainder = n % 1000;
+      return convertHundreds(thousands) + " ribu" + (remainder > 0 ? " " + convertHundreds(remainder) : "");
+    }
+    return "";
+  };
+
+  const convertMillions = (n) => {
+    if (n < 1000000) return convertThousands(n);
+    if (n < 1000000000) {
+      const millions = Math.floor(n / 1000000);
+      const remainder = n % 1000000;
+      return convertThousands(millions) + " juta" + (remainder > 0 ? " " + convertThousands(remainder) : "");
+    }
+    if (n < 1000000000000) {
+      const billions = Math.floor(n / 1000000000);
+      const remainder = n % 1000000000;
+      return convertThousands(billions) + " miliar" + (remainder > 0 ? " " + convertMillions(remainder) : "");
+    }
+    return "";
+  };
+
+  return convertMillions(num);
+};
+
+const terbilangText = computed(() => {
+  if (total.value > 0) {
+    const words = numberToWords(total.value);
+    return words.charAt(0).toUpperCase() + words.slice(1) + " rupiah";
+  }
+  return terbilang.value || "-";
+});
+
 const fetchBankAccounts = async () => {
   try {
     const token = Cookies.get("token");
     Api.defaults.headers.common["Authorization"] = token;
 
     const res = await Api.get("/api/banks-all");
-    
-    if (res.data && res.data.data) {
-      bankAccounts.value = res.data.data;
-    } else {
-      bankAccounts.value = [];
-    }
+    bankAccounts.value = res.data?.data || [];
   } catch (err) {
     console.error("Gagal load bank accounts:", err.response || err);
     bankAccounts.value = [];
   }
 };
-
-// FETCH DATA PERBAIKAN
-const fetchRepair = async () => {
+const fetchRepairInvoice = async () => {
   try {
-    const token = Cookies.get("token")
-    Api.defaults.headers.common["Authorization"] = token
+    const token = Cookies.get("token");
+    Api.defaults.headers.common["Authorization"] = token;
 
-    const res = await Api.get(`/api/repairs/invoice/${invoiceCode.value}`)
-    const data = res.data.data
+    const res = await Api.get(`/api/repairs/invoice/${invoiceCode.value}`);
+    const data = res.data.data;
 
-    customer.value = data.customer?.name_perusahaan ?? "-"
-    startDate.value = data.start_date
-    endDate.value = data.end_date
-    component.value = data.component ?? "-"
-    item_repair.value = data.item_repair ?? "-"
-    description.value = data.description ?? "-"
-    dp.value = Number(data.dp ?? 0)
-    status.value = data.status
-    repairCost.value = Number(data.repair_cost ?? 0)
+    invoiceDate.value = data.created_at || data.start_date;
+    customer.value = data.customer?.name_perusahaan ?? "-";
 
+    const repairCost = Number(data.repair_cost ?? 0);
+    const extra = Number(data.extra ?? 0);
+    const pphPercent = Number(data.pph ?? 0);
+    const dpNum = Number(data.dp ?? 0);
+
+    // 1. subtotal + extra
+    const _subtotalPlusExtra = repairCost + extra;
+
+    // 2. PPH nominal
+    const _pphNominal = _subtotalPlusExtra * (pphPercent / 100);
+
+    // 3. total setelah PPH (dikurangi PPH)
+    const _total = Math.max(0, _subtotalPlusExtra - _pphNominal);
+
+    subtotalPlusExtra.value = _subtotalPlusExtra;
+    pph.value = pphPercent;
+    pph_nominal.value = _pphNominal;
+    total.value = _total;
+
+    dp.value = dpNum;
+    sisa.value = dp.value > 0 ? Math.max(0, total.value - dp.value) : 0;
+
+    // item/barang perbaikan
+    itemName.value = data.item_repair ?? "-";
+    startDate.value = data.start_date;
+    endDate.value = data.end_date;
+    component.value = data.component ?? "-";
+    description.value = data.description ?? "-";
   } catch (err) {
-    console.error("Gagal memuat perbaikan:", err)
+    console.error("Gagal load invoice perbaikan:", err);
   }
-}
+};
 
-// HITUNG SISA
-const sisa = computed(() => {
-  const total = Number(repairCost.value ?? 0)
-  const down = Number(dp.value ?? 0)
+onMounted(async () => {
+  const params = new URLSearchParams(window.location.search);
+  invoiceCode.value = params.get("invoice") || "";
 
-  if (down === 0) return 0
+  await Promise.all([fetchRepairInvoice(), fetchBankAccounts()]);
+  loading.value = false;
+});
+const formatRupiah = (num) => {
+  return new Intl.NumberFormat("id-ID", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(num ?? 0);
+};
 
-  const result = total - down
-  return result > 0 ? result : 0
-})
-
-// DOWNLOAD PDF - SAMA SEPERTI RENTAL
+const formatDate = (date) => {
+  if (!date) return "-";
+  const d = new Date(date);
+  return d.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+};
 const downloadPdf = async () => {
   const element = printArea.value;
-
-  await new Promise(resolve => setTimeout(resolve, 300));
+  await new Promise((resolve) => setTimeout(resolve, 300));
 
   const opt = {
     margin: [10, 10, 10, 10],
-    filename: `Perbaikan-${invoiceCode.value}.pdf`,
-    image: { 
-      type: "jpeg", 
-      quality: 0.95
+    filename: `Invoice-Perbaikan-${invoiceCode.value}.pdf`,
+    image: {
+      type: "jpeg",
+      quality: 0.95,
     },
-    html2canvas: { 
+    html2canvas: {
       scale: 2.2,
       useCORS: true,
       logging: false,
       letterRendering: true,
       allowTaint: false,
-      backgroundColor: '#ffffff',
+      backgroundColor: "#ffffff",
       imageTimeout: 0,
       windowHeight: 1400,
       onclone: (clonedDoc) => {
-        const clonedElement = clonedDoc.querySelector('.invoice-print');
+        const clonedElement = clonedDoc.querySelector(".invoice-print");
         if (clonedElement) {
-          clonedElement.style.maxWidth = '100%';
-          clonedElement.style.padding = '20px 35px';
-          clonedElement.style.fontSize = '10pt';
+          clonedElement.style.maxWidth = "100%";
+          clonedElement.style.padding = "20px 35px";
+          clonedElement.style.fontSize = "10pt";
         }
-        
-        const header = clonedDoc.querySelector('.header');
-        if (header) {
-          header.style.display = 'flex';
-          header.style.alignItems = 'flex-start';
-          header.style.gap = '15px';
-          header.style.marginBottom = '15px';
-        }
-        
-        const logo = clonedDoc.querySelector('.logo');
-        if (logo) {
-          logo.style.width = '65px';
-          logo.style.height = '65px';
-          logo.style.flexShrink = '0';
-          logo.style.display = 'flex';
-        }
-        
-        const logoImg = clonedDoc.querySelector('.logo img');
-        if (logoImg) {
-          logoImg.style.width = '65px';
-          logoImg.style.height = '65px';
-        }
-        
-        const company = clonedDoc.querySelector('.company');
-        if (company) {
-          company.style.flex = '1';
-        }
-
-        const sections = clonedDoc.querySelectorAll('.title-section, .customer, .payment');
-        sections.forEach(section => {
-          section.style.marginTop = '15px';
-          section.style.marginBottom = '15px';
-        });
-
-        const table = clonedDoc.querySelector('.items');
-        if (table) {
-          table.style.fontSize = '10pt';
-          table.style.marginBottom = '18px';
-        }
-
-        const signature = clonedDoc.querySelector('.signature-section');
-        if (signature) {
-          signature.style.marginTop = '30px';
-        }
-
-        const signatureSpace = clonedDoc.querySelector('.signature-space');
-        if (signatureSpace) {
-          signatureSpace.style.height = '45px';
-        }
-      }
+      },
     },
-    jsPDF: { 
-      unit: "mm", 
-      format: "a4", 
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
       orientation: "portrait",
-      compress: true
+      compress: true,
     },
-    pagebreak: { 
-      mode: ['avoid-all', 'css', 'legacy'],
-      avoid: ['.signature-section', '.payment', '.header']
-    }
+    pagebreak: {
+      mode: ["avoid-all", "css", "legacy"],
+      avoid: [".signature-section", ".payment", ".header"],
+    },
   };
 
   html2pdf().set(opt).from(element).save();
 };
-
-// ON MOUNTED
-onMounted(async () => {
-  const params = new URLSearchParams(window.location.search)
-  invoiceCode.value = params.get("invoice")
-  
-  await Promise.all([
-    fetchRepair(),
-    fetchBankAccounts()
-  ]);
-});
 </script>
+
 
 <template>
   <div>
-    <!-- Tombol Download PDF -->
+    <!-- Tombol Preview dan Download -->
     <div style="margin-bottom: 20px; text-align:right;">
-      <button @click="downloadPdf" class="btn btn-primary">
-        Download PDF
+      <button @click="downloadPdf" class="btn btn-primary" :disabled="loading">
+        <span v-if="loading">Loading...</span>
+        <span v-else>Download PDF</span>
       </button>
     </div>
 
-    <!-- AREA PRINT -->
-    <div class="invoice-print" ref="printArea">
-
-      <!-- HEADER dengan Logo Image -->
+    <!-- AREA INVOICE UNTUK DIEXPORT PDF -->
+    <div class="invoice-print" ref="printArea" v-if="!loading">
+      <!-- Header Perusahaan -->
       <div class="header">
         <div class="logo">
           <img src="/images/logo/logo_ses2.png" alt="SES Logo" />
@@ -242,88 +262,92 @@ onMounted(async () => {
         <div class="company">
           <h1>SINAR ELEKTRO SEJAHTERA</h1>
           <div class="tagline">
-            service:Rewinding Elektro motor1 dan 3phase, ,Genset<br>
+            service:Rewinding Elektro motor1 dan 3phase, ,Genset<br />
             <span class="underline">Generator Jual-Beli dan Sewa Genset</span>
           </div>
           <div class="address">
-            Alamat:<span class="underline">JL.Cendanall Gg.H.JANUR Jatimulyo-Lampung Selatan Tlp.0853-8312-0656</span>
+            Alamat:<span class="underline"
+              >JL.Cendanall Gg.H.JANUR Jatimulyo-Lampung Selatan
+              Tlp.0853-8312-0656</span
+            >
           </div>
         </div>
       </div>
 
-      <!-- TEMPAT & TANGGAL -->
+      <!-- Tempat & Tanggal -->
       <div class="place-date">
-        Bandar Lampung, {{ formatPrintDate(printDate) }}
+        Bandar Lampung, {{ formatDate(invoiceDate || printDate) }}
       </div>
 
-      <!-- JUDUL -->
+      <!-- Judul Invoice -->
       <div class="title-section">
         <p class="invoice-title"><u>Invoice Perbaikan</u></p>
-        <p>Tanggal Cetak: {{ formatPrintDate(printDate) }}</p>
+        <p>Tanggal Cetak Tagihan: {{ formatDate(printDate) }}</p>
         <p>No Invoice: {{ invoiceCode }}</p>
       </div>
 
-      <!-- KEPADA -->
+      <!-- Kepada Yth -->
       <div class="customer">
         <p>Kepada Yth.</p>
         <p class="name">{{ customer }}</p>
       </div>
 
-      <!-- TABEL PERBAIKAN -->
-      <table class="items">
-        <thead>
-          <tr>
-            <th class="no-col">No</th>
-            <th class="item-col">Nama Barang</th>
-            <th class="date-col">Estimasi Tanggal</th>
-            <th class="component-col">Komponen</th>
-            <th class="price-col">Biaya</th>
-          </tr>
-        </thead>
+      <!-- Tabel (sesuai penjualan, tapi 1 item perbaikan) -->
+    <table class="items">
+  <thead>
+    <tr>
+      <th class="no-col">No</th>
+      <th class="item-col">Nama barang</th>
+      <th class="bill-col">Total Tagihan</th>
+      <th class="unit-price-col">PPH {{ pph }}%</th>
+      <th class="amount-col">Jumlah</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="center">1</td>
+      <td class="center">
+        {{ itemName }}
+      </td>
+      <td class="center">{{ formatRupiah(subtotalPlusExtra) }}</td>
+      <td class="center">{{ formatRupiah(pph_nominal) }}</td>
+      <!-- JUMALH RATA KANAN, SEJAJAR DENGAN KOLOM TOTAL/PPH -->
+      <td class="right">{{ formatRupiah(total) }}</td>
+    </tr>
 
-        <tbody>
-          <tr>
-            <td class="center">1</td>
-            <td>{{ item_repair }}</td>
-            <td class="center">
-              {{ formatDate(startDate) }} - {{ formatDate(endDate) }}
-            </td>
-            <td class="center">{{ component }}</td>
-            <td class="right">Rp {{ formatRupiah(repairCost) }}</td>
-          </tr>
+    <!-- Terbilang / DP / SISA / TOTAL -->
+    <tr class="sub-total-row">
+      <!-- Kolom terbilang tetap ambil 3 kolom awal -->
+      <td colspan="3" class="terbilang-cell">
+        Terbilang: {{ terbilangText }}
+      </td>
+      <!-- Kolom label & nilai DP sejajar dengan kolom PPH & Jumlah -->
+      <td class="center">DP</td>
+      <td class="right">{{ formatRupiah(dp) }}</td>
+    </tr>
 
-          <tr class="sub-total-row">
-            <td colspan="3" class="empty-cell"></td>
-            <td class="right">DP</td>
-            <td class="right">{{ formatRupiah(dp) }}</td>
-          </tr>
+    <tr class="sub-total-row">
+      <td colspan="3" class="empty-cell"></td>
+      <td class="center">SISA</td>
+      <td class="right">{{ formatRupiah(sisa) }}</td>
+    </tr>
 
-          <tr class="sub-total-row">
-            <td colspan="3" class="empty-cell"></td>
-            <td class="right">SISA</td>
-            <td class="right">{{ formatRupiah(sisa) }}</td>
-          </tr>
+    <tr class="total-row">
+      <td colspan="3" class="empty-cell"></td>
+      <td class="center">TOTAL</td>
+      <!-- TOTAL juga rata kanan dan bold -->
+      <td class="right total-amount">
+        Rp {{ formatRupiah(total) }}
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-          <tr class="total-row">
-            <td colspan="3" class="empty-cell"></td>
-            <td class="right">TOTAL</td>
-            <td class="right total-amount">Rp {{ formatRupiah(repairCost) }}</td>
-          </tr>
-        </tbody>
-      </table>
 
-      <!-- DESKRIPSI -->
-      <div class="payment">
-        <p><strong>Deskripsi Perbaikan</strong></p>
-        <p style="margin-top:8px;">
-          {{ description }}
-        </p>
-      </div>
-
-      <!-- PEMBAYARAN dengan Bank Dinamis -->
+      <!-- Informasi Pembayaran -->
       <div class="payment">
         <p>
-          <strong>Pembayaran</strong><br>
+          <strong>Pembayaran</strong><br />
           Mohon ditransfer ke
         </p>
 
@@ -332,27 +356,37 @@ onMounted(async () => {
           <div class="rek-label">Nomor Rekening</div>
           <div class="rek-content">
             <template v-if="bankAccounts.length > 0">
-              <template v-for="(bank, index) in bankAccounts" :key="bank.id">
-                : - Bank {{ bank.bank_name }}<br>
-                ({{ bank.account_number }})<br v-if="index < bankAccounts.length - 1">
+              <template
+                v-for="(bank, index) in bankAccounts"
+                :key="bank.id"
+              >
+                : - {{ bank.bank_name }}<br />
+                ({{ bank.account_number }})<br
+                  v-if="index < bankAccounts.length - 1"
+                />
               </template>
             </template>
             <template v-else>
-              : - Bank BRI<br>
-              (2092-0101-1376-504)<br>
-              : - Bank MANDIRI<br>
+              : - Bank BRI<br />
+              (2092-0101-1376-504)<br />
+              : - Bank MANDIRI<br />
               (114-00-2493557-2)
             </template>
           </div>
         </div>
 
-        <!-- Atas Nama - DINAMIS -->
+        <!-- Atas Nama -->
         <div class="atas-nama">
           <div class="an-label">Atas Nama</div>
           <div class="an-content">
             <template v-if="uniqueAccountHolders.length > 0">
-              <template v-for="(holder, index) in uniqueAccountHolders" :key="'holder-' + index">
-                : {{ holder }}<br v-if="index < uniqueAccountHolders.length - 1">
+              <template
+                v-for="(holder, index) in uniqueAccountHolders"
+                :key="'holder-' + index"
+              >
+                : {{ holder }}<br
+                  v-if="index < uniqueAccountHolders.length - 1"
+                />
               </template>
             </template>
             <template v-else>
@@ -364,16 +398,24 @@ onMounted(async () => {
 
       <!-- Signature Section -->
       <div class="signature-section">
-        <div class="signature-text">Bandar Lampung, {{ formatPrintDate(printDate) }}</div>
+        <div class="signature-text">
+          Bandar Lampung, {{ formatDate(printDate) }}
+        </div>
         <div class="signature-text">Sinar Elektro Sejahtera</div>
         <div class="signature-space"></div>
         <div class="signature-name">{{ signatureName }}</div>
         <div class="signature-title">Pelaksana</div>
       </div>
+    </div>
 
+    <!-- Loading State -->
+    <div v-else class="text-center py-20">
+      <p>Memuat data invoice...</p>
     </div>
   </div>
 </template>
+
+
 
 <style scoped>
 .invoice-print {

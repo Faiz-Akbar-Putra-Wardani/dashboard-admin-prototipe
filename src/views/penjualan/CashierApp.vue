@@ -17,7 +17,10 @@ const store = useSaleStore()
 const cartRef = computed(() => store.cart || [])
 const productsRef = computed(() => store.products || [])
 
+// useCalculation PENJUALAN + PPN
 const calculation = useCalculation(cartRef)
+// hasil yang dipakai: subtotal, ppn, ppnSafe, ppnNominal, totalBeforeNego, totalAfterNego, totalBayar, nego, dp, dll
+
 const { searchQuery, selectedBrand, filteredItems: filteredProducts } = useFilter(productsRef)
 const { checkout: performCheckout } = useCheckout()
 
@@ -38,10 +41,8 @@ const chooseCustomer = (customer) => {
 const handleCheckout = async () => {
   const success = await performCheckout({
     subtotal: calculation.subtotal.value,
-    subtotalPlusExtra: calculation.subtotalPlusExtra.value,
-    extraSafe: calculation.extraSafe.value,
-    pphSafe: calculation.pphSafe.value,
-    pphNominal: calculation.pphNominal.value,
+    ppnSafe: calculation.ppnSafe.value,
+    ppnNominal: calculation.ppnNominal.value,
     negoSafe: calculation.negoSafe.value,
     dpSafe: calculation.dpSafe.value,
     totalBayar: calculation.totalBayar.value,
@@ -64,6 +65,7 @@ onMounted(async () => {
   }
 });
 </script>
+
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100">
@@ -141,18 +143,17 @@ onMounted(async () => {
           </div>
           <div v-show="activeTab === 'cart'" class="animate-fade-in">
             <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-5 border border-blue-200">
+              <!-- MOBILE - CART TAB -->
               <CashierSection
                 :cart="store.cart || []"
                 :selected-customer="store.selectedCustomer"
                 :invoice="store.invoice"
                 :subtotal="calculation.subtotal.value"
-                :subtotal-plus-extra="calculation.subtotalPlusExtra.value"
-                :pph-nominal="calculation.pphNominal.value"
+                :ppn-nominal="calculation.ppnNominal.value"
                 :total-before-nego="calculation.totalBeforeNego.value"
                 :total-after-nego="calculation.totalAfterNego.value"
                 :total-bayar="calculation.totalBayar.value"
-                v-model:extra="calculation.extra.value"
-                v-model:pph="calculation.pph.value"
+                v-model:ppn="calculation.ppn.value"
                 v-model:nego="calculation.nego.value"
                 v-model:dp="calculation.dp.value"
                 v-model:status="store.status"
@@ -189,25 +190,23 @@ onMounted(async () => {
               Keranjang
             </h2>
             <CashierSection
-              :cart="store.cart || []"
-              :selected-customer="store.selectedCustomer"
-              :invoice="store.invoice"
-              :subtotal="calculation.subtotal.value"
-              :subtotal-plus-extra="calculation.subtotalPlusExtra.value"
-              :pph-nominal="calculation.pphNominal.value"
-              :total-before-nego="calculation.totalBeforeNego.value"
-              :total-after-nego="calculation.totalAfterNego.value"
-              :total-bayar="calculation.totalBayar.value"
-              v-model:extra="calculation.extra.value"
-              v-model:pph="calculation.pph.value"
-              v-model:nego="calculation.nego.value"
-              v-model:dp="calculation.dp.value"
-              v-model:status="store.status"
-              @checkout="handleCheckout"
-              @remove-item="store.removeCart"
-              @change-qty="({ id, delta }) => store.updateCartQty(id, delta)"
-              @open-customer-modal="showCustomerModal = true"
-            />
+            :cart="store.cart || []"
+            :selected-customer="store.selectedCustomer"
+            :invoice="store.invoice"
+            :subtotal="calculation.subtotal.value"
+            :ppn-nominal="calculation.ppnNominal.value"
+            :total-before-nego="calculation.totalBeforeNego.value"
+            :total-after-nego="calculation.totalAfterNego.value"
+            :total-bayar="calculation.totalBayar.value"
+            v-model:ppn="calculation.ppn.value"
+            v-model:nego="calculation.nego.value"
+            v-model:dp="calculation.dp.value"
+            v-model:status="store.status"
+            @checkout="handleCheckout"
+            @remove-item="store.removeCart"
+            @change-qty="({ id, delta }) => store.updateCartQty(id, delta)"
+            @open-customer-modal="showCustomerModal = true"
+          />
           </div>
         </div>
       </template>

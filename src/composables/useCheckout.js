@@ -3,25 +3,22 @@ import Swal from 'sweetalert2'
 import { useSaleStore } from '@/stores/useSaleStore'
 
 /**
- * Composable untuk handle checkout process
+ * Composable untuk handle checkout process (penjualan + PPN)
  */
 export function useCheckout() {
   const store = useSaleStore()
 
   /**
-   * Process checkout transaksi
-   * @param {Object} calculationData - Data perhitungan dari useCalculation
+   * @param {Object} calculationData - Data perhitungan dari useCalculation (PPN)
    */
   const checkout = async (calculationData) => {
     const { 
-      subtotal, 
-      subtotalPlusExtra, 
-      extraSafe, 
-      pphSafe, 
-      pphNominal, 
-      negoSafe, 
-      dpSafe, 
-      totalBayar 
+      subtotal,
+      ppnSafe,      // persen
+      ppnNominal,   // rupiah
+      negoSafe,
+      dpSafe,
+      totalBayar
     } = calculationData
 
     // VALIDASI KERANJANG
@@ -44,7 +41,7 @@ export function useCheckout() {
       return false
     }
 
-    // VALIDASI NEGO
+    // VALIDASI NEGO (tambahan guard di sisi UI)
     if (negoSafe >= totalBayar) {
       Swal.fire({
         icon: 'warning',
@@ -63,6 +60,7 @@ export function useCheckout() {
       })
       return false
     }
+
     // KONFIRMASI CHECKOUT
     const result = await Swal.fire({
       title: 'Konfirmasi Checkout',
@@ -70,10 +68,8 @@ export function useCheckout() {
         <div class="text-center">
           <p><strong>Customer:</strong> ${store.selectedCustomer?.name || '-'}</p>
           <p><strong>Subtotal:</strong> Rp ${subtotal.toLocaleString('id-ID')}</p>
-          <p><strong>Tambahan Biaya:</strong> Rp ${extraSafe.toLocaleString('id-ID')}</p>
-          <p><strong>Total + Biaya:</strong> Rp ${subtotalPlusExtra.toLocaleString('id-ID')}</p>
-          <p><strong>PPH (%):</strong> ${pphSafe}%</p>
-          <p><strong>PPH Nominal:</strong> Rp ${pphNominal.toLocaleString('id-ID')}</p>
+          <p><strong>PPN (%):</strong> ${ppnSafe}%</p>
+          <p><strong>PPN Nominal:</strong> Rp ${ppnNominal.toLocaleString('id-ID')}</p>
           <p><strong>Nego:</strong> Rp ${negoSafe.toLocaleString('id-ID')}</p>
           <p><strong>DP:</strong> Rp ${dpSafe.toLocaleString('id-ID')}</p>
           <hr class="my-2" />
@@ -102,12 +98,10 @@ export function useCheckout() {
       })
 
       const payload = {
-        customer_id: store.selectedCustomer.id,
+        customer_id: store.selectedCustomer.id, // kirim UUID/ID sesuai backend
         subtotal,
-        subtotalPlusExtra,
-        extra: extraSafe,
-        pph: pphSafe,
-        pph_nominal: pphNominal,
+        ppn: ppnSafe,
+        ppn_nominal: ppnNominal,
         nego: negoSafe,
         dp: dpSafe,
         grand_total: totalBayar,
@@ -125,14 +119,15 @@ export function useCheckout() {
       })
 
       return true
-
     } catch (error) {
       console.error('Checkout gagal:', error.response?.data || error)
 
       Swal.fire({
         icon: 'error',
         title: 'Gagal melakukan checkout',
-        text: error.response?.data?.meta?.message || 'Terjadi kesalahan saat memproses transaksi.',
+        text:
+          error.response?.data?.meta?.message ||
+          'Terjadi kesalahan saat memproses transaksi.',
         confirmButtonColor: '#e3342f',
       })
 
@@ -140,7 +135,5 @@ export function useCheckout() {
     }
   }
 
-  return {
-    checkout,
-  }
+  return { checkout }
 }

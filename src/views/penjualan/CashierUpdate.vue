@@ -20,19 +20,14 @@ const transactionUuid = route.params.uuid
 // Edit transaction composable
 const transactionEdit = useTransactionEdit(transactionUuid)
 
-// Computed refs untuk calculation
+// Calculation menggunakan cart dari transactionEdit
 const cartRef = computed(() => transactionEdit.cart.value)
-
-// Calculation dengan data dari transactionEdit
 const calculation = useCalculation(cartRef)
 
-// Sync financial data from transactionEdit to calculation
+// Sync financial data from transactionEdit to calculation (PPN, nego, dp)
 const syncFinancialData = () => {
-  if (transactionEdit.extra.value !== null) {
-    calculation.extra.value = transactionEdit.extra.value
-  }
-  if (transactionEdit.pph.value !== null) {
-    calculation.pph.value = transactionEdit.pph.value
+  if (transactionEdit.ppn.value !== null) {
+    calculation.ppn.value = transactionEdit.ppn.value
   }
   if (transactionEdit.nego.value !== null) {
     calculation.nego.value = transactionEdit.nego.value
@@ -44,21 +39,18 @@ const syncFinancialData = () => {
 
 // Products filter
 const productsRef = computed(() => store.products || [])
-const { searchQuery, selectedBrand, filteredItems: filteredProducts } = useFilter(productsRef)
+const { searchQuery, selectedBrand, filteredItems: filteredProducts } =
+  useFilter(productsRef)
 
 // Update handler
 const { processUpdate } = useTransactionUpdate()
 
-
 const activeTab = ref('products')
 const showCustomerModal = ref(false)
 
-// Cart count
 const cartCount = computed(() => (transactionEdit.cart.value || []).length)
 
-
 // HANDLERS
-
 const goToSalesPage = () => {
   router.push('/halaman-data-penjualan')
 }
@@ -71,28 +63,25 @@ const chooseCustomer = (customer) => {
 const handleUpdate = async () => {
   const success = await processUpdate(transactionEdit, {
     subtotal: calculation.subtotal.value,
-    subtotalPlusExtra: calculation.subtotalPlusExtra.value,
-    extraSafe: calculation.extraSafe.value,
-    pphSafe: calculation.pphSafe.value,
-    pphNominal: calculation.pphNominal.value,
+    ppnSafe: calculation.ppnSafe.value,
+    ppnNominal: calculation.ppnNominal.value,
     negoSafe: calculation.negoSafe.value,
     dpSafe: calculation.dpSafe.value,
     totalBayar: calculation.totalBayar.value,
   })
 
   if (success) {
-    console.log(' Transaction updated successfully')
+    console.log('Transaction updated successfully')
   }
 }
 
 onMounted(async () => {
-  // Load products, categories, customers
   await store.init()
   await transactionEdit.fetchTransactionDetail()
-  
   syncFinancialData()
 });
 </script>
+
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100">
@@ -174,18 +163,17 @@ onMounted(async () => {
           </div>
           <div v-show="activeTab === 'cart'" class="animate-fade-in">
             <div class="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-5 border border-blue-200">
+             <!-- MOBILE – CART TAB -->
               <CashierSection
                 :cart="transactionEdit.cart.value"
                 :selected-customer="transactionEdit.selectedCustomer.value"
                 :invoice="transactionEdit.invoice.value"
                 :subtotal="calculation.subtotal.value"
-                :subtotal-plus-extra="calculation.subtotalPlusExtra.value"
-                :pph-nominal="calculation.pphNominal.value"
+                :ppn-nominal="calculation.ppnNominal.value"
                 :total-before-nego="calculation.totalBeforeNego.value"
                 :total-after-nego="calculation.totalAfterNego.value"
                 :total-bayar="calculation.totalBayar.value"
-                v-model:extra="calculation.extra.value"
-                v-model:pph="calculation.pph.value"
+                v-model:ppn="calculation.ppn.value"
                 v-model:nego="calculation.nego.value"
                 v-model:dp="calculation.dp.value"
                 v-model:status="transactionEdit.status.value"
@@ -225,27 +213,25 @@ onMounted(async () => {
               </svg>
               Edit Transaksi
             </h2>
-            <CashierSection
-              :cart="transactionEdit.cart.value"
-              :selected-customer="transactionEdit.selectedCustomer.value"
-              :invoice="transactionEdit.invoice.value"
-              :subtotal="calculation.subtotal.value"
-              :subtotal-plus-extra="calculation.subtotalPlusExtra.value"
-              :pph-nominal="calculation.pphNominal.value"
-              :total-before-nego="calculation.totalBeforeNego.value"
-              :total-after-nego="calculation.totalAfterNego.value"
-              :total-bayar="calculation.totalBayar.value"
-              v-model:extra="calculation.extra.value"
-              v-model:pph="calculation.pph.value"
-              v-model:nego="calculation.nego.value"
-              v-model:dp="calculation.dp.value"
-              v-model:status="transactionEdit.status.value"
-              @checkout="handleUpdate"
-              @remove-item="transactionEdit.removeFromLocalCart"
-              @change-qty="({ id, delta }) => transactionEdit.updateLocalCartQty(id, delta)"
-              @open-customer-modal="showCustomerModal = true"
-              button-text="Update Transaksi"
-            />
+          <CashierSection
+          :cart="transactionEdit.cart.value"
+          :selected-customer="transactionEdit.selectedCustomer.value"
+          :invoice="transactionEdit.invoice.value"
+          :subtotal="calculation.subtotal.value"
+          :ppn-nominal="calculation.ppnNominal.value"
+          :total-before-nego="calculation.totalBeforeNego.value"
+          :total-after-nego="calculation.totalAfterNego.value"
+          :total-bayar="calculation.totalBayar.value"
+          v-model:ppn="calculation.ppn.value"
+          v-model:nego="calculation.nego.value"
+          v-model:dp="calculation.dp.value"
+          v-model:status="transactionEdit.status.value"
+          @checkout="handleUpdate"
+          @remove-item="transactionEdit.removeFromLocalCart"
+          @change-qty="({ id, delta }) => transactionEdit.updateLocalCartQty(id, delta)"
+          @open-customer-modal="showCustomerModal = true"
+          button-text="Update Transaksi"
+        />
           </div>
         </div>
       </template>

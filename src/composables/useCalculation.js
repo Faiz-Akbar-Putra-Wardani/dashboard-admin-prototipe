@@ -3,149 +3,124 @@ import { computed, ref, watch } from 'vue'
 import Swal from 'sweetalert2'
 
 /**
- * Composable untuk handle semua perhitungan transaksi
+ * Composable untuk handle semua perhitungan transaksi PENJUALAN
+ * (tanpa extra & PPH, hanya PPN).
  * @param {Ref} cartRef - Reactive reference ke cart array
  */
 export function useCalculation(cartRef) {
-  // ========================================
   // STATE
-  // ========================================
-  const extra = ref(null)
-  const pph = ref(null)
+  const ppn = ref(null)   // persen PPN (11, 12, dll)
   const nego = ref(null)
   const dp = ref(null)
 
-  // ========================================
   // SAFE NUMBER HELPERS
-  // ========================================
   const safeNum = (v) => Number(v) || 0
 
-  const extraSafe = computed(() => safeNum(extra.value))
-  const pphSafe = computed(() => safeNum(pph.value))
+  const ppnSafe = computed(() => safeNum(ppn.value))
   const negoSafe = computed(() => safeNum(nego.value))
   const dpSafe = computed(() => safeNum(dp.value))
 
-  // ========================================
-  // PERHITUNGAN BERTINGKAT
-  // ========================================
-  
   // 1. Subtotal (harga × qty semua item)
   const subtotal = computed(() => {
     const cart = Array.isArray(cartRef.value) ? cartRef.value : []
     return cart.reduce((sum, c) => sum + c.price * c.qty, 0)
   })
 
-  // 2. Subtotal + Biaya Extra
-  const subtotalPlusExtra = computed(() => 
-    subtotal.value + extraSafe.value
+  // 2. Nominal PPN (persen dari subtotal)
+  const ppnNominal = computed(() =>
+    subtotal.value * (ppnSafe.value / 100)
   )
 
-  // 3. Nominal PPH (persentase dari subtotal + extra)
-  const pphNominal = computed(() =>
-    subtotalPlusExtra.value * (pphSafe.value / 100)
-  )
-
-  // 4. Total sebelum nego (subtotal + extra - pph)
+  // 3. Total sebelum nego (subtotal + PPN)
   const totalBeforeNego = computed(() =>
-    subtotalPlusExtra.value - pphNominal.value
+    subtotal.value + ppnNominal.value
   )
 
-  // 5. Total setelah nego
+  // 4. Total setelah nego
   const totalAfterNego = computed(() =>
     Math.max(0, totalBeforeNego.value - negoSafe.value)
   )
 
-  // 6. Total bayar final
-  const totalBayar = computed(() => 
+  // 5. Total bayar final
+  const totalBayar = computed(() =>
     Math.max(0, totalAfterNego.value)
   )
 
-  // ========================================
   // VALIDASI NEGO
-  // ========================================
   watch([nego, totalBeforeNego], () => {
-  if (nego.value == null) return
+    if (nego.value == null) return
 
-  if (nego.value >= totalBeforeNego.value) { 
-    nego.value = Math.max(0, totalBeforeNego.value - 1)
-    Swal.fire({
-      icon: 'warning',
-      title: 'Nego tidak valid',
-      text: 'Nego harus lebih kecil dari total sebelum nego',
-      timer: 1500,
-      showConfirmButton: false,
-    })
-  }
-
-  if (nego.value < 0) nego.value = 0
-})
-
-
-  // VALIDASI DP
- 
-watch([dp, totalBayar], () => {
-  if (dp.value == null) return;
-
-  if (dp.value >= totalBayar.value) {
-    dp.value = Math.max(0, totalBayar.value - 1); 
-    Swal.fire({
-      icon: 'warning',
-      title: 'DP tidak valid',
-      text: 'DP harus lebih kecil dari total bayar',
-      timer: 1500,
-      showConfirmButton: false,
-    });
-  }
-
-  if (dp.value < 0) dp.value = 0;
-});
-
-
-  // VALIDASI PPH
-  watch([pph, subtotalPlusExtra], () => {
-    if (pph.value == null) return
-
-    if (pph.value > 100) {
-      pph.value = 100
+    if (nego.value >= totalBeforeNego.value) {
+      nego.value = Math.max(0, totalBeforeNego.value - 1)
       Swal.fire({
         icon: 'warning',
-        title: 'PPH tidak valid',
-        text: 'PPH tidak boleh melebihi 100%',
+        title: 'Nego tidak valid',
+        text: 'Nego harus lebih kecil dari total sebelum nego',
         timer: 1500,
         showConfirmButton: false,
       })
     }
 
-    if (pph.value < 0) pph.value = 0
+    if (nego.value < 0) nego.value = 0
   })
 
-  // RESET FUNCTION
+  // VALIDASI DP
+  watch([dp, totalBayar], () => {
+    if (dp.value == null) return
+
+    if (dp.value >= totalBayar.value) {
+      dp.value = Math.max(0, totalBayar.value - 1)
+      Swal.fire({
+        icon: 'warning',
+        title: 'DP tidak valid',
+        text: 'DP harus lebih kecil dari total bayar',
+        timer: 1500,
+        showConfirmButton: false,
+      })
+    }
+
+    if (dp.value < 0) dp.value = 0
+  })
+
+  // VALIDASI PPN
+  watch([ppn, subtotal], () => {
+    if (ppn.value == null) return
+
+    if (ppn.value > 100) {
+      ppn.value = 100
+      Swal.fire({
+        icon: 'warning',
+        title: 'PPN tidak valid',
+        text: 'PPN tidak boleh melebihi 100%',
+        timer: 1500,
+        showConfirmButton: false,
+      })
+    }
+
+    if (ppn.value < 0) ppn.value = 0
+  })
+
   const reset = () => {
-    extra.value = null
-    pph.value = null
+    ppn.value = null
     nego.value = null
     dp.value = null
   }
 
-  // RETURN API
   return {
     // Refs
-    extra,
-    pph,
+    ppn,
     nego,
     dp,
 
     // Computed values
     subtotal,
-    subtotalPlusExtra,
-    pphNominal,
+    ppnNominal,
     totalBeforeNego,
     totalAfterNego,
     totalBayar,
 
     // Safe values
-    extraSafe,
-    pphSafe,
+    ppnSafe,
     negoSafe,
     dpSafe,
 

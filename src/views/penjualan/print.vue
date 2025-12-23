@@ -46,14 +46,14 @@
       </div>
 
       <!-- Tabel -->
-      <table class="items">
+     <table class="items">
         <thead>
           <tr>
             <th class="no-col">No</th>
             <th class="item-col">Nama barang</th>
             <th class="qty-col">QTY</th>
-            <th class="bill-col">Total Tagihan</th>
-            <th class="unit-price-col">pph {{ pph }}%</th>
+            <th class="bill-col">Harga Produk</th>
+            <th class="unit-price-col">PPN {{ ppn }}%</th>
             <th class="amount-col">Jumlah</th>
           </tr>
         </thead>
@@ -62,8 +62,11 @@
             <td class="center">{{ i + 1 }}</td>
             <td>{{ item.name }}</td>
             <td class="center">{{ item.qty }}</td>
-            <td class="right">{{ formatRupiah(subtotalPlusExtra) }}</td>
-            <td class="center">{{ formatRupiah(pph_nominal) }}</td>
+            <!-- Harga produk per baris (subtotal item) -->
+            <td class="right">{{ formatRupiah(item.amount) }}</td>
+            <!-- PPN nominal ditampilkan total transaksi (bukan per item) -->
+            <td class="center">{{ formatRupiah(ppn_nominal) }}</td>
+            <!-- Jumlah (total akhir setelah PPN & nego) -->
             <td class="right">{{ formatRupiah(total) }}</td>
           </tr>
 
@@ -79,6 +82,7 @@
           <tr class="sub-total-row">
             <td colspan="4" class="empty-cell"></td>
             <td class="right">SISA</td>
+            <!-- SISA = total - dp, sudah dihitung di script -->
             <td class="right">{{ formatRupiah(sisa) }}</td>
           </tr>
 
@@ -89,6 +93,7 @@
           </tr>
         </tbody>
       </table>
+
 
       <!-- Informasi Pembayaran -->
     <div class="payment">
@@ -155,7 +160,6 @@ import Api from "@/services/api";
 import Cookies from "js-cookie";
 import html2pdf from "html2pdf.js";
 
-// DATA ======================================================================
 const invoiceCode = ref("");
 const loading = ref(true);
 
@@ -164,22 +168,19 @@ const printDate = ref(new Date());
 const customer = ref("-");
 const terbilang = ref("-");
 
-const total = ref(0);
+const subtotal = ref(0);      
+const ppn = ref(0);           
+const ppn_nominal = ref(0);   
+const total = ref(0);        
 const dp = ref(0);
 const sisa = ref(0);
-const subtotalPlusExtra = ref(0);
-const pph = ref(0);
-const pph_nominal = ref(0);
 
 const items = ref([]);
 
-// Bank accounts dari API
 const bankAccounts = ref([]);
-
 const printArea = ref(null);
 
-// COMPUTED ==================================================================
-// Untuk signature name - ambil account_holder pertama
+// signature
 const signatureName = computed(() => {
   if (bankAccounts.value.length > 0) {
     return bankAccounts.value[0]?.account_holder ?? "ISWOYO";
@@ -187,13 +188,12 @@ const signatureName = computed(() => {
   return "ISWOYO";
 });
 
-// KONVERSI ANGKA KE TERBILANG ===============================================
+// terbilang pakai total (grand_total)
 const numberToWords = (num) => {
   if (num === 0) return "nol";
-
   const units = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan"];
-  const teens = ["sepuluh", "sebelas", "dua belas", "tiga belas", "empat belas", "lima belas", 
-                 "enam belas", "tujuh belas", "delapan belas", "sembilan belas"];
+  const teens = ["sepuluh", "sebelas", "dua belas", "tiga belas", "empat belas", "lima belas",
+    "enam belas", "tujuh belas", "delapan belas", "sembilan belas"];
 
   const convertHundreds = (n) => {
     if (n === 0) return "";
@@ -248,7 +248,6 @@ const numberToWords = (num) => {
   return convertMillions(num);
 };
 
-// COMPUTED TERBILANG ========================================================
 const terbilangText = computed(() => {
   if (total.value > 0) {
     const words = numberToWords(total.value);
@@ -257,36 +256,25 @@ const terbilangText = computed(() => {
   return terbilang.value || "-";
 });
 
-// FETCH BANK DATA ===========================================================
+// BANK
 const fetchBankAccounts = async () => {
   try {
     const token = Cookies.get("token");
     Api.defaults.headers.common["Authorization"] = token;
-
     const res = await Api.get("/api/banks-all");
-    
-    console.log("Bank API Response:", res.data);
-    
-    if (res.data && res.data.data) {
-      bankAccounts.value = res.data.data;
-      console.log("Bank Accounts:", bankAccounts.value);
-    } else {
-      console.warn("Bank data kosong");
-      bankAccounts.value = [];
-    }
+    bankAccounts.value = res.data?.data || [];
   } catch (err) {
     console.error("Gagal load bank accounts:", err.response || err);
     bankAccounts.value = [];
   }
 };
 
-// FETCH INVOICE DATA ========================================================
+// INVOICE PENJUALAN (PPN)
 const fetchInvoice = async () => {
   try {
     const token = Cookies.get("token");
     Api.defaults.headers.common["Authorization"] = token;
 
-   // ✅ PERBAIKAN: Gunakan endpoint yang benar
     const res = await Api.get(`/api/transactions/invoice/${invoiceCode.value}`);
     const data = res.data.data;
 
@@ -294,66 +282,50 @@ const fetchInvoice = async () => {
     customer.value = data.customer?.name_perusahaan ?? "-";
     terbilang.value = data.terbilang ?? "-";
 
-    subtotalPlusExtra.value = Number(data.subtotalPlusExtra) || 0;
-    pph_nominal.value = Number(data.pph_nominal ?? data.pphNominal) || 0;
-    pph.value = Number(data.pph ?? data.pph) || 0;
-
+    subtotal.value = Number(data.subtotal) || 0;
+    ppn.value = Number(data.ppn ?? 0) || 0;
+    ppn_nominal.value = Number(data.ppn_nominal ?? 0) || 0;
     total.value = Number(data.grand_total) || 0;
     dp.value = Number(data.dp) || 0;
 
+    // SISA = total - dp (tetap statis)
     sisa.value = dp.value > 0 ? Math.max(0, total.value - dp.value) : 0;
-
-    items.value = data.transaction_details.map(t => ({
+    items.value = data.transaction_details.map((t) => ({
       name: t.product?.title ?? "-",
       qty: t.qty || 1,
-      amount: t.price
+      amount: t.price, 
     }));
   } catch (err) {
     console.error("Gagal load invoice:", err);
   }
 };
 
-// MOUNTED ===================================================================
 onMounted(async () => {
   const params = new URLSearchParams(window.location.search);
   invoiceCode.value = params.get("invoice");
-  
-  await Promise.all([
-    fetchInvoice(),
-    fetchBankAccounts()
-  ]);
-  
-  console.log("Final Bank Accounts:", bankAccounts.value);
-  console.log("Signature Name:", signatureName.value);
-  console.log("Terbilang:", terbilangText.value);
-  
+
+  await Promise.all([fetchInvoice(), fetchBankAccounts()]);
   loading.value = false;
 });
 
 const uniqueAccountHolders = computed(() => {
-  if (bankAccounts.value.length === 0) {
-    return [];
-  }
-  const holders = bankAccounts.value.map(bank => bank.account_holder);
-  
-  const unique = [...new Set(holders)];
-  
-  return unique;
+  if (bankAccounts.value.length === 0) return [];
+  const holders = bankAccounts.value.map((bank) => bank.account_holder);
+  return [...new Set(holders)];
 });
 
-const formatRupiah = (num) => {
-  return new Intl.NumberFormat("id-ID", {
+const formatRupiah = (num) =>
+  new Intl.NumberFormat("id-ID", {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(num);
-};
+    maximumFractionDigits: 0,
+  }).format(num ?? 0);
 
 const formatDate = (date) => {
   const d = new Date(date);
   return d.toLocaleDateString("id-ID", {
     day: "2-digit",
     month: "long",
-    year: "numeric"
+    year: "numeric",
   });
 };
 

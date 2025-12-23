@@ -96,99 +96,55 @@
 
     <!-- SUMMARY -->
     <div class="space-y-3 border-t-2 border-blue-200 pt-4">
-      <div class="flex justify-between text-sm text-gray-700">
-        <span class="font-medium">Subtotal</span>
-        <span class="font-semibold">Rp {{ subtotal.toLocaleString('id-ID') }}</span>
-      </div>
-
-      <!-- PPH (%) -->
-      <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
-          PPH (%)
-          <span class="text-gray-400 text-[10px]">(Optional)</span>
-        </label>
-        <input 
-          v-model.number="localPph"
-          type="number"
-          min="0"
-          max="100"
-          step="0.01"
-          placeholder="Masukkan persentase PPH (opsional)"
-          class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all" 
-        />
-      </div>
-
-      <div class="flex justify-between text-sm text-gray-700">
-        <span class="font-medium">PPH Nominal</span>
-        <span class="font-semibold">Rp {{ pphNominal.toLocaleString('id-ID') }}</span>
-      </div>
-
-     <!-- Tambahan Biaya (Disabled jika PPH kosong) -->
-        <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
-            Tambahan Biaya
-            <span v-if="!isPphFilled" class="text-red-500 text-[10px]">
-              (Isi PPH terlebih dahulu)
-            </span>
-          </label>
-          <div class="relative">
-            <span 
-              :class="[
-                'absolute left-3 top-1/2 -translate-y-1/2 text-sm z-10',
-                isPphFilled ? 'text-gray-500' : 'text-gray-300'
-              ]"
-            >
-              Rp
-            </span>
-            <input 
-              v-model="localExtra"
-              @input="handleExtraInput"
-              type="text"
-              :disabled="!isPphFilled"
-              placeholder="0"
-              :class="[
-                'w-full pl-10 pr-4 py-2 border-2 rounded-xl text-sm transition-all',
-                isPphFilled 
-                  ? 'border-blue-200 focus:outline-none focus:border-cyan-500 bg-white' 
-                  : 'border-gray-200 bg-gray-100 cursor-not-allowed text-gray-400'
-              ]"
-            />
-          </div>
-          <p v-if="!isPphFilled" class="text-xs text-gray-500 mt-1 flex items-center gap-1">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Field ini akan aktif setelah PPH diisi
-          </p>
-          <p v-else class="mt-1 text-xs text-gray-500">
-            Contoh: 100.000 (seratus ribu rupiah)
-          </p>
+          <div class="flex justify-between text-sm text-gray-700">
+          <span class="font-medium">Subtotal</span>
+          <span class="font-semibold">
+            Rp {{ subtotal.toLocaleString('id-ID') }}
+          </span>
         </div>
 
+        <!-- PPN (%) -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+            PPN (%)
+            <span class="text-gray-400 text-[10px]">(Optional)</span>
+          </label>
+          <input
+            v-model.number="localPpn"
+            type="number"
+            min="0"
+            max="100"
+            step="0.01"
+            placeholder="Masukkan persentase PPN"
+            class="w-full px-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all"
+          />
+        </div>
 
-      <div class="flex justify-between text-sm text-gray-700">
-        <span class="font-medium">Total Tambahan Biaya</span>
-        <span class="font-semibold">Rp {{ subtotalPlusExtra.toLocaleString('id-ID') }}</span>
-      </div>
+        <div class="flex justify-between text-sm text-gray-700">
+          <span class="font-medium">PPN Nominal</span>
+          <span class="font-semibold">
+            Rp {{ ppnNominal.toLocaleString('id-ID') }}
+          </span>
+        </div>
 
-      <div class="flex justify-between text-sm font-semibold text-gray-800 bg-blue-50 px-3 py-2 rounded-xl">
-        <span>Total Sebelum Nego</span>
-        <span>Rp {{ totalBeforeNego.toLocaleString('id-ID') }}</span>
-      </div>
+        <div class="flex justify-between text-sm font-semibold text-gray-800 bg-blue-50 px-3 py-2 rounded-xl">
+          <span>Total Sebelum Nego</span>
+          <span>Rp {{ totalBeforeNego.toLocaleString('id-ID') }}</span>
+        </div>
 
-     <!-- Harga Nego -->
+        <!-- Harga Nego -->
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-2">Harga Nego</label>
           <div class="relative">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 z-10">
               Rp
             </span>
-            <input 
+            <input
               v-model="localNego"
               @input="handleNegoInput"
               type="text"
               placeholder="0"
-              class="w-full pl-10 pr-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all" 
+              class="w-full pl-10 pr-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all"
             />
           </div>
           <p class="mt-1 text-xs text-gray-500">
@@ -196,30 +152,32 @@
           </p>
         </div>
 
-      <div class="flex justify-between text-sm font-bold text-cyan-600 bg-cyan-50 px-3 py-2 rounded-xl">
-        <span>Total Setelah Nego</span>
-        <span>Rp {{ totalAfterNego.toLocaleString('id-ID') }}</span>
-      </div>
-
-     <!-- DP (Down Payment) -->
-      <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-2">DP (Down Payment)</label>
-        <div class="relative">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 z-10">
-            Rp
-          </span>
-          <input 
-            v-model="localDp"
-            @input="handleDpInput"
-            type="text"
-            placeholder="0"
-            class="w-full pl-10 pr-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all" 
-          />
+        <div class="flex justify-between text-sm font-bold text-cyan-600 bg-cyan-50 px-3 py-2 rounded-xl">
+          <span>Total Setelah Nego</span>
+          <span>Rp {{ totalAfterNego.toLocaleString('id-ID') }}</span>
         </div>
-        <p class="mt-1 text-xs text-gray-500">
-          Contoh: 200.000 (dua ratus ribu rupiah)
-        </p>
-      </div>
+
+        <!-- DP -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-2">
+            DP (Down Payment)
+          </label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 z-10">
+              Rp
+            </span>
+            <input
+              v-model="localDp"
+              @input="handleDpInput"
+              type="text"
+              placeholder="0"
+              class="w-full pl-10 pr-4 py-2 border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 transition-all"
+            />
+          </div>
+          <p class="mt-1 text-xs text-gray-500">
+            Contoh: 200.000 (dua ratus ribu rupiah)
+          </p>
+        </div>
 
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-2">Status Pesanan</label>
@@ -259,7 +217,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import Swal from 'sweetalert2'
-import { useCurrencyInput } from "@/composables/useCurrencyInput" 
+import { useCurrencyInput } from "@/composables/useCurrencyInput"
 
 const props = defineProps({
   cart: { type: Array, required: true },
@@ -267,18 +225,16 @@ const props = defineProps({
   invoice: { type: String, default: '' },
 
   subtotal: { type: Number, required: true },
-  subtotalPlusExtra: { type: Number, required: true },
-  pphNominal: { type: Number, required: true },
+  ppnNominal: { type: Number, required: true },
   totalBeforeNego: { type: Number, required: true },
   totalAfterNego: { type: Number, required: true },
   totalBayar: { type: Number, required: true },
 
-  extra: Number,
-  pph: Number,
+  ppn: Number,   // persen PPN
   nego: Number,
   dp: Number,
   status: String,
-  buttonText: { type: String, default: 'Checkout Sekarang' }
+  buttonText: { type: String, default: 'Checkout Sekarang' },
 })
 
 const emit = defineEmits([
@@ -286,195 +242,137 @@ const emit = defineEmits([
   'open-customer-modal',
   'checkout',
   'change-qty',
-  'update:extra',
-  'update:pph',
+  'update:ppn',
   'update:nego',
   'update:dp',
   'update:status',
+  'update:selectedCustomer',
 ])
 
-const extraCurrency = useCurrencyInput();
-const negoCurrency = useCurrencyInput();
-const dpCurrency = useCurrencyInput();
-
-watch(() => props.extra, (newVal) => {
-  console.log("Props extra changed:", newVal);
-  if (newVal !== null && newVal !== undefined && newVal !== 0) {
-    extraCurrency.setValue(newVal);
-  } else {
-    extraCurrency.reset();
-  }
-}, { immediate: true })
+const negoCurrency = useCurrencyInput()
+const dpCurrency = useCurrencyInput()
 
 watch(() => props.nego, (newVal) => {
-  console.log("Props nego changed:", newVal);
   if (newVal !== null && newVal !== undefined && newVal !== 0) {
-    negoCurrency.setValue(newVal);
+    negoCurrency.setValue(newVal)
   } else {
-    negoCurrency.reset();
+    negoCurrency.reset()
   }
 }, { immediate: true })
 
 watch(() => props.dp, (newVal) => {
-  console.log("Props dp changed:", newVal);
   if (newVal !== null && newVal !== undefined && newVal !== 0) {
-    dpCurrency.setValue(newVal);
+    dpCurrency.setValue(newVal)
   } else {
-    dpCurrency.reset();
+    dpCurrency.reset()
   }
 }, { immediate: true })
 
-const isPphFilled = computed(() => {
-  return props.pph !== null && props.pph !== 0 && props.pph !== '' && props.pph !== undefined
-})
-
-const handleExtraInput = (event) => {
-  if (!isPphFilled.value) {
-    extraCurrency.reset();
-    emit('update:extra', null);
-    return;
-  }
-  
-  extraCurrency.handleInput(event);
-  const rawVal = extraCurrency.rawValue.value;
-  emit('update:extra', rawVal === "" ? null : Number(rawVal));
-};
-
-const localExtra = computed({
+// PPN (%) two-way binding
+const localPpn = computed({
   get: () => {
-    if (!isPphFilled.value) {
-      return '';
-    }
-    return extraCurrency.displayValue.value;
+    if (props.ppn === null || props.ppn === 0 || props.ppn === '') return ''
+    return props.ppn
   },
   set: (v) => {
-    if (!isPphFilled.value) {
-      extraCurrency.reset();
-      return;
+    if (v === '' || v === 0 || v === '0') {
+      emit('update:ppn', null)
+    } else {
+      emit('update:ppn', Number(v))
     }
-    extraCurrency.displayValue.value = v;
-  }
-});
+  },
+})
 
+// NEGO input
 const handleNegoInput = (event) => {
-  negoCurrency.handleInput(event);
-  const rawVal = negoCurrency.rawValue.value;
-  let num = rawVal === "" ? null : Number(rawVal);
+  negoCurrency.handleInput(event)
+  const rawVal = negoCurrency.rawValue.value
+  let num = rawVal === "" ? null : Number(rawVal)
 
-  const max = props.totalBeforeNego; 
+  const max = props.totalBeforeNego
 
   if (num != null && max != null && num >= max) {
-      const newMax = Math.max(0, max - 1);
-    num = newMax;
-    negoCurrency.setValue(newMax);
+    const newMax = Math.max(0, max - 1)
+    num = newMax
+    negoCurrency.setValue(newMax)
     Swal.fire({
       icon: 'warning',
       title: 'Nego tidak valid',
       text: 'Harga nego tidak boleh melebihi total sebelum nego',
       timer: 1500,
       showConfirmButton: false,
-    });
+    })
   }
 
   if (num != null && num < 0) {
-    num = 0;
-    negoCurrency.setValue(0);
+    num = 0
+    negoCurrency.setValue(0)
   }
 
-  emit('update:nego', num === null ? null : num);
-};
+  emit('update:nego', num === null ? null : num)
+}
 
 const localNego = computed({
   get: () => negoCurrency.displayValue.value,
-  set: (v) => {
-    negoCurrency.displayValue.value = v;
-  }
-});
+  set: (v) => { negoCurrency.displayValue.value = v },
+})
 
+// DP input
 const handleDpInput = (event) => {
-  dpCurrency.handleInput(event);
-  const rawVal = dpCurrency.rawValue.value;
-  let num = rawVal === "" ? null : Number(rawVal);
+  dpCurrency.handleInput(event)
+  const rawVal = dpCurrency.rawValue.value
+  let num = rawVal === "" ? null : Number(rawVal)
 
-  const max = props.totalBayar;
+  const max = props.totalBayar
 
   if (num != null && max != null && num >= max) {
-    const newMax = max - 1; 
-    num = newMax;
-    dpCurrency.setValue(newMax);
+    const newMax = max - 1
+    num = newMax
+    dpCurrency.setValue(newMax)
     Swal.fire({
       icon: 'warning',
       title: 'DP tidak valid',
       text: 'DP harus lebih kecil dari total bayar',
       timer: 1500,
       showConfirmButton: false,
-    });
+    })
   }
 
   if (num != null && num < 0) {
-    num = 0;
-    dpCurrency.setValue(0);
+    num = 0
+    dpCurrency.setValue(0)
   }
 
-  emit('update:dp', num === null ? null : num);
-};
+  emit('update:dp', num === null ? null : num)
+}
 
 const localDp = computed({
   get: () => dpCurrency.displayValue.value,
-  set: (v) => {
-    dpCurrency.displayValue.value = v;
-  }
-});
-
-const localPph = computed({
-  get: () => {
-    console.log("localPph get:", props.pph);
-    if (props.pph === null || props.pph === 0 || props.pph === '') {
-      return '';
-    }
-    return props.pph;
-  },
-  set: v => {
-    console.log("localPph set:", v);
-    if (v === '' || v === 0 || v === '0') {
-      emit('update:pph', null);
-      extraCurrency.reset();
-      emit('update:extra', null);
-    } else {
-      emit('update:pph', Number(v));
-    }
-  },
+  set: (v) => { dpCurrency.displayValue.value = v },
 })
 
 const localStatus = computed({
-  get: () => {
-    console.log("localStatus get:", props.status);
-    return props.status || 'proses';
-  },
-  set: v => {
-    console.log("localStatus set:", v);
-    emit('update:status', v);
-  }
+  get: () => props.status || 'proses',
+  set: (v) => emit('update:status', v),
 })
 
 const clearCustomer = () => {
-  console.log("Clearing customer");
-  emit('update:selectedCustomer', null);
-};
+  emit('update:selectedCustomer', null)
+}
 
 onMounted(() => {
-  console.log("=== CASHIER SECTION MOUNTED ===");
-  console.log("Cart:", props.cart);
-  console.log("Customer:", props.selectedCustomer);
-  console.log("Invoice:", props.invoice);
-  console.log("Extra:", props.extra);
-  console.log("PPH:", props.pph);
-  console.log("Nego:", props.nego);
-  console.log("DP:", props.dp);
-  console.log("Status:", props.status);
-  console.log("==============================");
-});
+  console.log("=== CASHIER SECTION MOUNTED ===")
+  console.log("Cart:", props.cart)
+  console.log("Customer:", props.selectedCustomer)
+  console.log("Invoice:", props.invoice)
+  console.log("PPN:", props.ppn)
+  console.log("Nego:", props.nego)
+  console.log("DP:", props.dp)
+  console.log("Status:", props.status)
+  console.log("==============================")
+})
 </script>
+
 
 
 
