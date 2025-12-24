@@ -106,6 +106,45 @@ watch(
   () => fetchData(1)
 );
 
+// Tambahkan fungsi ini di <script setup>
+const exportExcel = async () => {
+  try {
+    isLoading.value = true;
+
+    const token = Cookies.get("token");
+    Api.defaults.headers.common.Authorization = token;
+
+    // Parameter sama seperti getCustomerRecap
+    const params = {
+      type: filters.value.type || undefined,
+      search: filters.value.search || undefined,
+    };
+
+    // Download file Excel
+    const response = await Api.get("/api/reports/customer-recap/export", { 
+      params,
+      responseType: 'blob' // Penting untuk download file
+    });
+
+    // Buat URL dan trigger download
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Rekap_Pelanggan_${new Date().toISOString().split('T')[0]}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+
+  } catch (error) {
+    console.error('Export failed:', error);
+    alert('Gagal export Excel. Silakan coba lagi.');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+
 onMounted(() => fetchData());
 </script>
 
@@ -125,16 +164,31 @@ onMounted(() => fetchData());
             </p>
           </div>
 
-          <!-- TOMBOL PRINT -->
-          <button
-            @click="openPrintModal"
-            class="flex items-center gap-2 px-5 py-3 rounded-xl bg-green-600 text-white hover:bg-green-700 transition-all transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
-            <span class="font-semibold">Print Rekap</span>
-          </button>
+         <div class="flex gap-3">
+            <!-- Tombol Print (yang sudah ada) -->
+            <button
+              @click="openPrintModal"
+              class="flex items-center gap-2 px-5 py-3 rounded-xl bg-green-600 text-white hover:bg-green-700 transition-all transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              <span class="font-semibold">Print Rekap</span>
+            </button>
+
+            <!-- Tombol Export Excel BARU -->
+            <button
+              @click="exportExcel"
+              class="flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+              :disabled="isLoading"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span class="font-semibold">Export Excel</span>
+            </button>
+          </div>
         </div>
 
         <!-- SEARCH & FILTER -->
