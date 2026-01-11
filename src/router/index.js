@@ -467,7 +467,7 @@ const router = createRouter({
 // Apply global guards
 router.beforeEach((to, from, next) => {
   // Set document title
-  document.title = to.meta.title ? `${to.meta.title} | MyApp` : 'MyApp'
+  document.title = to.meta.title ? `${to.meta.title} | SES-rentFix` : 'SES-rentFix'
   
   // Apply role guard
   roleGuard(to, from, next)

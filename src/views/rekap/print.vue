@@ -499,7 +499,7 @@ onMounted(() => {
 .items .center { text-align: center; }
 .items .right { text-align: right; }
 
-.badge {
+/* .badge {
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 8.5pt;
@@ -520,7 +520,7 @@ onMounted(() => {
 .badge-perbaikan {
   background: #FED7AA;
   color: #9A3412;
-}
+} */
 
 .total-row td {
   font-weight: bold;
@@ -675,9 +675,9 @@ onMounted(() => {
     padding: 6px 8px !important;
   }
 
-  .badge {
+  /* .badge {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
-  }
+  } */
 }
 </style>
