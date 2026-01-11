@@ -48,10 +48,8 @@ const loginHandler = async () => {
       return
     }
 
-    // 🔹 Proses login
     await userStore.login({ email: email.value, password: password.value })
 
-    // 🔹 DEBUG - CEK DATA SETELAH LOGIN
     console.log('=== DEBUG LOGIN ===')
     console.log('User Store:', userStore.user)
     console.log('Token:', userStore.token)
@@ -59,12 +57,10 @@ const loginHandler = async () => {
     console.log('Is Authenticated:', userStore.isAuthenticated)
     console.log('=================')
 
-    // 🔹 Keep login
     if (keepLoggedIn.value) {
       localStorage.setItem('keepLoggedIn', 'true')
     }
 
-    // 🔹 Notifikasi sukses
     await Swal.fire({
       icon: 'success',
       title: 'Berhasil login!',
@@ -73,7 +69,6 @@ const loginHandler = async () => {
       showConfirmButton: false
     })
 
-    // 🔹 Redirect berdasarkan role
     const userRole = userStore.userRole
     
     console.log('Redirecting with role:', userRole) 
@@ -85,15 +80,14 @@ const loginHandler = async () => {
       console.log('Redirecting to /data-pelanggan') 
       await router.push('/data-pelanggan')
     } else {
-      // Fallback jika role tidak dikenali
-      console.warn('Role tidak dikenali:', userRole, '- Redirecting to login page') // DEBUG
+      console.warn('Role tidak dikenali:', userRole, '- Redirecting to login page') 
       await router.push('/')
     }
 
   } catch (error) {
-    console.error('Login error:', error) // DEBUG
+    console.error('Login error:', error) 
     
-    // 🔹 Jika kredensial salah
+   
     if (error.response?.data?.message) {
       loginFailed.value = error.response.data.message
 
@@ -107,7 +101,6 @@ const loginHandler = async () => {
       return
     }
 
-    // 🔹 Jika error validasi backend
     handleErrors(error.response?.data, errors)
 
     Swal.fire({
