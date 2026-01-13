@@ -302,7 +302,7 @@ const routes = [
     beforeEnter: (to, from, next) => {
       useUser().getToken ? next() : next('/')
     },
-    name: 'edit data proyek',
+    name: 'edit data kategori proyek',
     component: () => import(/* webpackChunkName: "home" */ '../views/kategori-projek/edit.vue'),
     meta: { requiresAuth: true, roles: ['super_admin', 'admin'] },
   },

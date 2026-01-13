@@ -98,7 +98,7 @@ onMounted(() => {
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            Tambah Kategori
+            Tambah Klien
           </router-link>
         </div>
 
@@ -110,7 +110,7 @@ onMounted(() => {
                 v-model="keywords"
                 @keydown.enter="searchHandler"
                 type="text"
-                placeholder="Cari kategori..."
+                placeholder="Cari klien..."
                 class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
               />
               <svg

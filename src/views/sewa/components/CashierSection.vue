@@ -18,7 +18,8 @@ const props = defineProps({
     totalPreview: {
     type: Number,
     required: true
-  }
+  },
+    buttonText: { type: String, default: 'Checkout Sekarang' },
 });
 
 const calculateMonths = (item) => {
@@ -309,7 +310,7 @@ const updateRentPrice = (item, value) => {
 
       class="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-2xl font-bold"
     >
-      Checkout Sekarang
+      {{ buttonText }}
     </button>
   </div>
 </template>

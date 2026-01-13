@@ -168,7 +168,7 @@ onMounted(() => {
                   <tr>
                     <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">No</th>
                     <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Nama Kategori</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Slug</th>
+                    <!-- <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Slug</th> -->
                     <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Jumlah Proyek</th>
                     <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Tanggal Dibuat</th>
                     <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
@@ -189,14 +189,14 @@ onMounted(() => {
                       {{ cat.name }}
                     </td>
 
-                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    <!-- <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                       <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
                         <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                         </svg>
                         {{ cat.slug }}
                       </span>
-                    </td>
+                    </td> -->
 
                     <td class="px-6 py-4 text-sm text-center">
                       <span class="inline-flex items-center justify-center min-w-[2rem] px-3 py-1.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-full font-semibold">
@@ -212,7 +212,7 @@ onMounted(() => {
                       <div class="flex justify-end gap-2">
                         <!-- TOMBOL EDIT -->
                         <router-link
-                          :to="`/halaman-kategori-proyek/edit/${cat.uuid}`"
+                          :to="`/projects-categories/edit/${cat.uuid}`"
                           class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
                           title="Edit"
                         >
