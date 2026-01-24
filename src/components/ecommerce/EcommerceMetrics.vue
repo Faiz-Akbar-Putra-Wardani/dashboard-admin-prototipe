@@ -65,7 +65,6 @@ onMounted(() => {
       <div class="flex items-end justify-between mt-5">
         <div>
           <span class="text-sm text-gray-600 dark:text-gray-300">Total Perbaikan</span>
-          <!-- ✅ FIX: Ganti h4 ke p dengan styling yang sama -->
           <p class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
             <span v-if="isLoading" class="inline-block w-20 h-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
             <span v-else>{{ stats.perbaikan.toLocaleString("id-ID") }} transaksi</span>
@@ -101,7 +100,6 @@ onMounted(() => {
       <div class="flex items-end justify-between mt-5">
         <div>
           <span class="text-sm text-gray-600 dark:text-gray-300">Total Penjualan</span>
-          <!-- ✅ FIX: Ganti h4 ke p -->
           <p class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
             <span v-if="isLoading" class="inline-block w-20 h-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
             <span v-else>{{ stats.penjualan.toLocaleString("id-ID") }} transaksi</span>
@@ -137,7 +135,6 @@ onMounted(() => {
       <div class="flex items-end justify-between mt-5">
         <div>
           <span class="text-sm text-gray-600 dark:text-gray-300">Total Sewa</span>
-          <!-- ✅ FIX: Ganti h4 ke p -->
           <p class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
             <span v-if="isLoading" class="inline-block w-20 h-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
             <span v-else>{{ stats.sewa.toLocaleString("id-ID") }} transaksi</span>

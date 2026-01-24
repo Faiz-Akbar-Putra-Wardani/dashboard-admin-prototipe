@@ -75,7 +75,7 @@
 <script setup>
 import { ref, computed, onMounted, nextTick, defineAsyncComponent } from 'vue'
 import DropdownMenu from '../common/DropdownMenu.vue'
-// ✅ LAZY LOAD: Ganti import biasa dengan defineAsyncComponent
+// LAZY LOAD: Ganti import biasa dengan defineAsyncComponent
 const VueApexCharts = defineAsyncComponent(() => 
   import('vue3-apexcharts')
 )

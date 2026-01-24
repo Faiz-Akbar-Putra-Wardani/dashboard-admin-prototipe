@@ -33,14 +33,12 @@
             <VueApexCharts type="radialBar" :height="330" :options="chartOptions" :series="series" />
           </div>
         </div>
-        <!-- ✅ FIX: Ganti text-success-600 dark:text-success-400 -->
         <span class="absolute left-1/2 top-[85%] -translate-x-1/2 -translate-y-[85%] rounded-full bg-success-50 px-3 py-1 text-xs font-medium text-success-700 dark:bg-success-500/20 dark:text-success-300">
           Total: Rp {{ revenue.total.toLocaleString("id-ID") }}
         </span>
       </div>
     </div>
 
-    <!-- ✅ FIX: Stats Section - SEMUA text-gray-400 diganti -->
     <div class="flex items-center justify-center gap-5 px-6 py-3.5 sm:gap-8 sm:py-5">
       <!-- PERBAIKAN -->
       <div>
@@ -51,7 +49,6 @@
           <span v-if="isLoading" class="inline-block w-16 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
           <span v-else>Rp {{ formatCurrency(revenue.perbaikan) }}</span>
         </p>
-        <!-- ✅ FIX: text-gray-500 di light mode, text-gray-300 di dark -->
         <p class="text-center text-xs text-gray-500 dark:text-gray-300 mt-1">
           {{ revenuePercentage.perbaikan }}%
         </p>
@@ -68,7 +65,6 @@
           <span v-if="isLoading" class="inline-block w-16 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
           <span v-else>Rp {{ formatCurrency(revenue.penjualan) }}</span>
         </p>
-        <!-- ✅ FIX: text-gray-500 di light mode, text-gray-300 di dark -->
         <p class="text-center text-xs text-gray-500 dark:text-gray-300 mt-1">
           {{ revenuePercentage.penjualan }}%
         </p>
@@ -85,7 +81,6 @@
           <span v-if="isLoading" class="inline-block w-16 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
           <span v-else>Rp {{ formatCurrency(revenue.sewa) }}</span>
         </p>
-        <!-- ✅ FIX: text-gray-500 di light mode, text-gray-300 di dark -->
         <p class="text-center text-xs text-gray-500 dark:text-gray-300 mt-1">
           {{ revenuePercentage.sewa }}%
         </p>
@@ -97,7 +92,7 @@
 <script setup>
 import { ref, computed, onMounted, nextTick, defineAsyncComponent } from 'vue'
 import DropdownMenu from '../common/DropdownMenu.vue'
-// ✅ LAZY LOAD: Ganti import biasa dengan defineAsyncComponent
+// LAZY LOAD: Ganti import biasa dengan defineAsyncComponent
 const VueApexCharts = defineAsyncComponent(() => 
   import('vue3-apexcharts')
 )
