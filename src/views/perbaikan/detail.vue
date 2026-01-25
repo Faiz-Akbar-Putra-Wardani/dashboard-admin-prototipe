@@ -288,9 +288,9 @@ onMounted(fetchDetail);
                 <span class="font-medium break-words text-left">{{ repair.item_repair }}</span>
               </div>
 
-              <div class="flex flex-col gap-1">
+              <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
                 <span class="text-gray-600">Tanggal</span>
-                <span class="text-left">
+                <span class="font medium break-words text-left">
                   {{ formatDate(repair.start_date) }} -
                   {{ formatDate(repair.end_date) }}
                 </span>

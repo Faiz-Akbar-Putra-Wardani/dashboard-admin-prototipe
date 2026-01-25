@@ -169,7 +169,7 @@ onMounted(() => fetchDetail());
 
       <div v-else-if="rental">
         <!-- Header -->
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           <h1 class="text-2xl font-bold text-gray-900">
             Detail Rental / 
             <span class="text-indigo-600">#{{ rental?.invoice }}</span>
@@ -177,7 +177,7 @@ onMounted(() => fetchDetail());
 
           <button
             @click="openPrintPage"
-            class="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 flex items-center gap-2 transition-all"
+            class="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 flex items-center gap-2 transition-all w-full sm:w-auto justify-center"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -207,43 +207,43 @@ onMounted(() => fetchDetail());
 
             <div class="space-y-4 text-sm">
 
-              <div class="flex justify-between">
+              <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
                 <span class="text-gray-600">Invoice</span>
-                <span class="font-medium">#{{ rental?.invoice }}</span>
+                <span class="font-medium break-all">#{{ rental?.invoice }}</span>
               </div>
 
-              <div class="flex justify-between">
+              <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
                 <span class="text-gray-600">Customer</span>
-                <span class="font-medium">
+                <span class="font-medium break-words text-left">
                   {{ rental?.customer?.name_perusahaan ?? "-" }}
                 </span>
               </div>
 
               <!-- Tanggal Sewa -->
-              <div class="flex justify-between">
+              <div class="flex flex-col gap-1">
                 <span class="text-gray-600">Tanggal Sewa</span>
 
-                <span v-if="rental?.details && !hasMultipleDates(rental.details)" class="font-medium">
+                <span v-if="rental?.details && !hasMultipleDates(rental.details)" class="font-medium text-left">
                   {{ formatDate(rental.details[0]?.start_date) }} - 
                   {{ formatDate(rental.details[0]?.end_date) }}
                 </span>
 
                 <span
                   v-else-if="rental?.details"
-                  class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full cursor-pointer"
+                  class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full cursor-pointer inline-block"
                   :title="getTooltipDates(rental.details)"
                 >
                   Multiple Dates
                 </span>
-                <span v-else>-</span>
+                <span v-else class="text-left">-</span>
               </div>
 
-              <div class="flex justify-between">
+              <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
                 <span class="text-gray-600">DP</span>
                 <span class="font-medium">Rp {{ formatRupiah(rental?.dp ?? 0) }}</span>
               </div>
 
-              <div class="flex justify-between items-center">
+              <div class="flex flex-col sm:flex-row sm:justify-between gap-1 items-start sm:items-center">
                 <span class="text-gray-600">Status</span>
                 <span 
                   :class="[
@@ -256,7 +256,7 @@ onMounted(() => fetchDetail());
               </div>
 
               <div class="pt-4 border-t border-gray-200">
-                <div class="flex justify-between text-base font-semibold">
+                <div class="flex flex-col sm:flex-row sm:justify-between gap-1 text-base font-semibold">
                   <span>Total</span>
                   <span class="text-indigo-600">
                     Rp {{ formatRupiah(rental?.total_rent_price ?? 0) }}
@@ -299,16 +299,17 @@ onMounted(() => fetchDetail());
           <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
             <h2 class="text-lg font-semibold mb-6">Produk Disewa</h2>
 
-            <div class="overflow-x-auto">
+            <!-- Desktop: Table View -->
+            <div class="hidden md:block overflow-x-auto">
               <table v-if="rental?.details && rental.details.length > 0" class="w-full text-sm">
                 <thead>
                   <tr class="border-b-2 border-gray-200">
-                    <th class="py-3 text-left">No</th>
-                    <th class="py-3 text-left">Produk</th>
-                    <th class="py-3 text-center">Qty</th>
-                    <th class="py-3 text-right">Harga / Bulan</th>
-                    <th class="py-3 text-center">Durasi</th>
-                    <th class="py-3 text-right">Subtotal</th>
+                    <th class="py-3 px-2 text-left">No</th>
+                    <th class="py-3 px-2 text-left">Produk</th>
+                    <th class="py-3 px-2 text-center">Qty</th>
+                    <th class="py-3 px-2 text-right">Harga / Bulan</th>
+                    <th class="py-3 px-2 text-center">Durasi</th>
+                    <th class="py-3 px-2 text-right">Subtotal</th>
                   </tr>
                 </thead>
 
@@ -318,21 +319,21 @@ onMounted(() => fetchDetail());
                     :key="item.id"
                     class="border-b hover:bg-gray-50 transition-colors"
                   >
-                    <td class="py-4">{{ index + 1 }}</td>
-                    <td class="py-4 font-medium">{{ item.product?.title ?? "-" }}</td>
-                    <td class="py-4 text-center">{{ item.qty ?? 0 }}</td>
+                    <td class="py-4 px-2">{{ index + 1 }}</td>
+                    <td class="py-4 px-2 font-medium">{{ item.product?.title ?? "-" }}</td>
+                    <td class="py-4 px-2 text-center">{{ item.qty ?? 0 }}</td>
 
-                    <td class="py-4 text-right">
+                    <td class="py-4 px-2 text-right">
                       Rp {{ formatRupiah(item.rent_price ?? 0) }}
                     </td>
 
-                    <td class="py-4 text-center">
+                    <td class="py-4 px-2 text-center">
                       <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
                         {{ getMonths(item.start_date, item.end_date) }} bulan
                       </span>
                     </td>
 
-                    <td class="py-4 text-right font-semibold">
+                    <td class="py-4 px-2 text-right font-semibold">
                       Rp {{ formatRupiah((item.qty ?? 0) * (item.rent_price ?? 0) * getMonths(item.start_date, item.end_date)) }}
                     </td>
                   </tr>
@@ -340,6 +341,51 @@ onMounted(() => fetchDetail());
               </table>
 
               <div v-else class="text-center py-10 text-gray-500">
+                Tidak ada detail produk
+              </div>
+            </div>
+
+            <!-- Mobile: Card View -->
+            <div class="md:hidden space-y-3">
+              <div
+                v-for="(item, index) in rental.details"
+                :key="item.id"
+                class="bg-gray-50 rounded-xl p-4 border border-gray-200"
+              >
+                <div class="flex justify-between items-start mb-3">
+                  <div class="flex-1 pr-2">
+                    <div class="text-xs text-gray-500 mb-1">Produk #{{ index + 1 }}</div>
+                    <div class="font-semibold text-sm text-gray-900 break-words">
+                      {{ item.product?.title ?? "-" }}
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div class="flex flex-col">
+                    <span class="text-gray-500">Qty</span>
+                    <span class="font-medium">{{ item.qty ?? 0 }}</span>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-gray-500">Harga / Bulan</span>
+                    <span class="font-medium">Rp {{ formatRupiah(item.rent_price ?? 0) }}</span>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-gray-500">Durasi</span>
+                    <span class="px-2 py-1 bg-blue-100 text-blue-800 font-semibold rounded-full inline-block text-center">
+                      {{ getMonths(item.start_date, item.end_date) }} bulan
+                    </span>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-gray-500">Subtotal</span>
+                    <span class="font-semibold text-indigo-600">
+                      Rp {{ formatRupiah((item.qty ?? 0) * (item.rent_price ?? 0) * getMonths(item.start_date, item.end_date)) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="!rental?.details || rental.details.length === 0" class="text-center py-10 text-gray-500">
                 Tidak ada detail produk
               </div>
             </div>
@@ -372,11 +418,53 @@ onMounted(() => fetchDetail());
   </admin-layout>
 </template>
 
-
 <style scoped>
 @media print {
   button, nav, header {
     display: none !important;
   }
 }
+
+/* Scrollbar horizontal untuk tabel */
+.overflow-x-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #6366f1 #e5e7eb;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: linear-gradient(to right, #6366f1, #8b5cf6);
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to right, #4f46e5, #7c3aed);
+}
+
+/* Prevent text overflow */
+.break-words {
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.break-all {
+  word-break: break-all;
+}
+
+/* Ensure price stays in one line */
+.whitespace-nowrap {
+  white-space: nowrap;
+}
 </style>
+

@@ -364,8 +364,7 @@ onMounted(fetchDetail);
                 </div>
               </div>
             </div>
-
-
+            
             <!-- Detail Perhitungan Step-by-Step -->
             <div
               class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl shadow-lg p-6 border-2 border-indigo-200"
