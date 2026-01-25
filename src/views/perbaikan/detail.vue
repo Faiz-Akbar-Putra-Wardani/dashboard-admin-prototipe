@@ -227,7 +227,7 @@ onMounted(fetchDetail);
 
       <div v-else>
         <!-- Header -->
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           <h1 class="text-2xl font-bold text-gray-900">
             Detail Perbaikan /
             <span class="text-indigo-600">#{{ repair.invoice }}</span>
@@ -235,7 +235,7 @@ onMounted(fetchDetail);
 
           <button
             @click="openPrintPage"
-            class="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 flex items-center gap-2"
+            class="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 flex items-center gap-2 w-full sm:w-auto justify-center"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -271,42 +271,42 @@ onMounted(fetchDetail);
             <h2 class="text-lg font-semibold mb-6">Informasi Perbaikan</h2>
 
             <div class="space-y-4 text-sm">
-              <div class="flex justify-between">
+              <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
                 <span class="text-gray-600">Invoice</span>
-                <span class="font-medium">#{{ repair.invoice }}</span>
+                <span class="font-medium break-all">#{{ repair.invoice }}</span>
               </div>
 
-              <div class="flex justify-between">
+              <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
                 <span class="text-gray-600">Customer</span>
-                <span class="font-medium">
+                <span class="font-medium break-words text-left">
                   {{ repair.customer?.name_perusahaan ?? "-" }}
                 </span>
               </div>
 
-              <div class="flex justify-between">
+              <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
                 <span class="text-gray-600">Barang</span>
-                <span class="font-medium">{{ repair.item_repair }}</span>
+                <span class="font-medium break-words text-left">{{ repair.item_repair }}</span>
               </div>
 
-              <div class="flex justify-between">
+              <div class="flex flex-col gap-1">
                 <span class="text-gray-600">Tanggal</span>
-                <span>
+                <span class="text-left">
                   {{ formatDate(repair.start_date) }} -
                   {{ formatDate(repair.end_date) }}
                 </span>
               </div>
 
-              <div class="flex justify-between">
+              <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
                 <span class="text-gray-600">Teknisi (PIC)</span>
-                <span>{{ repair.pic }}</span>
+                <span class="text-left">{{ repair.pic }}</span>
               </div>
 
-              <div class="flex justify-between">
+              <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
                 <span class="text-gray-600">Komponen</span>
-                <span>{{ repair.component ?? "-" }}</span>
+                <span class="break-words text-left">{{ repair.component ?? "-" }}</span>
               </div>
 
-              <div class="flex justify-between items-center">
+              <div class="flex flex-col sm:flex-row sm:justify-between gap-1 items-start sm:items-center">
                 <span class="text-gray-600">Status</span>
                 <span
                   class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full"
@@ -316,7 +316,7 @@ onMounted(fetchDetail);
               </div>
 
               <div class="pt-4 border-t border-gray-200">
-                <div class="flex justify-between text-base font-semibold">
+                <div class="flex flex-col sm:flex-row sm:justify-between gap-1 text-base font-semibold">
                   <span>Biaya Perbaikan</span>
                   <span class="text-indigo-600">
                     Rp {{ formatRupiah(repair.grand_total) }}
@@ -347,45 +347,72 @@ onMounted(fetchDetail);
             </div>
           </div>
 
-          <!-- KANAN: DETAIL BARANG + PERHITUNGAN -->
           <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6 space-y-6">
             <div>
               <h2 class="text-lg font-semibold mb-6">Barang Diperbaiki</h2>
 
-              <div class="overflow-x-auto">
+              <!-- Desktop: Table View -->
+              <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="border-b-2 border-gray-200">
-                      <th class="py-3 text-left">No</th>
-                      <th class="py-3 text-left">Barang</th>
-                      <th class="py-3 text-center">Estimasi Tanggal</th>
-                      <th class="py-3 text-right">Biaya Perbaikan</th>
+                      <th class="py-3 px-2 text-left">No</th>
+                      <th class="py-3 px-2 text-left">Barang</th>
+                      <th class="py-3 px-2 text-center">Estimasi Tanggal</th>
+                      <th class="py-3 px-2 text-right">Biaya Perbaikan</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr class="border-b">
-                      <td class="py-4">1</td>
-                      <td class="py-4 font-medium">
+                      <td class="py-4 px-2">1</td>
+                      <td class="py-4 px-2 font-medium">
                         {{ repair.item_repair }}
                       </td>
-                      <td class="py-4 text-center">
+                      <td class="py-4 px-2 text-center">
                         <span
-                          class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full"
+                          class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full inline-block"
                         >
                           {{ formatDate(repair.start_date) }} -
                           {{ formatDate(repair.end_date) }}
                         </span>
                       </td>
-                      <td class="py-4 text-right font-semibold">
+                      <td class="py-4 px-2 text-right font-semibold">
                         Rp {{ formatRupiah(totalAfterPph) }}
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
+
+              <!-- Mobile: Card View -->
+              <div class="md:hidden">
+                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <div class="flex justify-between items-start mb-3">
+                    <div class="flex-1 pr-2">
+                      <div class="text-xs text-gray-500 mb-1">Barang #1</div>
+                      <div class="font-semibold text-sm text-gray-900 break-words">
+                        {{ repair.item_repair }}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="space-y-2 text-xs">
+                    <div class="flex flex-col">
+                      <span class="text-gray-500 mb-1">Estimasi Tanggal</span>
+                      <span class="px-3 py-1 bg-blue-100 text-blue-800 font-semibold rounded-full inline-block text-center">
+                        {{ formatDate(repair.start_date) }} - {{ formatDate(repair.end_date) }}
+                      </span>
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+                      <span class="text-gray-500">Biaya Perbaikan</span>
+                      <span class="font-semibold text-indigo-600">Rp {{ formatRupiah(totalAfterPph) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <!-- Detail Perhitungan Step-by-Step -->
+           <!-- Detail Perhitungan Step-by-Step -->
             <div
               class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl shadow-lg p-6 border-2 border-indigo-200"
             >
@@ -421,41 +448,54 @@ onMounted(fetchDetail);
                         : 'bg-white/60 border-gray-200',
                   ]"
                 >
-                  <div class="flex items-start justify-between mb-2">
-                    <div class="flex items-center gap-3">
-                      <div
-                        :class="[
-                          'flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm',
-                          calc.isFinal
-                            ? 'bg-white text-purple-700'
-                            : 'bg-' + calc.color + '-100 text-' + calc.color + '-700',
-                        ]"
-                      >
-                        {{ calc.step }}
-                      </div>
-                      <span
-                        :class="[
-                          'font-semibold text-sm',
-                          calc.isFinal ? 'text-white text-lg' : 'text-gray-800',
-                        ]"
-                      >
-                        {{ calc.label }}
-                      </span>
+                  <!-- Header dengan nomor step -->
+                  <div class="flex items-center gap-3 mb-2">
+                    <div
+                      :class="[
+                        'flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm flex-shrink-0',
+                        calc.isFinal
+                          ? 'bg-white text-purple-700'
+                          : 'bg-' + calc.color + '-100 text-' + calc.color + '-700',
+                      ]"
+                    >
+                      {{ calc.step }}
                     </div>
                     <span
                       :class="[
-                        'font-bold text-right',
-                        calc.isFinal ? 'text-white text-2xl' : 'text-' + calc.color + '-700 text-lg',
+                        'font-semibold text-sm',
+                        calc.isFinal ? 'text-white text-base md:text-lg' : 'text-gray-800',
                       ]"
                     >
-                      Rp {{ formatRupiah(calc.value) }}
+                      {{ calc.label }}
                     </span>
                   </div>
 
+                  <div class="mt-2 ml-11">
+                    <div
+                      :class="[
+                        'font-bold flex items-baseline gap-1',
+                        calc.isFinal ? 'text-white' : 'text-' + calc.color + '-700',
+                      ]"
+                    >
+                      <span :class="calc.isFinal ? 'text-base md:text-lg' : 'text-sm md:text-base'">
+                        Rp
+                      </span>
+                      <span 
+                        :class="[
+                          'whitespace-nowrap',
+                          calc.isFinal ? 'text-xl md:text-2xl' : 'text-base md:text-lg'
+                        ]"
+                      >
+                        {{ formatRupiah(calc.value) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Formula -->
                   <div
                     v-if="calc.formula"
                     :class="[
-                      'text-xs mt-2 p-2 rounded-lg font-mono',
+                      'text-xs mt-2 ml-11 p-2 rounded-lg font-mono break-all',
                       calc.isFinal
                         ? 'bg-purple-800/30 text-purple-100'
                         : calc.highlight
@@ -468,7 +508,6 @@ onMounted(fetchDetail);
                 </div>
               </div>
             </div>
-
             <!-- Total besar -->
             <div class="text-right">
               <div class="text-lg font-bold text-gray-800">Total</div>
@@ -491,4 +530,47 @@ onMounted(fetchDetail);
     display: none !important;
   }
 }
+
+/* Scrollbar horizontal untuk tabel */
+.overflow-x-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #6366f1 #e5e7eb;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: linear-gradient(to right, #6366f1, #8b5cf6);
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to right, #4f46e5, #7c3aed);
+}
+
+/* Prevent text overflow */
+.break-words {
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.break-all {
+  word-break: break-all;
+}
+
+/* Ensure price stays in one line */
+.whitespace-nowrap {
+  white-space: nowrap;
+}
 </style>
+
