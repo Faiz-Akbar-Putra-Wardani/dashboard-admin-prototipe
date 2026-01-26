@@ -23,7 +23,7 @@ const errors = reactive({})
 const isSubmitting = ref(false)
 
 const storeBank = async () => {
-  const confirm = await Swal.fire({
+  const confirm = await Swal.fire({ 
     title: 'Simpan Data?',
     text: 'Apakah kamu yakin ingin menambahkan data bank baru?',
     icon: 'question',

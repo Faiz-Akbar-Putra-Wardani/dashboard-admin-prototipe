@@ -160,6 +160,7 @@ onMounted(async () => {
                 @checkout="handleCheckout"
                 @remove-item="store.removeCart"
                 @change-qty="({ id, delta }) => store.updateCartQty(id, delta)"
+                @select-customer="chooseCustomer" 
                 @open-customer-modal="showCustomerModal = true"
               />
             </div>
@@ -205,6 +206,7 @@ onMounted(async () => {
             @checkout="handleCheckout"
             @remove-item="store.removeCart"
             @change-qty="({ id, delta }) => store.updateCartQty(id, delta)"
+            @select-customer="chooseCustomer" 
             @open-customer-modal="showCustomerModal = true"
           />
           </div>

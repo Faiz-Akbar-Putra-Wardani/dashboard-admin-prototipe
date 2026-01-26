@@ -236,6 +236,7 @@ const props = defineProps({
 
 const emit = defineEmits([
   'remove-item',
+  'select-customer',
   'open-customer-modal',
   'checkout',
   'change-qty',
@@ -354,7 +355,7 @@ const localStatus = computed({
 })
 
 const clearCustomer = () => {
-  emit('update:selectedCustomer', null)
+  emit('select-customer',  null)
 }
 
 onMounted(() => {
