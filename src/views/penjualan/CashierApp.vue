@@ -19,7 +19,6 @@ const productsRef = computed(() => store.products || [])
 
 // useCalculation PENJUALAN + PPN
 const calculation = useCalculation(cartRef)
-// hasil yang dipakai: subtotal, ppn, ppnSafe, ppnNominal, totalBeforeNego, totalAfterNego, totalBayar, nego, dp, dll
 
 const { searchQuery, selectedBrand, filteredItems: filteredProducts } = useFilter(productsRef)
 const { checkout: performCheckout } = useCheckout()
