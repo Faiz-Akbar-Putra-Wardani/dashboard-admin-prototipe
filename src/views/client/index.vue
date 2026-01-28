@@ -16,49 +16,55 @@ const keywords = ref("");
 const isLoading = ref(true);
 
 const pagination = ref({
-    currentPage: 1,
-    perPage: 5,
-    total: 0,
+  currentPage: 1,
+  perPage: 5,
+  total: 0,
+  totalPages: 1, 
 });
 
 const fetchData = async (pageNumber = 1, search = "") => {
-    const token = Cookies.get("token");
+  const token = Cookies.get("token");
 
-    if (!token) {
-        toast.error("Token tidak ditemukan, silakan login ulang.");
-        return;
-    }
+  if (!token) {
+    toast.error("Token tidak ditemukan, silakan login ulang.");
+    return;
+  }
 
-    Api.defaults.headers.common["Authorization"] = token;
+  Api.defaults.headers.common["Authorization"] = token;
 
-    try {
-        const response = await Api.get(
-            `/api/clients?page=${pageNumber}&search=${search}`
-        );
-        clients.value = response.data.data;
-        pagination.value = {
-            currentPage: response.data.pagination.currentPage,
-            perPage: response.data.pagination.perPage,
-            total: response.data.pagination.total,
-        };
-    } catch (error) {
-        console.error("Gagal ambil data:", error);
-        toast.error("Gagal mengambil data klien.");
-    } finally  {
-        isLoading.value = false
-    }
+  try {
+    isLoading.value = true; 
+    const response = await Api.get(
+      `/api/clients?page=${pageNumber}&search=${search}`
+    );
+    clients.value = response.data.data;
+    pagination.value = {
+      currentPage: response.data.pagination.currentPage,
+      perPage: response.data.pagination.perPage,
+      total: response.data.pagination.total,
+      totalPages: Math.ceil(response.data.pagination.total / response.data.pagination.perPage), // ✅ Hitung totalPages
+    };
+  } catch (error) {
+    console.error("Gagal ambil data:", error);
+    toast.error("Gagal mengambil data klien.");
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 const searchHandler = () => {
-    fetchData(1, keywords.value);
-}
+  fetchData(1, keywords.value);
+};
+
+const goToPage = (page) => {
+  if (page < 1 || page > pagination.value.totalPages) return; 
+  fetchData(page, keywords.value);
+};
 
 onMounted(() => {
-    fetchData();
+  fetchData();
 });
-
 </script>
-
 
 <template>
   <AdminLayout>
@@ -77,7 +83,7 @@ onMounted(() => {
               Daftar Klien
             </h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Kelola data kliendi sini
+              Kelola data klien dengan mudah
             </p>
           </div>
 
@@ -111,7 +117,7 @@ onMounted(() => {
                 @keydown.enter="searchHandler"
                 type="text"
                 placeholder="Cari klien..."
-                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
+                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
               />
               <svg
                 class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
@@ -136,7 +142,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Loading -->
+        <!-- Loading Skeleton -->
         <div v-if="isLoading" class="space-y-4">
           <div v-for="n in 5" :key="n" class="animate-pulse">
             <div class="h-16 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
@@ -144,36 +150,37 @@ onMounted(() => {
         </div>
 
         <!-- Table -->
-      <div
-      v-else-if="clients.length > 0"
-      class="overflow-x-auto w-full rounded-2xl border border-gray-200 dark:border-gray-700"
-    >
-      <table class="min-w-max w-full">
-        <thead
-          class="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/50 dark:to-indigo-800/50"
+        <div
+          v-else-if="clients.length > 0"
+          class="overflow-x-auto w-full rounded-2xl border border-gray-200 dark:border-gray-700"
         >
-      <tr>
-        <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">
-          No
-        </th>
-        <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">
-          Gambar
-        </th>
-        <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">
-          Nama Kategori
-        </th>
-        <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">
-          Aksi
-        </th>
-      </tr>
-    </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+          <table class="min-w-full w-full">
+            <thead
+              class="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/50 dark:to-indigo-800/50"
+            >
+              <tr>
+                <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">
+                  No
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">
+                  Gambar
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">
+                  Nama Klien
+                </th>
+                <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">
+                  Aksi
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
               <tr
                 v-for="(client, i) in clients"
                 :key="client.id"
-                class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 transition-colors"
+                class="border-t border-gray-200 dark:border-gray-700 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 transition-colors"
               >
-                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300">
                   {{ (pagination.currentPage - 1) * pagination.perPage + i + 1 }}
                 </td>
                 <td class="px-6 py-4">
@@ -188,12 +195,11 @@ onMounted(() => {
                 >
                   {{ client.name }}
                 </td>
-                <td class="px-6 py-4 text-right">
+                <td class="px-6 py-4">
                   <div class="flex justify-end gap-2">
                     <router-link
                       :to="`/clients/edit/${client.uuid}`"
-                      class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
-                      title="Edit"
+                      class="p-2.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-xl transition-all"
                     >
                       <svg
                         class="w-5 h-5"
@@ -209,6 +215,7 @@ onMounted(() => {
                         />
                       </svg>
                     </router-link>
+
                     <DeleteModal
                       :uuid="client.uuid"
                       endpoint="/api/clients"
@@ -226,7 +233,7 @@ onMounted(() => {
                             stroke-linecap="round"
                             stroke-linejoin="round"
                             stroke-width="2"
-                            d="M19 7l-.867 12.142A2.2 2.2 0 0116.138 21H7.862a2.2 2.2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                           />
                         </svg>
                       </template>
@@ -244,7 +251,7 @@ onMounted(() => {
             class="bg-gray-100 dark:bg-gray-800 w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center"
           >
             <svg
-              class="w-12 h-12 text-gray-400"
+              class="w-12 h-12 text-gray-400 dark:text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -257,75 +264,66 @@ onMounted(() => {
               />
             </svg>
           </div>
-          <p class="text-gray-500 dark:text-gray-400">
-            Belum ada data kategori
+          <p class="text-gray-500 dark:text-gray-400 font-medium">
+            Belum ada data klien
+          </p>
+          <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">
+            Tambahkan data klien baru untuk memulai
           </p>
         </div>
 
-        <!-- Pagination -->
+        <!-- Pagination  -->
         <div
           v-if="pagination.total > pagination.perPage && !isLoading"
           class="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4"
         >
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            Menampilkan {{ (pagination.currentPage - 1) * pagination.perPage + 1 }} -
-            {{ Math.min(pagination.currentPage * pagination.perPage, pagination.total) }}
-            dari {{ pagination.total }} data
+            Menampilkan
+            <span class="font-semibold text-gray-700 dark:text-gray-300">
+              {{ (pagination.currentPage - 1) * pagination.perPage + 1 }}
+            </span>
+            -
+            <span class="font-semibold text-gray-700 dark:text-gray-300">
+              {{ Math.min(pagination.currentPage * pagination.perPage, pagination.total) }}
+            </span>
+            dari
+            <span class="font-semibold text-gray-700 dark:text-gray-300">
+              {{ pagination.total }}
+            </span>
           </p>
 
-          <div class="flex items-center gap-2">
+          <div class="flex gap-2">
             <button
               @click="goToPage(pagination.currentPage - 1)"
               :disabled="pagination.currentPage === 1"
-              class="w-11 h-11 flex items-center justify-center rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 disabled:opacity-50 transition-all"
+              class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
             >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              Prev
+            </button>
+            
+            <!-- Page Numbers -->
+            <div class="hidden sm:flex gap-1">
+              <button
+                v-for="page in Math.min(pagination.totalPages, 5)"
+                :key="page"
+                @click="goToPage(page)"
+                :class="[
+                  'px-4 py-2 rounded-lg border transition-all font-medium',
+                  pagination.currentPage === page
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                ]"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-
-            <button
-              v-for="page in Math.ceil(pagination.total / pagination.perPage)"
-              :key="page"
-              @click="goToPage(page)"
-              :class="[
-                'w-11 h-11 rounded-xl border flex items-center justify-center text-sm font-medium transition-all',
-                page === pagination.currentPage
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50',
-              ]"
-            >
-              {{ page }}
-            </button>
+                {{ page }}
+              </button>
+            </div>
 
             <button
               @click="goToPage(pagination.currentPage + 1)"
-              :disabled="pagination.currentPage === Math.ceil(pagination.total / pagination.perPage)"
-              class="w-11 h-11 flex items-center justify-center rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 disabled:opacity-50 transition-all"
+              :disabled="pagination.currentPage === pagination.totalPages"
+              class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
             >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
+              Next
             </button>
           </div>
         </div>
