@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { toast } from "vue3-toastify";
-import "vue3-toastify/dist/index.css";
+import Swal from "sweetalert2";
 
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import DeleteModal from "@/components/DeleteButton.vue";
@@ -25,7 +24,13 @@ const fetchData = async (pageNumber = 1, search = "") => {
   const token = Cookies.get("token");
 
   if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
+    await Swal.fire({
+      icon: "error",
+      title: "Sesi Berakhir",
+      text: "Token tidak ditemukan, silakan login ulang.",
+      confirmButtonText: "Login",
+      confirmButtonColor: "#ef4444",
+    });
     return;
   }
 
@@ -47,7 +52,14 @@ const fetchData = async (pageNumber = 1, search = "") => {
 
   } catch (error) {
     console.error("Gagal ambil transaksi:", error);
-    toast.error("Gagal mengambil data transaksi.");
+    
+    await Swal.fire({
+      icon: "error",
+      title: "Gagal Memuat Data",
+      text: error.response?.data?.meta?.message || "Gagal mengambil data transaksi. Silakan coba lagi.",
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#ef4444",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -107,7 +119,7 @@ onMounted(() => {
                 @keydown.enter="searchHandler"
                 type="text"
                 placeholder="Cari invoice atau customer..."
-                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
+                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
               />
               <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -139,7 +151,7 @@ onMounted(() => {
             class="bg-gray-100 dark:bg-gray-800 w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center"
           >
             <svg
-              class="w-12 h-12 text-gray-400"
+              class="w-12 h-12 text-gray-400 dark:text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -152,8 +164,11 @@ onMounted(() => {
               />
             </svg>
           </div>
-          <p class="text-gray-500 dark:text-gray-400">
+          <p class="text-gray-500 dark:text-gray-400 font-medium">
             Belum ada transaksi penjualan
+          </p>
+          <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">
+            Transaksi yang dibuat akan muncul di sini
           </p>
         </div>
 
@@ -185,7 +200,7 @@ onMounted(() => {
                     :key="t.id"
                     class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 transition-colors"
                   >
-                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300">
                       {{ (pagination.currentPage - 1) * pagination.perPage + i + 1 }}
                     </td>
 
@@ -193,24 +208,24 @@ onMounted(() => {
                       {{ t.invoice }}
                     </td>
 
-                   <td>
-                    <span v-if="t.customer && t.customer.name_perusahaan">
-                      {{ t.customer.name_perusahaan }}
-                    </span>
-                    <span v-else class="text-gray-400 italic">
-                      Tanpa Customer
-                    </span>
-                  </td>
+                    <td class="px-6 py-4 text-sm text-center">
+                      <span v-if="t.customer && t.customer.name_perusahaan" class="text-gray-900 dark:text-gray-300">
+                        {{ t.customer.name_perusahaan }}
+                      </span>
+                      <span v-else class="text-gray-400 dark:text-gray-500 italic">
+                        Tanpa Customer
+                      </span>
+                    </td>
 
-                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">
+                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300 text-center whitespace-nowrap">
                       {{ new Date(t.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) }}
                     </td>
 
-                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 text-center">
+                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300 text-center">
                       {{ getProductName(t) }}
                     </td>
 
-                    <td class="px-6 py-4 text-sm font-bold text-green-600 text-center">
+                    <td class="px-6 py-4 text-sm font-bold text-green-600 dark:text-green-400 text-center">
                       Rp {{ new Intl.NumberFormat("id-ID").format(t.grand_total) }}
                     </td>
 
@@ -219,7 +234,7 @@ onMounted(() => {
                         <!-- TOMBOL DETAIL -->
                         <router-link
                           :to="`/halaman-data-penjualan/detail/${t.uuid}`"
-                          class="p-2.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all"
+                          class="p-2.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 rounded-xl transition-all"
                           title="Detail"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,7 +248,7 @@ onMounted(() => {
                         <!-- TOMBOL EDIT -->
                         <router-link
                           :to="`/halaman-data-penjualan/edit/${t.uuid}`"
-                          class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
+                          class="p-2.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-xl transition-all"
                           title="Edit"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,27 +258,29 @@ onMounted(() => {
                           </svg>
                         </router-link>
 
-                      <delete-modal
-                        :uuid="t.uuid"
-                        endpoint="/api/transactions"
-                        :fetchData="fetchData"
-                      >
-                        <template #trigger>
-                          <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </template>
-                      </delete-modal>
+                        <!-- TOMBOL DELETE -->
+                        <delete-modal
+                          :uuid="t.uuid"
+                          endpoint="/api/transactions"
+                          :fetchData="fetchData"
+                          class="p-2 rounded-xl transition-all"
+                        >
+                          <template #trigger>
+                            <svg
+                              class="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </template>
+                        </delete-modal>
                       </div>
                     </td>
                   </tr>
@@ -291,7 +308,6 @@ onMounted(() => {
             <span class="font-semibold text-gray-700 dark:text-gray-300">
               {{ pagination.total }}
             </span>
-            data
           </p>
 
           <div class="flex gap-2">

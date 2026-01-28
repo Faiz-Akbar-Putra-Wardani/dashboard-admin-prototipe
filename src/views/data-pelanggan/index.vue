@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { toast } from "vue3-toastify";
-import "vue3-toastify/dist/index.css";
+import Swal from "sweetalert2";
 
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import DeleteModal from "../../components/DeleteButton.vue";
@@ -24,14 +23,20 @@ const fetchData = async (pageNumber = 1, search = "") => {
   const token = Cookies.get("token");
 
   if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
+    await Swal.fire({
+      icon: "error",
+      title: "Sesi Berakhir",
+      text: "Token tidak ditemukan, silakan login ulang.",
+      confirmButtonText: "Login",
+      confirmButtonColor: "#ef4444",
+    });
     return;
   }
 
   Api.defaults.headers.common["Authorization"] = token;
 
   try {
-    isLoading.value = true; 
+    isLoading.value = true;
     const response = await Api.get(
       `/api/customers?page=${pageNumber}&search=${search}`
     );
@@ -44,7 +49,14 @@ const fetchData = async (pageNumber = 1, search = "") => {
     };
   } catch (error) {
     console.error("Gagal ambil data:", error);
-    toast.error("Gagal mengambil data pelanggan.");
+    
+    await Swal.fire({
+      icon: "error",
+      title: "Gagal Memuat Data",
+      text: error.response?.data?.meta?.message || "Gagal mengambil data pelanggan. Silakan coba lagi.",
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#ef4444",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -162,6 +174,7 @@ onMounted(() => {
                     <router-link
                       :to="`/data-pelanggan/edit/${c.uuid}`"
                       class="p-2.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-xl transition-all"
+                      title="Edit"
                     >
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -176,7 +189,12 @@ onMounted(() => {
                       :fetchData="fetchData"
                       class="p-2 rounded-xl transition-all"
                     >
-                      <template #trigger>🗑️</template>
+                      <template #trigger>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </template>
                     </delete-modal>
                   </div>
                 </td>
@@ -189,13 +207,15 @@ onMounted(() => {
         <div v-else class="text-center py-16">
           <div class="bg-gray-100 dark:bg-gray-800 w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center">
             <svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
           </div>
           <p class="text-gray-500 dark:text-gray-400 font-medium">Belum ada data pelanggan</p>
           <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Tambahkan data pelanggan baru untuk memulai</p>
         </div>
 
+        <!-- Pagination -->
         <div
           v-if="pagination.total > pagination.perPage && !isLoading"
           class="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4"
@@ -255,4 +275,3 @@ onMounted(() => {
     </div>
   </admin-layout>
 </template>
-

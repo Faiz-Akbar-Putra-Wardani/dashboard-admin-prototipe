@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { toast } from "vue3-toastify";
-import "vue3-toastify/dist/index.css";
+import Swal from "sweetalert2";
 
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import DeleteModal from "@/components/DeleteButton.vue";
@@ -26,14 +25,20 @@ const fetchData = async (pageNumber = 1, search = "") => {
   const token = Cookies.get("token");
 
   if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
+    await Swal.fire({
+      icon: "error",
+      title: "Sesi Berakhir",
+      text: "Token tidak ditemukan, silakan login ulang.",
+      confirmButtonText: "Login",
+      confirmButtonColor: "#ef4444",
+    });
     return;
   }
 
   Api.defaults.headers.common["Authorization"] = token;
 
   try {
-    isLoading.value = true; // ✅ Pindahkan ke dalam try
+    isLoading.value = true;
     const response = await Api.get(
       `/api/categories?page=${pageNumber}&search=${search}`
     );
@@ -42,11 +47,18 @@ const fetchData = async (pageNumber = 1, search = "") => {
       currentPage: response.data.pagination.currentPage,
       perPage: response.data.pagination.perPage,
       total: response.data.pagination.total,
-      totalPages: Math.ceil(response.data.pagination.total / response.data.pagination.perPage), // ✅ Hitung totalPages
+      totalPages: Math.ceil(response.data.pagination.total / response.data.pagination.perPage),
     };
   } catch (error) {
     console.error("Gagal ambil data:", error);
-    toast.error("Gagal mengambil data kategori.");
+    
+    await Swal.fire({
+      icon: "error",
+      title: "Gagal Memuat Data",
+      text: error.response?.data?.meta?.message || "Gagal mengambil data kategori. Silakan coba lagi.",
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#ef4444",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -272,7 +284,7 @@ onMounted(() => {
           </p>
         </div>
 
-        <!-- Pagination (Sama seperti data pelanggan) -->
+        <!-- Pagination -->
         <div
           v-if="pagination.total > pagination.perPage && !isLoading"
           class="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4"

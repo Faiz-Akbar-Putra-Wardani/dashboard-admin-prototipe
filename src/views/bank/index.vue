@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { toast } from "vue3-toastify";
-import "vue3-toastify/dist/index.css";
+import Swal from "sweetalert2";
 
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import DeleteModal from "../../components/DeleteButton.vue";
@@ -24,7 +23,13 @@ const fetchData = async (pageNumber = 1, search = "") => {
   const token = Cookies.get("token");
 
   if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
+    await Swal.fire({
+      icon: "error",
+      title: "Sesi Berakhir",
+      text: "Token tidak ditemukan, silakan login ulang.",
+      confirmButtonText: "Login",
+      confirmButtonColor: "#ef4444",
+    });
     return;
   }
 
@@ -44,7 +49,14 @@ const fetchData = async (pageNumber = 1, search = "") => {
     };
   } catch (error) {
     console.error("Gagal ambil data:", error);
-    toast.error("Gagal mengambil data bank.");
+    
+    await Swal.fire({
+      icon: "error",
+      title: "Gagal Memuat Data",
+      text: error.response?.data?.meta?.message || "Gagal mengambil data bank. Silakan coba lagi.",
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#ef4444",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -102,7 +114,7 @@ onMounted(() => {
                 @keydown.enter="searchHandler"
                 type="text"
                 placeholder="Cari nama bank, pemilik, atau nomor rekening..."
-                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
+                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
               />
               <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -220,7 +232,6 @@ onMounted(() => {
             <span class="font-semibold text-gray-700 dark:text-gray-300">
               {{ pagination.total }}
             </span>
-            data
           </p>
 
           <div class="flex gap-2">

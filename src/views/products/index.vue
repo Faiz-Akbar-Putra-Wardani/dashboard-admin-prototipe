@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { toast } from "vue3-toastify";
-import "vue3-toastify/dist/index.css";
+import Swal from "sweetalert2";
 
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import DeleteModal from "@/components/DeleteButton.vue";
@@ -28,7 +27,13 @@ const fetchData = async (pageNumber = 1, search = "") => {
   const token = Cookies.get("token");
 
   if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
+    await Swal.fire({
+      icon: "error",
+      title: "Sesi Berakhir",
+      text: "Token tidak ditemukan, silakan login ulang.",
+      confirmButtonText: "Login",
+      confirmButtonColor: "#ef4444",
+    });
     return;
   }
 
@@ -44,11 +49,17 @@ const fetchData = async (pageNumber = 1, search = "") => {
       currentPage: response.data.pagination.currentPage,
       perPage: response.data.pagination.perPage,
       total: response.data.pagination.total,
-      totalPages: Math.ceil(response.data.pagination.total / response.data.pagination.perPage), // ✅ Hitung totalPages
+      totalPages: Math.ceil(response.data.pagination.total / response.data.pagination.perPage),
     };
   } catch (error) {
     console.error("Gagal ambil data:", error);
-    toast.error("Gagal mengambil data produk.");
+    await Swal.fire({
+      icon: "error",
+      title: "Gagal Memuat Data",
+      text: error.response?.data?.meta?.message || "Gagal mengambil data produk. Silakan coba lagi.",
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#ef4444",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -269,7 +280,7 @@ onMounted(() => {
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                d="M20 7l-2-2m0 0l-2-2m2 2l-2 2m2-2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h2m10 10v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2m16 0H4"
               />
             </svg>
           </div>

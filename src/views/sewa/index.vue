@@ -1,9 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import dayjs from "dayjs";
-
-import { toast } from "vue3-toastify";
-import "vue3-toastify/dist/index.css";
+import Swal from "sweetalert2";
 
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import DeleteModal from "@/components/DeleteButton.vue";
@@ -68,8 +66,15 @@ const getRentalDates = (details = []) => {
 
 const fetchData = async (pageNumber = 1, search = "") => {
   const token = Cookies.get("token");
+  
   if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
+    await Swal.fire({
+      icon: "error",
+      title: "Sesi Berakhir",
+      text: "Token tidak ditemukan, silakan login ulang.",
+      confirmButtonText: "Login",
+      confirmButtonColor: "#ef4444",
+    });
     return;
   }
 
@@ -90,7 +95,14 @@ const fetchData = async (pageNumber = 1, search = "") => {
 
   } catch (error) {
     console.error("Gagal ambil data rental:", error);
-    toast.error("Gagal mengambil data rental.");
+    
+    await Swal.fire({
+      icon: "error",
+      title: "Gagal Memuat Data",
+      text: error.response?.data?.meta?.message || "Gagal mengambil data rental. Silakan coba lagi.",
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#ef4444",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -145,7 +157,7 @@ onMounted(() => {
                 @keydown.enter="searchHandler"
                 type="text"
                 placeholder="Cari invoice atau customer..."
-                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
+                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
               />
               <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -177,7 +189,7 @@ onMounted(() => {
             class="bg-gray-100 dark:bg-gray-800 w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center"
           >
             <svg
-              class="w-12 h-12 text-gray-400"
+              class="w-12 h-12 text-gray-400 dark:text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -186,12 +198,15 @@ onMounted(() => {
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
               />
             </svg>
           </div>
-          <p class="text-gray-500 dark:text-gray-400">
+          <p class="text-gray-500 dark:text-gray-400 font-medium">
             Belum ada transaksi penyewaan
+          </p>
+          <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">
+            Transaksi sewa yang dibuat akan muncul di sini
           </p>
         </div>
 
@@ -224,7 +239,7 @@ onMounted(() => {
                     :key="r.id"
                     class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 transition-colors"
                   >
-                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300">
                       {{ (pagination.currentPage - 1) * pagination.perPage + i + 1 }}
                     </td>
 
@@ -232,7 +247,7 @@ onMounted(() => {
                       {{ r.invoice }}
                     </td>
 
-                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 text-center">
+                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300 text-center">
                       {{ r.customer?.name_perusahaan ?? "-" }}
                     </td>
 
@@ -241,53 +256,54 @@ onMounted(() => {
                       :title="getTooltipDates(r.details)"
                     >
                       <div class="flex flex-col items-center">
-                        <div class="text-sm font-medium text-gray-800 dark:text-gray-200">
+                        <div class="text-sm font-medium text-gray-900 dark:text-gray-200">
                           {{ getRentalDates(r.details).start }}
                         </div>
-                        <div class="text-xs text-gray-500">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
                           s/d {{ getRentalDates(r.details).end }}
                         </div>
 
                         <!-- BADGE MULTIPLE DATES -->
                         <span
                           v-if="hasMultipleDates(r.details)"
-                          class="mt-1 px-2 py-0.5 text-[10px] bg-yellow-100 text-yellow-700 rounded-full font-semibold"
+                          class="mt-1 px-2 py-0.5 text-[10px] bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 rounded-full font-semibold"
                         >
                           Multiple Dates
                         </span>
                       </div>
                     </td>
 
-                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 text-center">
+                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300 text-center">
                       {{ getProductName(r) }}
                     </td>
 
-                    <td class="px-6 py-4 text-sm font-bold text-green-600 text-center">
+                    <td class="px-6 py-4 text-sm font-bold text-green-600 dark:text-green-400 text-center">
                       Rp {{ new Intl.NumberFormat("id-ID").format(r.total_rent_price) }}
                     </td>
 
                     <td class="px-6 py-4 text-center">
-                    <span
-                      :class="[
-                        'px-3 py-1 rounded-xl text-xs font-semibold',
-                        r.status === 'proses'
-                          ? 'bg-yellow-100 text-yellow-700'   
-                          : r.status === 'disewa'
-                          ? 'bg-blue-100 text-blue-700'      
-                          : r.status === 'selesai'
-                          ? 'bg-green-100 text-green-700'   
-                          : 'bg-gray-200 text-gray-700'      
-                      ]"
-                    >
-                      {{ r.status }}
-                    </span>
-                  </td>
+                      <span
+                        :class="[
+                          'px-3 py-1 rounded-xl text-xs font-semibold',
+                          r.status === 'proses'
+                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'   
+                            : r.status === 'disewa'
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'      
+                            : r.status === 'selesai'
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'   
+                            : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'      
+                        ]"
+                      >
+                        {{ r.status }}
+                      </span>
+                    </td>
+
                     <td class="px-6 py-4 text-right">
                       <div class="flex justify-end gap-2">
                         <!-- TOMBOL DETAIL -->
                         <router-link
                           :to="`/halaman-data-sewa/detail/${r.uuid}`"
-                          class="p-2.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all"
+                          class="p-2.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 rounded-xl transition-all"
                           title="Detail"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -301,7 +317,7 @@ onMounted(() => {
                         <!-- TOMBOL EDIT -->
                         <router-link
                           :to="`/halaman-data-sewa/edit/${r.uuid}`"
-                          class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
+                          class="p-2.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-xl transition-all"
                           title="Edit"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -361,7 +377,6 @@ onMounted(() => {
             <span class="font-semibold text-gray-700 dark:text-gray-300">
               {{ pagination.total }}
             </span>
-            data
           </p>
 
           <div class="flex gap-2">
@@ -388,7 +403,7 @@ onMounted(() => {
               >
                 {{ page }}
               </button>
-              <span v-if="pagination.totalPages > 5" class="px-2 flex items-center text-gray-500">...</span>
+              <span v-if="pagination.totalPages > 5" class="px-2 flex items-center text-gray-500 dark:text-gray-400">...</span>
             </div>
 
             <button

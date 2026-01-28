@@ -1,9 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import dayjs from "dayjs";
-
-import { toast } from "vue3-toastify";
-import "vue3-toastify/dist/index.css";
+import Swal from "sweetalert2";
 
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import DeleteModal from "@/components/DeleteButton.vue";
@@ -45,8 +43,15 @@ const getRepairDates = (repair) => {
 
 const fetchData = async (pageNumber = 1, search = "") => {
   const token = Cookies.get("token");
+  
   if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
+    await Swal.fire({
+      icon: "error",
+      title: "Sesi Berakhir",
+      text: "Token tidak ditemukan, silakan login ulang.",
+      confirmButtonText: "Login",
+      confirmButtonColor: "#ef4444",
+    });
     return;
   }
 
@@ -67,7 +72,14 @@ const fetchData = async (pageNumber = 1, search = "") => {
 
   } catch (error) {
     console.error("Gagal ambil data perbaikan:", error);
-    toast.error("Gagal mengambil data perbaikan.");
+    
+    await Swal.fire({
+      icon: "error",
+      title: "Gagal Memuat Data",
+      text: error.response?.data?.meta?.message || "Gagal mengambil data perbaikan. Silakan coba lagi.",
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#ef4444",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -173,7 +185,13 @@ onMounted(() => {
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
           </div>
@@ -213,7 +231,7 @@ onMounted(() => {
                   :key="r.id"
                   class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 transition-colors"
                 >
-                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300">
                     {{ (pagination.currentPage - 1) * pagination.perPage + i + 1 }}
                   </td>
 
@@ -221,26 +239,26 @@ onMounted(() => {
                     {{ r.invoice }}
                   </td>
 
-                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 text-center">
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300 text-center">
                     {{ r.customer?.name_perusahaan ?? "-" }}
                   </td>
 
                   <td class="px-6 py-4 text-center whitespace-nowrap">
                     <div class="flex flex-col items-center">
-                      <div class="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      <div class="text-sm font-medium text-gray-900 dark:text-gray-200">
                         {{ getRepairDates(r).start }}
                       </div>
-                      <div class="text-xs text-gray-500">
+                      <div class="text-xs text-gray-500 dark:text-gray-400">
                         s/d {{ getRepairDates(r).end }}
                       </div>
                     </div>
                   </td>
 
-                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 text-center">
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300 text-center">
                     {{ r.item_repair ?? "-" }}
                   </td>
 
-                  <td class="px-6 py-4 text-sm font-bold text-green-600 text-center">
+                  <td class="px-6 py-4 text-sm font-bold text-green-600 dark:text-green-400 text-center">
                     Rp {{ new Intl.NumberFormat("id-ID").format(r.grand_total) }}
                   </td>
 
@@ -249,12 +267,12 @@ onMounted(() => {
                       :class="[
                         'px-3 py-1 rounded-xl text-xs font-semibold',
                         r.status === 'masuk'
-                          ? 'bg-blue-100 text-blue-700'
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                           : r.status === 'dikerjakan'
-                          ? 'bg-yellow-100 text-yellow-700'
+                          ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
                           : r.status === 'selesai'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-200 text-gray-700'
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                          : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                       ]"
                     >
                       {{ r.status }}
@@ -266,7 +284,7 @@ onMounted(() => {
                       <!-- TOMBOL DETAIL -->
                       <router-link
                         :to="`/repairs/detail/${r.uuid}`"
-                        class="p-2.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all"
+                        class="p-2.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 rounded-xl transition-all"
                         title="Detail"
                       >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,7 +298,7 @@ onMounted(() => {
                       <!-- TOMBOL EDIT -->
                       <router-link
                         :to="`/repairs/edit/${r.uuid}`"
-                        class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
+                        class="p-2.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-xl transition-all"
                         title="Edit"
                       >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

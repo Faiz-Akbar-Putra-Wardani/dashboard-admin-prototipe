@@ -1,279 +1,442 @@
 <script setup>
-import { ref, reactive } from "vue";
-import { useRouter } from "vue-router";
-import Cookies from "js-cookie";
+import { ref, onMounted, computed } from "vue";
+import { toast } from "vue3-toastify";
+import "vue3-toastify/dist/index.css";
 import Swal from "sweetalert2";
-import Api from "@/services/api";
-import { handleErrors } from "@/utils/handleErrors";
+
 import AdminLayout from "@/components/layout/AdminLayout.vue";
-import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 
-const router = useRouter();
-const currentPageTitle = ref("Tambah Admin");
-const token = Cookies.get("token");
+import Api from "@/services/api";
+import Cookies from "js-cookie";
 
-const form = reactive({
-  name: "",
-  email: "",
-  password: "",
-  role: "",
+// State
+const admins = ref([]);
+const keywords = ref("");
+const isLoading = ref(true);
+
+const pagination = ref({
+  currentPage: 1,
+  perPage: 5,
+  total: 0,
+  totalPages: 1, 
 });
 
-const errors = reactive({});
-const isSubmitting = ref(false);
+const superAdminCount = computed(() => {
+  return admins.value.filter(admin => admin.role === 'super_admin').length;
+});
 
-const storeAdmin = async () => {
+const canDelete = (admin) => {
+  // Jika bukan super_admin, bisa dihapus
+  if (admin.role !== 'super_admin') return true;
+  
+  // Jika super_admin dan jumlah > 1, bisa dihapus
+  return superAdminCount.value > 1;
+};
+
+const getDeleteTooltip = (admin) => {
+  if (canDelete(admin)) return "Hapus admin";
+  return "Tidak dapat menghapus super admin terakhir";
+};
+
+// Ambil data admin dari API
+const fetchData = async (pageNumber = 1, search = "") => {
+  const token = Cookies.get("token");
+
+  if (!token) {
+    toast.error("Token tidak ditemukan, silakan login ulang.");
+    return;
+  }
+
+  Api.defaults.headers.common["Authorization"] = token;
+
+  try {
+    isLoading.value = true; 
+    const response = await Api.get(
+      `/api/admins?page=${pageNumber}&search=${search}`
+    );
+    admins.value = response.data.data;
+    pagination.value = {
+      currentPage: response.data.pagination.currentPage,
+      perPage: response.data.pagination.perPage,
+      total: response.data.pagination.total,
+      totalPages: Math.ceil(response.data.pagination.total / response.data.pagination.perPage), // ✅ Hitung totalPages
+    };
+  } catch (error) {
+    console.error("Gagal ambil data:", error);
+    toast.error("Gagal mengambil data admin.");
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const handleDelete = async (admin) => {
+  if (!canDelete(admin)) {
+    await Swal.fire({
+      icon: "warning",
+      title: "Tidak Dapat Dihapus!",
+      text: "Tidak dapat menghapus super admin terakhir.",
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#6b7280",
+    });
+    return;
+  }
+
   const confirm = await Swal.fire({
-    title: "Simpan Data?",
-    text: "Apakah kamu yakin ingin menambahkan admin baru?",
-    icon: "question",
+    title: "Hapus Admin?",
+    html: `Apakah kamu yakin ingin menghapus admin <strong>${admin.name}</strong>?<br><span style="color: #dc2626;">Tindakan ini tidak dapat dibatalkan!</span>`,
+    icon: "warning",
     showCancelButton: true,
-    confirmButtonText: "Ya, Simpan",
+    confirmButtonText: "Ya, Hapus",
     cancelButtonText: "Batal",
-    confirmButtonColor: "#2563eb",
+    confirmButtonColor: "#dc2626",
     cancelButtonColor: "#6b7280",
+    reverseButtons: true,
   });
 
   if (!confirm.isConfirmed) return;
 
-  isSubmitting.value = true;
-  Object.keys(errors).forEach((key) => (errors[key] = ""));
+  const token = Cookies.get("token");
+  Api.defaults.headers.common["Authorization"] = token;
 
   try {
-    Api.defaults.headers.common["Authorization"] = token;
-    const response = await Api.post("/api/admins", form);
+    await Api.delete(`/api/admins/${admin.uuid}`);
 
     await Swal.fire({
       icon: "success",
       title: "Berhasil!",
-      text: response.data.meta?.message || "Data admin berhasil disimpan.",
+      text: "Admin berhasil dihapus.",
       timer: 2000,
       showConfirmButton: false,
     });
 
-    router.push("/data-admin");
+    // Refresh data
+    fetchData(pagination.value.currentPage, keywords.value);
   } catch (error) {
-    if (error.response?.data) {
-      handleErrors(error.response.data, errors);
-      const errorMessages =
-        error.response.data.errors
-          ?.map((err) => `<li>${err.msg}</li>`)
-          .join("") || "<li>Terjadi kesalahan validasi.</li>";
-
-      await Swal.fire({
-        icon: "error",
-        title: "Validasi Gagal!",
-        html: `
-          <ul style="text-align: center; margin: 0; padding-left: 1.2rem; color: #e53e3e;">
-            ${errorMessages}
-          </ul>
-        `,
-        confirmButtonText: "Tutup",
-        confirmButtonColor: "#ef4444",
-      });
-    } else {
-      Swal.fire({
-        icon: "error",
-        title: "Kesalahan!",
-        text: "Terjadi kesalahan, silakan coba lagi.",
-      });
-    }
-  } finally {
-    isSubmitting.value = false;
+    console.error("Gagal hapus data:", error);
+    
+    const errorMessage = error.response?.data?.meta?.message || "Gagal menghapus admin.";
+    
+    await Swal.fire({
+      icon: "error",
+      title: "Gagal!",
+      text: errorMessage,
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#ef4444",
+    });
   }
 };
 
-const goBack = () => router.push("/data-admin");
+// Fungsi pencarian
+const searchHandler = () => {
+  fetchData(1, keywords.value);
+};
+
+// Fungsi pagination
+const goToPage = (page) => {
+  if (page < 1 || page > pagination.value.totalPages) return; 
+  fetchData(page, keywords.value);
+};
+
+// Format tanggal
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+};
+
+// Saat komponen di-mount
+onMounted(() => {
+  fetchData();
+});
 </script>
 
 <template>
-  <admin-layout>
-    <PageBreadcrumb :pageTitle="currentPageTitle" />
+  <AdminLayout>
+    <div class="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+      <div
+        class="rounded-3xl bg-white/80 backdrop-blur-xl shadow-2xl border border-indigo-100 dark:bg-gray-900/90 dark:border-indigo-900/50 p-6 lg:p-8"
+      >
+        <!-- Header -->
+        <div
+          class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6"
+        >
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+              Daftar Admin
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Kelola data admin di sini
+            </p>
+          </div>
 
-    <!-- Card -->
-    <div
-      class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6"
-    >
-      <div class="mb-6">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-          Tambah Admin Baru
-        </h2>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Isi kolom di bawah untuk menambahkan admin baru.
-        </p>
-      </div>
-
-      <!-- Form -->
-      <form @submit.prevent="storeAdmin" class="space-y-6">
-        <!-- Nama -->
-        <div class="group relative">
-          <input
-            id="name"
-            v-model="form.name"
-            type="text"
-            :data-filled="form.name"
-            class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
-            placeholder="Masukkan nama admin"
-          />
-          <label
-            for="name"
-            class="absolute left-4 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
-              peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
-              peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
-              peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
-          >
-            Nama <span class="text-red-500">*</span>
-          </label>
-          <p
-            v-if="errors.name"
-            class="mt-1 text-xs text-red-600 dark:text-red-400"
-          >
-            {{ errors.name }}
-          </p>
-        </div>
-
-        <!-- Email -->
-        <div class="group relative">
-          <input
-            id="email"
-            v-model="form.email"
-            type="email"
-            :data-filled="form.email"
-            class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
-            placeholder="Masukkan email"
-          />
-          <label
-            for="email"
-            class="absolute left-4 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
-              peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
-              peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
-              peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
-          >
-            Email <span class="text-red-500">*</span>
-          </label>
-          <p
-            v-if="errors.email"
-            class="mt-1 text-xs text-red-600 dark:text-red-400"
-          >
-            {{ errors.email }}
-          </p>
-        </div>
-
-        <!-- Password -->
-        <div class="group relative">
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            :data-filled="form.password"
-            class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
-            placeholder="Masukkan password"
-          />
-          <label
-            for="password"
-            class="absolute left-4 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20 
-              peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 
-              peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
-              peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
-          >
-            Password <span class="text-red-500">*</span>
-          </label>
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Minimal 6 karakter
-          </p>
-          <p
-            v-if="errors.password"
-            class="mt-1 text-xs text-red-600 dark:text-red-400"
-          >
-            {{ errors.password }}
-          </p>
-        </div>
-
-        <!-- Role -->
-        <div class="group relative">
-          <select
-            id="role"
-            v-model="form.role"
-            :data-filled="form.role"
-            class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 appearance-none focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
-          >
-            <option disabled value="">Pilih</option>
-            <option value="admin">Admin</option>
-            <option value="super_admin">Super Admin</option>
-          </select>
-
-          <label
-            for="role"
-            class="absolute left-4 top-2.5 px-1 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 ease-out pointer-events-none bg-white dark:bg-gray-800 z-20
-              peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
-              peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400
-              peer-[&:not([data-filled=''])]:-top-3 peer-[&:not([data-filled=''])]:text-xs peer-[&:not([data-filled=''])]:text-indigo-600 dark:peer-[&:not([data-filled=''])]:text-indigo-400"
-          >
-            Role <span class="text-red-500">*</span>
-          </label>
-
-          <!-- Custom Arrow Icon -->
-          <svg
-            class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-
-          <p
-            v-if="errors.role"
-            class="mt-1 text-xs text-red-600 dark:text-red-400"
-          >
-            {{ errors.role }}
-          </p>
-        </div>
-
-        <!-- Tombol Aksi -->
-        <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            @click="goBack"
-            class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-all"
-          >
-            Batal
-          </button>
-          <button
-            type="submit"
-            :disabled="isSubmitting"
-            class="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 transform hover:-translate-y-0.5 transition-all duration-200"
+          <router-link
+            to="/data-admin/create"
+            class="group flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-medium text-sm px-5 py-3 rounded-xl shadow-lg hover:shadow-xl hover:from-indigo-600 hover:to-indigo-700 transform hover:-translate-y-0.5 transition-all duration-200"
           >
             <svg
-              v-if="isSubmitting"
-              class="animate-spin h-4 w-4"
-              xmlns="http://www.w3.org/2000/svg"
+              class="w-5 h-5 group-hover:rotate-90 transition-transform"
               fill="none"
+              stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              ></circle>
               <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
             </svg>
-            <span>{{ isSubmitting ? "Menyimpan..." : "Simpan Admin" }}</span>
-          </button>
+            Tambah Admin
+          </router-link>
         </div>
-      </form>
+
+        <!-- Search Bar -->
+        <div class="relative mb-6">
+          <div class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+              <input
+                v-model="keywords"
+                @keydown.enter="searchHandler"
+                type="text"
+                placeholder="Cari admin..."
+                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
+              />
+              <svg
+                class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <button
+              @click="searchHandler"
+              class="px-6 py-3.5 bg-indigo-600 text-white font-medium text-sm rounded-2xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all"
+            >
+              Cari
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading Skeleton -->
+        <div v-if="isLoading" class="space-y-4">
+          <div v-for="n in 5" :key="n" class="animate-pulse">
+            <div class="h-16 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div
+          v-else-if="admins.length > 0"
+          class="overflow-x-auto w-full rounded-2xl border border-gray-200 dark:border-gray-700"
+        >
+          <table class="min-w-full w-full">
+            <thead
+              class="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/50 dark:to-indigo-800/50"
+            >
+              <tr>
+                <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">No</th>
+                <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Nama</th>
+                <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Email</th>
+                <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Role</th>
+                <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Tanggal Dibuat</th>
+                <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr
+                v-for="(admin, i) in admins"
+                :key="admin.id"
+                class="border-t border-gray-200 dark:border-gray-700 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 transition-colors"
+              >
+                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300">
+                  {{ (pagination.currentPage - 1) * pagination.perPage + i + 1 }}
+                </td>
+                <td class="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">
+                  {{ admin.name }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300">
+                  {{ admin.email }}
+                </td>
+                <td class="px-6 py-4 text-sm">
+                  <span
+                    :class="[
+                      'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium',
+                      admin.role === 'super_admin'
+                        ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                        : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                    ]"
+                  >
+                    {{ admin.role === 'super_admin' ? 'Super Admin' : 'Admin' }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300">
+                  {{ formatDate(admin.created_at) }}
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex justify-end gap-2">
+                    <router-link
+                      :to="`/data-admin/edit/${admin.uuid}`"
+                      class="p-2.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-xl transition-all"
+                      title="Edit"
+                    >
+                      <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                    </router-link>
+                    
+                    <div class="relative group">
+                      <button
+                        @click="handleDelete(admin)"
+                        :disabled="!canDelete(admin)"
+                        :title="getDeleteTooltip(admin)"
+                        :class="[
+                          'p-2.5 rounded-xl transition-all',
+                          canDelete(admin)
+                            ? 'text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/50 cursor-pointer'
+                            : 'text-gray-400 cursor-not-allowed opacity-50'
+                        ]"
+                      >
+                        <svg
+                          class="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            v-if="canDelete(admin)"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                          <path
+                            v-else
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                          />
+                        </svg>
+                      </button>
+                      
+                      <div 
+                        v-if="!canDelete(admin)"
+                        class="absolute bottom-full right-0 mb-2 hidden group-hover:block w-48 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg z-10"
+                      >
+                        {{ getDeleteTooltip(admin) }}
+                        <div class="absolute top-full right-4 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else class="text-center py-16">
+          <div
+            class="bg-gray-100 dark:bg-gray-800 w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center"
+          >
+            <svg
+              class="w-12 h-12 text-gray-400 dark:text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+              />
+            </svg>
+          </div>
+          <p class="text-gray-500 dark:text-gray-400 font-medium">
+            Belum ada data admin
+          </p>
+          <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">
+            Tambahkan data admin baru untuk memulai
+          </p>
+        </div>
+
+        <!-- Pagination (Sama seperti data pelanggan) -->
+        <div
+          v-if="pagination.total > pagination.perPage && !isLoading"
+          class="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4"
+        >
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Menampilkan
+            <span class="font-semibold text-gray-700 dark:text-gray-300">
+              {{ (pagination.currentPage - 1) * pagination.perPage + 1 }}
+            </span>
+            -
+            <span class="font-semibold text-gray-700 dark:text-gray-300">
+              {{ Math.min(pagination.currentPage * pagination.perPage, pagination.total) }}
+            </span>
+            dari
+            <span class="font-semibold text-gray-700 dark:text-gray-300">
+              {{ pagination.total }}
+            </span>
+          </p>
+
+          <div class="flex gap-2">
+            <button
+              @click="goToPage(pagination.currentPage - 1)"
+              :disabled="pagination.currentPage === 1"
+              class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
+            >
+              Prev
+            </button>
+            
+            <!-- Page Numbers -->
+            <div class="hidden sm:flex gap-1">
+              <button
+                v-for="page in Math.min(pagination.totalPages, 5)"
+                :key="page"
+                @click="goToPage(page)"
+                :class="[
+                  'px-4 py-2 rounded-lg border transition-all font-medium',
+                  pagination.currentPage === page
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                ]"
+              >
+                {{ page }}
+              </button>
+            </div>
+
+            <button
+              @click="goToPage(pagination.currentPage + 1)"
+              :disabled="pagination.currentPage === pagination.totalPages"
+              class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-  </admin-layout>
+  </AdminLayout>
 </template>

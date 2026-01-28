@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
+import Swal from "sweetalert2";
 import Api from "@/services/api";
 import Cookies from "js-cookie";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
@@ -26,7 +27,7 @@ const pagination = ref({
 
 // PRINT OPTIONS
 const printOptions = ref({
-  scope: 'current', // 'current', 'all', 'type'
+  scope: 'current',
   selectedType: ''
 });
 
@@ -36,6 +37,18 @@ const fetchData = async (page = 1) => {
     pagination.value.currentPage = page;
 
     const token = Cookies.get("token");
+    
+    if (!token) {
+      await Swal.fire({
+        icon: "error",
+        title: "Sesi Berakhir",
+        text: "Token tidak ditemukan, silakan login ulang.",
+        confirmButtonText: "Login",
+        confirmButtonColor: "#ef4444",
+      });
+      return;
+    }
+
     Api.defaults.headers.common.Authorization = token;
 
     const params = {
@@ -55,6 +68,16 @@ const fetchData = async (page = 1) => {
       pagination.value.total = meta.total;
       pagination.value.totalPages = meta.totalPages;
     }
+  } catch (error) {
+    console.error("Gagal mengambil data rekap:", error);
+    
+    await Swal.fire({
+      icon: "error",
+      title: "Gagal Memuat Data",
+      text: error.response?.data?.meta?.message || "Gagal mengambil data rekap pelanggan. Silakan coba lagi.",
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#ef4444",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -80,15 +103,12 @@ const executePrint = () => {
   };
 
   if (printOptions.value.scope === 'current') {
-    // Print halaman saat ini
     query.page = pagination.value.currentPage;
     query.type = filters.value.type || '';
   } else if (printOptions.value.scope === 'all') {
-    // Print semua data
     query.all = true;
     query.type = filters.value.type || '';
   } else if (printOptions.value.scope === 'type') {
-    // Print berdasarkan type tertentu
     query.all = true;
     query.type = printOptions.value.selectedType;
   }
@@ -106,27 +126,35 @@ watch(
   () => fetchData(1)
 );
 
-// Tambahkan fungsi ini di <script setup>
 const exportExcel = async () => {
   try {
     isLoading.value = true;
 
     const token = Cookies.get("token");
+    
+    if (!token) {
+      await Swal.fire({
+        icon: "error",
+        title: "Sesi Berakhir",
+        text: "Token tidak ditemukan, silakan login ulang.",
+        confirmButtonText: "Login",
+        confirmButtonColor: "#ef4444",
+      });
+      return;
+    }
+
     Api.defaults.headers.common.Authorization = token;
 
-    // Parameter sama seperti getCustomerRecap
     const params = {
       type: filters.value.type || undefined,
       search: filters.value.search || undefined,
     };
 
-    // Download file Excel
     const response = await Api.get("/api/reports/customer-recap/export", { 
       params,
-      responseType: 'blob' // Penting untuk download file
+      responseType: 'blob'
     });
 
-    // Buat URL dan trigger download
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
@@ -136,14 +164,29 @@ const exportExcel = async () => {
     link.remove();
     window.URL.revokeObjectURL(url);
 
+    await Swal.fire({
+      icon: "success",
+      title: "Berhasil!",
+      text: "File Excel berhasil diunduh.",
+      timer: 3000,
+      showConfirmButton: false,
+      timerProgressBar: true,
+    });
+
   } catch (error) {
     console.error('Export failed:', error);
-    alert('Gagal export Excel. Silakan coba lagi.');
+    
+    await Swal.fire({
+      icon: "error",
+      title: "Export Gagal",
+      text: error.response?.data?.meta?.message || "Gagal export Excel. Silakan coba lagi.",
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#ef4444",
+    });
   } finally {
     isLoading.value = false;
   }
 };
-
 
 onMounted(() => fetchData());
 </script>
@@ -165,7 +208,7 @@ onMounted(() => fetchData());
           </div>
 
          <div class="flex gap-3">
-            <!-- Tombol Print (yang sudah ada) -->
+            <!-- Tombol Print -->
             <button
               @click="openPrintModal"
               class="flex items-center gap-2 px-5 py-3 rounded-xl bg-green-600 text-white hover:bg-green-700 transition-all transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
@@ -176,7 +219,7 @@ onMounted(() => fetchData());
               <span class="font-semibold">Export PDF</span>
             </button>
 
-            <!-- Tombol Export Excel BARU -->
+            <!-- Tombol Export Excel -->
             <button
               @click="exportExcel"
               class="flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
@@ -197,8 +240,8 @@ onMounted(() => fetchData());
           <!-- SELECT TYPE -->
           <select
             v-model="filters.type"
-            class="w-full sm:w-48 px-4 py-3 rounded-xl border border-gray-300
-                   dark:border-gray-700 dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            class="w-full sm:w-48 px-4 py-3 rounded-xl border border-gray-300 text-gray-900
+                   dark:border-gray-700 dark:bg-gray-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="">Semua</option>
             <option value="penjualan">Penjualan</option>
@@ -225,8 +268,8 @@ onMounted(() => fetchData());
               @keydown.enter="searchHandler"
               type="text"
               placeholder="Cari invoice atau pelanggan..."
-              class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300
-                     dark:border-gray-700 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 text-gray-900
+                     dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <svg
               class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
@@ -270,22 +313,22 @@ onMounted(() => fetchData());
         <!-- TABLE -->
         <div v-else class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-2xl">
           <table class="min-w-[800px] w-full text-sm">
-            <thead class="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-gray-800 dark:to-gray-800">
+            <thead class="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/50 dark:to-indigo-800/50">
               <tr>
-                <th class="p-3 text-left font-semibold text-gray-700 dark:text-gray-300">No</th>
-                <th v-if="!filters.group" class="p-3 text-left font-semibold text-gray-700 dark:text-gray-300">Invoice</th>
-                <th class="p-3 text-left font-semibold text-gray-700 dark:text-gray-300">Pelanggan</th>
-                <th v-if="!filters.group" class="p-3 text-center font-semibold text-gray-700 dark:text-gray-300">Jenis</th>
-                <th class="p-3 text-right font-semibold text-gray-700 dark:text-gray-300">Total</th>
+                <th class="p-3 text-left font-semibold text-indigo-700 dark:text-indigo-300">No</th>
+                <th v-if="!filters.group" class="p-3 text-left font-semibold text-indigo-700 dark:text-indigo-300">Invoice</th>
+                <th class="p-3 text-left font-semibold text-indigo-700 dark:text-indigo-300">Pelanggan</th>
+                <th v-if="!filters.group" class="p-3 text-center font-semibold text-indigo-700 dark:text-indigo-300">Jenis</th>
+                <th class="p-3 text-right font-semibold text-indigo-700 dark:text-indigo-300">Total</th>
               </tr>
             </thead>
             <tbody>
               <tr
                 v-for="(r, i) in recaps"
                 :key="i"
-                class="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                class="border-t dark:border-gray-700 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 transition-colors"
               >
-                <td class="p-3 text-gray-600 dark:text-gray-400">
+                <td class="p-3 text-gray-900 dark:text-gray-300">
                   {{ (pagination.currentPage - 1) * pagination.perPage + i + 1 }}
                 </td>
                 <td v-if="!filters.group" class="p-3 font-medium text-gray-900 dark:text-white">
@@ -319,7 +362,7 @@ onMounted(() => fetchData());
           v-if="pagination.total > pagination.perPage"
           class="mt-6 flex justify-between items-center flex-wrap gap-4"
         >
-          <p class="text-sm text-gray-500 dark:text-gray-400">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
             Menampilkan
             <span class="font-semibold text-gray-700 dark:text-gray-300">
               {{ (pagination.currentPage - 1) * pagination.perPage + 1 }}
@@ -338,7 +381,7 @@ onMounted(() => fetchData());
             <button
               @click="goToPage(pagination.currentPage - 1)"
               :disabled="pagination.currentPage === 1"
-              class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
+              class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
             >
               Prev
             </button>
@@ -353,7 +396,7 @@ onMounted(() => fetchData());
                   'px-4 py-2 rounded-lg border transition-all font-medium',
                   pagination.currentPage === page
                     ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                 ]"
               >
                 {{ page }}
@@ -363,7 +406,7 @@ onMounted(() => fetchData());
             <button
               @click="goToPage(pagination.currentPage + 1)"
               :disabled="pagination.currentPage === pagination.totalPages"
-              class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
+              class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
             >
               Next
             </button>
@@ -447,7 +490,7 @@ onMounted(() => fetchData());
               <select
                 v-model="printOptions.selectedType"
                 @click="printOptions.scope = 'type'"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="">Pilih Jenis Transaksi</option>
                 <option value="penjualan">Penjualan</option>
@@ -462,7 +505,7 @@ onMounted(() => fetchData());
         <div class="flex gap-3 mt-6">
           <button
             @click="showPrintModal = false"
-            class="flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold transition-all"
+            class="flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold transition-all"
           >
             Batal
           </button>

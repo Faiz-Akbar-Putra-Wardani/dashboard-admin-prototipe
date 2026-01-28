@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { toast } from "vue3-toastify";
-import "vue3-toastify/dist/index.css";
+import Swal from "sweetalert2";
 
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import DeleteModal from "@/components/DeleteButton.vue";
@@ -25,7 +24,13 @@ const fetchData = async (pageNumber = 1, search = "") => {
   const token = Cookies.get("token");
 
   if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
+    await Swal.fire({
+      icon: "error",
+      title: "Sesi Berakhir",
+      text: "Token tidak ditemukan, silakan login ulang.",
+      confirmButtonText: "Login",
+      confirmButtonColor: "#ef4444",
+    });
     return;
   }
 
@@ -47,7 +52,13 @@ const fetchData = async (pageNumber = 1, search = "") => {
 
   } catch (error) {
     console.error("Gagal ambil kategori proyek:", error);
-    toast.error("Gagal mengambil data kategori proyek.");
+    await Swal.fire({
+      icon: "error",
+      title: "Gagal Memuat Data",
+      text: error.response?.data?.meta?.message || "Gagal mengambil data kategori proyek. Silakan coba lagi.",
+      confirmButtonText: "Tutup",
+      confirmButtonColor: "#ef4444",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -104,7 +115,7 @@ onMounted(() => {
                 @keydown.enter="searchHandler"
                 type="text"
                 placeholder="Cari nama kategori..."
-                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
+                class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
               />
               <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -136,7 +147,7 @@ onMounted(() => {
             class="bg-gray-100 dark:bg-gray-800 w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center"
           >
             <svg
-              class="w-12 h-12 text-gray-400"
+              class="w-12 h-12 text-gray-400 dark:text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -149,8 +160,11 @@ onMounted(() => {
               />
             </svg>
           </div>
-          <p class="text-gray-500 dark:text-gray-400">
+          <p class="text-gray-500 dark:text-gray-400 font-medium">
             Belum ada kategori proyek
+          </p>
+          <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">
+            Tambahkan kategori proyek baru untuk memulai
           </p>
         </div>
 
@@ -168,7 +182,6 @@ onMounted(() => {
                   <tr>
                     <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">No</th>
                     <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Nama Kategori</th>
-                    <!-- <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Slug</th> -->
                     <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Jumlah Proyek</th>
                     <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Tanggal Dibuat</th>
                     <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
@@ -181,7 +194,7 @@ onMounted(() => {
                     :key="cat.uuid"
                     class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 transition-colors"
                   >
-                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300">
                       {{ (pagination.currentPage - 1) * pagination.perPage + i + 1 }}
                     </td>
 
@@ -189,22 +202,13 @@ onMounted(() => {
                       {{ cat.name }}
                     </td>
 
-                    <!-- <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                        </svg>
-                        {{ cat.slug }}
-                      </span>
-                    </td> -->
-
                     <td class="px-6 py-4 text-sm text-center">
                       <span class="inline-flex items-center justify-center min-w-[2rem] px-3 py-1.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-full font-semibold">
                         {{ cat._count.projects }}
                       </span>
                     </td>
 
-                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">
+                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300 text-center whitespace-nowrap">
                       {{ new Date(cat.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) }}
                     </td>
 
@@ -213,7 +217,7 @@ onMounted(() => {
                         <!-- TOMBOL EDIT -->
                         <router-link
                           :to="`/projects-categories/edit/${cat.uuid}`"
-                          class="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all"
+                          class="p-2.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-xl transition-all"
                           title="Edit"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,6 +232,7 @@ onMounted(() => {
                           :uuid="cat.uuid"
                           endpoint="/api/project-categories"
                           :fetchData="fetchData"
+                          class="p-2 rounded-xl transition-all"
                         >
                           <template #trigger>
                             <svg
@@ -272,7 +277,6 @@ onMounted(() => {
             <span class="font-semibold text-gray-700 dark:text-gray-300">
               {{ pagination.total }}
             </span>
-            kategori
           </p>
 
           <div class="flex gap-2">
