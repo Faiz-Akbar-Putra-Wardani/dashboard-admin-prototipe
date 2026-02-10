@@ -244,9 +244,13 @@ onMounted(fetchDetail);
                 <span>{{ transaction.ppn }}%</span>
               </div>
 
-              <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span class="text-gray-600">Harga Produk (Subtotal)</span>
-                <span class="font-medium">Rp {{ formatRupiah(transaction.subtotal) }}</span>
+              <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 flex-nowrap">
+                <span class="text-gray-600 whitespace-nowrap min-w-[150px] flex-shrink-0">
+                  Harga Produk (Subtotal)
+                </span>
+                <span class="font-medium whitespace-nowrap text-right flex-1 justify-self-end">
+                  Rp {{ formatRupiah(transaction.subtotal) }}
+                </span>
               </div>
 
               <div class="flex flex-col sm:flex-row sm:justify-between gap-1 items-start sm:items-center">
