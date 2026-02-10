@@ -219,24 +219,33 @@ onMounted(() => fetchDetail());
                 </span>
               </div>
 
-              <!-- Tanggal Sewa -->
-              <div class="flex flex-col gap-1">
-                <span class="text-gray-600">Tanggal Sewa</span>
+             <!-- Tanggal Sewa -->
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+  <span class="text-gray-600">Tanggal Sewa</span>
 
-                <span v-if="rental?.details && !hasMultipleDates(rental.details)" class="font-medium text-left">
-                  {{ formatDate(rental.details[0]?.start_date) }} - 
-                  {{ formatDate(rental.details[0]?.end_date) }}
-                </span>
+  <div class="flex items-center gap-2">
+    <!-- Case 1: Single date range (satu produk atau tanggal sama) -->
+    <span
+      v-if="rental?.details && !hasMultipleDates(rental.details)"
+      class="font-medium whitespace-nowrap"
+    >
+      {{ formatDate(rental.details[0]?.start_date) }} - 
+      {{ formatDate(rental.details[0]?.end_date) }}
+    </span>
 
-                <span
-                  v-else-if="rental?.details"
-                  class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full cursor-pointer inline-block"
-                  :title="getTooltipDates(rental.details)"
-                >
-                  Multiple Dates
-                </span>
-                <span v-else class="text-left">-</span>
-              </div>
+    <!-- Case 2: Multiple dates -->
+    <span
+      v-else-if="rental?.details"
+      class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full cursor-pointer inline-block"
+      :title="getTooltipDates(rental.details)"
+    >
+      Multiple Dates
+    </span>
+
+    <!-- Case 3: Tidak ada data -->
+    <span v-else class="text-gray-500">-</span>
+  </div>
+</div>
 
               <div class="flex flex-col sm:flex-row sm:justify-between gap-1">
                 <span class="text-gray-600">DP</span>

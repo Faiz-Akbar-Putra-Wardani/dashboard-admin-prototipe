@@ -258,8 +258,6 @@ onMounted(fetchDetail);
                 </span>
               </div>
             </div>
-
-
             <!-- Update Status -->
             <div class="mt-8 space-y-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">Ubah Status</label>
