@@ -319,7 +319,7 @@ onMounted(() => fetchData());
                 <th v-if="!filters.group" class="p-3 text-left font-semibold text-indigo-700 dark:text-indigo-300">Invoice</th>
                 <th class="p-3 text-left font-semibold text-indigo-700 dark:text-indigo-300">Pelanggan</th>
                 <th v-if="!filters.group" class="p-3 text-center font-semibold text-indigo-700 dark:text-indigo-300">Jenis</th>
-                <th class="p-3 text-right font-semibold text-indigo-700 dark:text-indigo-300">Total</th>
+                <th class="p-3 text-center font-semibold text-indigo-700 dark:text-indigo-300">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -349,7 +349,7 @@ onMounted(() => fetchData());
                     {{ r.type }}
                   </span>
                 </td>
-                <td class="p-3 text-right font-bold text-gray-900 dark:text-white">
+                <td class="p-3 text-center font-bold text-gray-900 dark:text-white">
                   Rp {{ Number(r.total || 0).toLocaleString("id-ID") }}
                 </td>
               </tr>

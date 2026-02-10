@@ -145,7 +145,7 @@ onMounted(() => {
                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Perusahaan</th>
                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Telepon</th>
                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Alamat</th>
-                <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
+                <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
               </tr>
             </thead>
 
@@ -169,8 +169,8 @@ onMounted(() => {
                   {{ c.address }}
                 </td>
 
-                <td class="px-6 py-4">
-                  <div class="flex justify-end gap-2">
+               <td class="px-6 py-4">
+                  <div class="flex items-center justify-center gap-2 sm:gap-3">
                     <router-link
                       :to="`/data-pelanggan/edit/${c.uuid}`"
                       class="p-2.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-xl transition-all"
@@ -178,8 +178,7 @@ onMounted(() => {
                     >
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 
-                             112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </router-link>
 

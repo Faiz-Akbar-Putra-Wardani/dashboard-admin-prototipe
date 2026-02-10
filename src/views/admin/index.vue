@@ -192,7 +192,7 @@ onMounted(() => {
                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Email</th>
                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Role</th>
                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Tanggal Dibuat</th>
-                <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
+                <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
@@ -247,7 +247,6 @@ onMounted(() => {
                       </svg>
                     </router-link>
                     
-                    <!-- ✅ PERBAIKAN: Conditional delete button -->
                     <div class="relative group">
                       <DeleteModal
                         v-if="canDelete(admin)"
@@ -272,7 +271,6 @@ onMounted(() => {
                         </template>
                       </DeleteModal>
                       
-                      <!-- ✅ Disabled button untuk super_admin terakhir -->
                       <button
                         v-else
                         disabled
@@ -294,7 +292,6 @@ onMounted(() => {
                         </svg>
                       </button>
                       
-                      <!-- ✅ Tooltip -->
                       <div 
                         v-if="!canDelete(admin)"
                         class="absolute bottom-full right-0 mb-2 hidden group-hover:block w-48 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg z-10"

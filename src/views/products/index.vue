@@ -180,7 +180,7 @@ onMounted(() => {
                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Harga Jual</th>
                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Harga Sewa</th>
                 <th class="px-6 py-4 text-left text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Stok</th>
-                <th class="px-6 py-4 text-right text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
+                <th class="px-6 py-4 text-center text-xs font-bold uppercase text-indigo-700 dark:text-indigo-300">Aksi</th>
               </tr>
             </thead>
 
@@ -212,10 +212,10 @@ onMounted(() => {
                 <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300">
                   {{ moneyFormat(product.rent_price ?? "-") }}
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-300">
+                <td class="px-6 py-4 text-center text-sm text-gray-900 dark:text-gray-300">
                   {{ product.stock }}
                 </td>
-                <td class="px-6 py-4">
+                <td class="px-6 py-4 ">
                   <div class="flex justify-end gap-2">
                     <router-link
                       :to="`/products/edit/${product.uuid}`"
