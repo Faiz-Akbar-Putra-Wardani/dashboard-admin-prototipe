@@ -83,7 +83,7 @@ const storeBank = async () => {
 }
 
 const goBack = () => {
-  router.push('/data-bank')
+  router.push('/banks')
 }
 </script>
 
@@ -109,7 +109,6 @@ const goBack = () => {
             id="bank_name"
             v-model="form.bank_name"
             type="text"
-            required
             :data-filled="form.bank_name"
             class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
             placeholder="Contoh: Bank BRI, Bank MANDIRI"
@@ -134,7 +133,6 @@ const goBack = () => {
             id="account_number"
             v-model="form.account_number"
             type="text"
-            required
             :data-filled="form.account_number"
             class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative font-mono"
             placeholder="Contoh: 2092-0101-1376-504"
@@ -162,7 +160,6 @@ const goBack = () => {
             id="account_holder"
             v-model="form.account_holder"
             type="text"
-            required
             :data-filled="form.account_holder"
             class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative uppercase"
             placeholder="Contoh: ISWOYO"

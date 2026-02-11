@@ -144,7 +144,6 @@ onMounted(() => {
             id="name_perusahaan"
             v-model="form.name_perusahaan"
             type="text"
-            required
             :data-filled="form.name_perusahaan"
             class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
             placeholder="Masukkan nama perusahaan"
@@ -169,7 +168,6 @@ onMounted(() => {
             id="no_telp"
             v-model="form.no_telp"
             type="text"
-            required
             :data-filled="form.no_telp"
             class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all z-10 relative"
             placeholder="Contoh: 0812-3456-7890"
@@ -194,7 +192,6 @@ onMounted(() => {
             id="address"
             v-model="form.address"
             rows="4"
-            required
             :data-filled="form.address"
             class="peer block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-transparent focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:bg-gray-800 transition-all resize-none z-10 relative"
             placeholder="Masukkan alamat lengkap perusahaan"
