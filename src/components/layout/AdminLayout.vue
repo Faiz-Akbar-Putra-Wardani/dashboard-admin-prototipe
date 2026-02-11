@@ -18,7 +18,7 @@
         <p class="text-sm text-center text-brand-500 dark:text-blue-400 font-medium">
           SES-rentFix ~ Distributed by 
           <a 
-            href="https://themewagon.com/" 
+            href="https://admin.sinarelektrosejahtera.com/" 
             target="_blank" 
             rel="noopener noreferrer"
             class="text-brand-500 hover:text-brand-600 transition-colors duration-200 font-medium"
