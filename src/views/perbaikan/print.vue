@@ -5,7 +5,6 @@ import Api from "@/services/api";
 import Cookies from "js-cookie";
 import html2pdf from "html2pdf.js";
 
-// DATA ======================================================================
 const invoiceCode = ref("");
 const loading = ref(true);
 
@@ -309,17 +308,17 @@ const downloadPdf = async () => {
       <td class="center">
         {{ itemName }}
       </td>
-      <td class="center">{{ formatRupiah(subtotalPlusExtra) }}</td>
-      <td class="center">{{ formatRupiah(pph_nominal) }}</td>
+      <td class="center">Rp {{ formatRupiah(subtotalPlusExtra) }}</td>
+      <td class="center">Rp {{ formatRupiah(pph_nominal) }}</td>
       <!-- JUMALH RATA KANAN, SEJAJAR DENGAN KOLOM TOTAL/PPH -->
-      <td class="right">{{ formatRupiah(total) }}</td>
+      <td class="right">Rp {{ formatRupiah(total) }}</td>
     </tr>
 
     <!-- Terbilang / DP / SISA / TOTAL -->
     <tr class="sub-total-row">
       <!-- Kolom terbilang tetap ambil 3 kolom awal -->
       <td colspan="3" class="terbilang-cell">
-        Terbilang: {{ terbilangText }}
+        <b>Terbilang: {{ terbilangText }}</b>
       </td>
       <!-- Kolom label & nilai DP sejajar dengan kolom PPH & Jumlah -->
       <td class="center">DP</td>

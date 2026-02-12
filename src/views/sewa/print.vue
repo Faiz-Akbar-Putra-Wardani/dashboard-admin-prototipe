@@ -40,6 +40,79 @@ const uniqueAccountHolders = computed(() => {
   return unique;
 });
 
+// === LOGIKA TERBILANG (BARU) ===
+const numberToWords = (num) => {
+  if (num === 0) return "nol";
+
+  const units = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan"];
+  const teens = ["sepuluh", "sebelas", "dua belas", "tiga belas", "empat belas", "lima belas",
+    "enam belas", "tujuh belas", "delapan belas", "sembilan belas"];
+
+  const convertHundreds = (n) => {
+    if (n === 0) return "";
+    if (n < 10) return units[n];
+    if (n >= 10 && n < 20) return teens[n - 10];
+    if (n < 100) {
+      const tens = Math.floor(n / 10);
+      const remainder = n % 10;
+      return (tens === 1 ? "se" : units[tens]) + " puluh" + (remainder > 0 ? " " + units[remainder] : "");
+    }
+    if (n < 200) {
+      const remainder = n % 100;
+      return "seratus" + (remainder > 0 ? " " + convertHundreds(remainder) : "");
+    }
+    if (n < 1000) {
+      const hundreds = Math.floor(n / 100);
+      const remainder = n % 100;
+      return units[hundreds] + " ratus" + (remainder > 0 ? " " + convertHundreds(remainder) : "");
+    }
+    return "";
+  };
+
+  const convertThousands = (n) => {
+    if (n < 1000) return convertHundreds(n);
+    if (n < 2000) {
+      const remainder = n % 1000;
+      return "seribu" + (remainder > 0 ? " " + convertHundreds(remainder) : "");
+    }
+    if (n < 1000000) {
+      const thousands = Math.floor(n / 1000);
+      const remainder = n % 1000;
+      return convertHundreds(thousands) + " ribu" + (remainder > 0 ? " " + convertHundreds(remainder) : "");
+    }
+    return "";
+  };
+
+  const convertMillions = (n) => {
+    if (n < 1000000) return convertThousands(n);
+    if (n < 1000000000) {
+      const millions = Math.floor(n / 1000000);
+      const remainder = n % 1000000;
+      return convertThousands(millions) + " juta" + (remainder > 0 ? " " + convertThousands(remainder) : "");
+    }
+    if (n < 1000000000000) {
+      const billions = Math.floor(n / 1000000000);
+      const remainder = n % 1000000000;
+      return convertThousands(billions) + " miliar" + (remainder > 0 ? " " + convertMillions(remainder) : "");
+    }
+    return "";
+  };
+
+  return convertMillions(num);
+};
+
+// Computed Text Terbilang
+const terbilangText = computed(() => {
+  const total = Number(total_rent_price.value ?? 0);
+  if (total > 0) {
+    const words = numberToWords(total);
+    // Huruf kapital di awal + rupiah
+    return words.charAt(0).toUpperCase() + words.slice(1) + " rupiah";
+  }
+  return "-";
+});
+// ===============================
+
 // Format Functions
 const formatRupiah = (num) =>
   new Intl.NumberFormat("id-ID").format(num);
@@ -272,15 +345,12 @@ onMounted(async () => {
 
 <template>
   <div>
-    <!-- Tombol Download PDF -->
     <div style="margin-bottom: 20px; text-align:right;">
       <button @click="downloadPdf" class="btn btn-primary">Download PDF</button>
     </div>
 
-    <!-- AREA PRINT -->
     <div class="invoice-print" ref="printArea">
 
-      <!-- Header Perusahaan -->
       <div class="header">
         <div class="logo">
           <img src="/images/logo/logo_ses2.png" alt="SES Logo" />
@@ -297,25 +367,21 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Tanggal -->
       <div class="place-date">
         Bandar Lampung, {{ formatPrintDate(printDate) }}
       </div>
 
-      <!-- Judul -->
       <div class="title-section">
-        <p class="invoice-title"><u>Invoice Rental</u></p>
+        <p class="invoice-title"><u>Invoice Sewa</u></p>
         <p>Tanggal Cetak: {{ formatPrintDate(printDate) }}</p>
         <p>No Invoice: {{ invoiceCode }}</p>
       </div>
 
-      <!-- Kepada Yth -->
       <div class="customer">
         <p>Kepada Yth.</p>
         <p class="name">{{ customer }}</p>
       </div>
 
-      <!-- Tabel Produk Disewa -->
       <table class="items">
         <thead>
           <tr>
@@ -344,7 +410,9 @@ onMounted(async () => {
           </tr>
 
           <tr class="sub-total-row">
-            <td colspan="5" class="empty-cell"></td>
+            <td colspan="5" class="terbilang-cell" style="text-align: left; vertical-align: top;">
+              <b>Terbilang: {{ terbilangText }}</b>
+            </td>
             <td class="right">DP</td>
             <td class="right">{{ formatRupiah(dp) }}</td>
           </tr>
@@ -363,14 +431,12 @@ onMounted(async () => {
         </tbody>
       </table>
 
-      <!-- Informasi Pembayaran -->
       <div class="payment">
         <p>
           <strong>Pembayaran</strong><br>
           Mohon ditransfer ke
         </p>
         
-        <!-- Nomor Rekening -->
         <div class="account-details">
           <div class="rek-label">Nomor Rekening</div>
           <div class="rek-content">
@@ -389,7 +455,6 @@ onMounted(async () => {
           </div>
         </div>
         
-        <!-- Atas Nama - DINAMIS -->
         <div class="atas-nama">
           <div class="an-label">Atas Nama</div>
           <div class="an-content">
@@ -405,7 +470,6 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Signature Section -->
       <div class="signature-section">
         <div class="signature-text">Bandar Lampung, {{ formatPrintDate(printDate) }}</div>
         <div class="signature-text">Sinar Elektro Sejahtera</div>
@@ -610,6 +674,13 @@ onMounted(async () => {
   border-left: 1px solid #000;
 }
 
+/* Style Tambahan untuk Terbilang */
+.terbilang-cell {
+  border-right: none !important;
+  border-left: 1px solid #000;
+  font-style: italic; /* Agar miring seperti umumnya invoice */
+}
+
 .total-row td {
   font-weight: bold;
   border-top: 1px solid #000;
@@ -761,6 +832,3 @@ onMounted(async () => {
   }
 }
 </style>
-
-
-
